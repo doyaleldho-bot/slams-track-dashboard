@@ -1,7 +1,7 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom"
 
 function Home() {
-  return <h1 className="text-red-500">Home Page</h1>;
+  return <h1 className="text-red-500">Home Page</h1>
 }
 
 function App() {
@@ -12,7 +12,7 @@ function App() {
         <Route path="/" element={<Home />} />
       </Routes>
     </BrowserRouter>
-  );
+  )
 }
 
-export default App;
+export default App
