@@ -5,7 +5,7 @@ import {
   UserX,
   GraduationCap,
 } from "lucide-react";
-import StatsCard from "../components/Homepage/StatsCard";
+import StatsCard from "../components/StatsCard";
 import { PiUserList } from "react-icons/pi";
 
 const HomePage = () => {
