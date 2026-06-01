@@ -1,18 +1,20 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import DashboardLayout from "./layouts/DashboardLayout";
+import HomePage from "./pages/HomePage";
 
-function Home() {
-  return <h1 className="text-red-500">Home Page</h1>
-}
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* MAIN DASHBOARD LAYOUT */}
-        <Route path="/" element={<Home />} />
+        <Route path="" element={<DashboardLayout />}>
+          {/* MAIN DASHBOARD LAYOUT */}
+          <Route path="/" element={<HomePage />} />
+
+        </Route>
       </Routes>
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
+export default App;
