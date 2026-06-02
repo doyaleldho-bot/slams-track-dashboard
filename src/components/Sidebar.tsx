@@ -50,7 +50,7 @@ const Sidebar = () => {
       {/* MOBILE TOGGLE */}
       <button
         onClick={() => setOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 bg-[#083b9a] text-white p-2 rounded-md"
+        className="lg:hidden fixed top-7 left-4 z-50 bg-[#083b9a] text-white p-2 rounded-md"
       >
         <FiMenu size={20} />
       </button>
@@ -66,8 +66,8 @@ const Sidebar = () => {
       {/* SIDEBAR */}
       <aside
         className={`
-          fixed lg:static top-0 left-0 z-50
-          w-[340px] min-h-screen
+          fixed top-0 left-0 z-50
+          w-[340px] h-screen
           bg-[#083b9a] text-white
           flex flex-col justify-between
           transform transition-transform duration-300

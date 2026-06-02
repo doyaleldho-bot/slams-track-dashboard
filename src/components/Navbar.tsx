@@ -13,13 +13,13 @@ const [isOpen, setIsOpen] = useState(false);
 
 
   return (
-    <header className="h-[90px] w-full bg-[#FCFCFC] border-b border-gray-200 pl-4 md:pl-10 flex items-center justify-between pr-6">
+    <header className="h-[90px] w-full bg-[#FCFCFC] border-b border-gray-200 pl-4 md:pl-14 sm:pl-14 flex items-center justify-between pr-6">
       
       {/* LEFT */}
       <div className="flex items-center gap-[10px] min-w-fit">
         <Building size={24} className="text-[#474747]" />
 
-        <div className="leading-tight hidden sm:block">
+        <div className="leading-tight hidden sm:block ">
           <p className="text-[#2F2F2F] text-[20px] font-medium leading-[16px] tracking-[0.08em]">
             Jyothi Public School Kottayam
           </p>
