@@ -35,14 +35,14 @@ const [isOpen, setIsOpen] = useState(false);
        
 
         {/* NOTIFICATION */}
-        <div className="relative cursor-pointer"
+        {/* <div className="relative cursor-pointer"
         onClick={() => setIsOpen(true)}>
           <FiBell size={25} className="text-[#000000] " 
           />
           <span className="absolute -top-0 -right-0 w-2 h-2 bg-[#6CEA0C] text-white text-[10px] rounded-full flex items-center justify-center">
             
           </span>
-        </div>
+        </div> */}
   
         {/* PROFILE */}
       <Link

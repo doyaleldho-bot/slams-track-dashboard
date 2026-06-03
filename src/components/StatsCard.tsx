@@ -6,7 +6,6 @@ interface StatsCardProps {
   change?: string;
   subtitle?: string;
   icon: React.ReactNode;
-  highlight?: boolean;
 }
 
 const StatsCard: React.FC<StatsCardProps> = ({
@@ -15,7 +14,6 @@ const StatsCard: React.FC<StatsCardProps> = ({
   change,
   subtitle,
   icon,
-  highlight = false,
 }) => {
   return (
     <div
@@ -25,7 +23,6 @@ const StatsCard: React.FC<StatsCardProps> = ({
         minHeight: "172px",
         padding: "25.23px 25.23px 1.25px 25.23px",
         borderWidth: "1.25px",
-        borderColor: highlight ? "#3B82F6" : "#E5E7EB",
       }}
     >
       <div className="flex items-center justify-between">
