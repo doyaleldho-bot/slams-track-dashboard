@@ -21,7 +21,7 @@ const StatsCard: React.FC<StatsCardProps> = ({
     <div
       className="bg-white rounded-[14px] border flex flex-col gap-2 shadow-[0_8px_12px_-6px_rgba(0,0,0,0.15)] w-full"
       style={{
-        maxWidth: "252px",
+        maxWidth: "318px",
         minHeight: "172px",
         padding: "25.23px 25.23px 1.25px 25.23px",
         borderWidth: "1.25px",

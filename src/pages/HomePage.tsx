@@ -1,12 +1,7 @@
-import React from "react";
-import {
-  Users,
-  SquareChartGantt,
-  UserX,
-  GraduationCap,
-} from "lucide-react";
-import StatsCard from "../components/StatsCard";
-import { PiUserList } from "react-icons/pi";
+import React from "react"
+import { Users, SquareChartGantt, UserX, GraduationCap } from "lucide-react"
+import StatsCard from "../components/StatsCard"
+import { PiUserList } from "react-icons/pi"
 
 const HomePage = () => {
   const statsData = [
@@ -41,11 +36,13 @@ const HomePage = () => {
       subtitle: "+24% from last month",
       icon: <SquareChartGantt size={18} className="" />,
     },
-  ];
+  ]
 
   return (
     <div className="p-6">
-<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-6">        {statsData.map((card, index) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-6">
+        {" "}
+        {statsData.map((card, index) => (
           <StatsCard
             key={index}
             title={card.title}
@@ -58,7 +55,7 @@ const HomePage = () => {
         ))}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default HomePage;
+export default HomePage
