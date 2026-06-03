@@ -23,7 +23,7 @@ const menuItems: MenuItem[] = [
   { label: "Staff Management", icon: UserCog, path: "/StaffManagement" },
   { label: "Academic Management", icon: GraduationCap, path: "/AcademicManagement" },
   { label: "Student Management", icon: Users, path: "/StudentManagement" },
-  { label: "Attendance", icon: FileSpreadsheet, path: "/attendance" },
+  { label: "Attendance", icon: FileSpreadsheet, path: "/Attendance" },
   { label: "Finance", icon: Landmark, path: "/finance" },
  
   { label: "Settings", icon: Settings, path: "/settings" },
