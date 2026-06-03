@@ -31,3 +31,17 @@
           brightness(92%)
           contrast(110%);
 }
+
+/* Recharts v3 accessibility focus ring */
+.recharts-wrapper:focus-visible,
+.recharts-surface:focus-visible,
+.recharts-cartesian-axis:focus-visible,
+.recharts-area:focus-visible {
+  outline: none !important;
+}
+
+/* Remove SVG focus ring */
+svg:focus,
+svg:focus-visible {
+  outline: none !important;
+}
