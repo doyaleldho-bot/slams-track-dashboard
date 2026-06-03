@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useState } from 'react'
 import StatsCard from '../components/StatsCard'
 import { PiUserList } from "react-icons/pi";
+import type { TeacherAttendance } from "../components/Attendance/types/TeacherAttendance";
 
 import {
   Users,
@@ -13,15 +14,95 @@ import Notice from '../components/Attendance/Notice';
 import AttendanceTabs from '../components/Attendance/AttendanceTabs';
 import StaffAttendanceTable from '../components/Attendance/StaffAttendanceTable';
 import StudentAttendanceTable from '../components/Attendance/StudentAttendanceTable';
-import TeacherAttendanceTable from '../components/Attendance/TeacherAttendanceTable';
+import TeacherAttendanceTab from "../components/Attendance/TeacherAttendanceTable";import ActionModal from "../components/Attendance/modal/ActionModal";
 
 const Attendance = () => {
     const [activeTab, setActiveTab] = React.useState("Teacher Attendance");
+const [isModalOpen, setIsModalOpen] = useState(false);
+const [selectedTeacher, setSelectedTeacher] =
+  useState<TeacherAttendance | null>(null);
+
+const handleEdit = (teacher: TeacherAttendance) => {
+  setSelectedTeacher(teacher);
+  setIsModalOpen(true);
+};
     const today = new Date().toLocaleDateString("en-US", {
   month: "long",
   day: "2-digit",
   year: "numeric",
 });
+
+const initialTeachers: TeacherAttendance[] = [
+  {
+    teacherId: "TCH-001",
+    teacherName: "Robort Williams",
+    section: "A",
+    status: "Present",
+    checkIn: "08:45 AM",
+    checkOut: "---",
+    remark: "---",
+  },
+  {
+    teacherId: "TCH-002",
+    teacherName: "Emily Davis",
+    section: "A",
+    status: "Present",
+    checkIn: "08:30 AM",
+    checkOut: "---",
+    remark: "---",
+  },
+  {
+    teacherId: "TCH-003",
+    teacherName: "Jhon Benddit",
+    section: "B",
+    status: "Absent",
+    checkIn: "---",
+    checkOut: "---",
+    remark: "Medical Leave",
+  },
+  {
+    teacherId: "TCH-004",
+    teacherName: "Binu James",
+    section: "A",
+    status: "Late",
+    checkIn: "09:40 AM",
+    checkOut: "---",
+    remark: "Traffic Delay",
+  },
+  {
+    teacherId: "TCH-005",
+    teacherName: "Sindhu Ragav",
+    section: "B",
+    status: "Present",
+    checkIn: "08:40 AM",
+    checkOut: "---",
+    remark: "---",
+  },
+  {
+    teacherId: "TCH-006",
+    teacherName: "Merry Jonson",
+    section: "B",
+    status: "Absent",
+    checkIn: "---",
+    checkOut: "---",
+    remark: "Casual Leave",
+  },
+];
+
+const handleSaveTeacher = (updatedTeacher: TeacherAttendance) => {
+  setTeachers((prev) =>
+    prev.map((teacher) =>
+      teacher.teacherId === updatedTeacher.teacherId
+        ? updatedTeacher
+        : teacher
+    )
+  );
+
+  setIsModalOpen(false);
+};
+const [teachers, setTeachers] =
+  useState<TeacherAttendance[]>(initialTeachers);
+
      const statsData = [
     {
       title: "Student Attendance Today",
@@ -111,20 +192,27 @@ Track and manage attendance for teachers, students, and staff      </p>
 
       <div className="mt-10">
         {activeTab === "Teacher Attendance" && (
-          <TeacherAttendanceTable />
-        )}
+<TeacherAttendanceTab onEdit={handleEdit} />    
+    )}
 
         {activeTab === "Student Attendance" && (
           <StudentAttendanceTable />
         )}
 
         {activeTab === "Staff Attendance" && (
-          <StaffAttendanceTable />
-        )}
+<StaffAttendanceTable
+  onEdit={handleEdit}
+/>        )}
       </div>
     </div>
 
+  <ActionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        teacher={selectedTeacher}
+          onSave={handleSaveTeacher}
 
+      />
 
     </div>
   );

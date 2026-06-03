@@ -13,6 +13,7 @@ import StudentAdmissionTrendChart from "../components/Homepage/StudentAdmissionT
 import StudentAdmissionTrend from "../components/Homepage/StudentAdmissionTrend";
 
 const HomePage = () => {
+
   const statsData = [
     {
       title: "Total Students",
@@ -72,6 +73,7 @@ const HomePage = () => {
      <div className=" bg-gray-100 mt-10 rounded-3xl">
       <StudentAdmissionTrend />
     </div>
+     
     </div>
   );
 };

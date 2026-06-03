@@ -1,23 +1,20 @@
 import React from "react";
-import {
+import type { TeacherAttendance } from "./types/TeacherAttendance";import {
   Search,
   ChevronDown,
-  CalendarDays,
   SquarePen,
 } from "lucide-react";
 
-interface TeacherAttendance {
-  teacherId: string;
-  teacherName: string;
-  section: string;
-  status: "Present" | "Absent" | "Late";
-  checkIn: string;
-  checkOut: string;
-  remark: string;
+
+
+interface TeacherAttendanceTableProps {
+  onEdit: (teacher: TeacherAttendance) => void;
 }
 
-const TeacherAttendanceTab = () => {
-    const batchOptions = [
+const TeacherAttendanceTab: React.FC<TeacherAttendanceTableProps> = ({
+  onEdit,
+}) => {
+        const batchOptions = [
   "2025-2026",
   "2024-2025",
   "2023-2024",
@@ -36,6 +33,9 @@ const sectionOptions = [
   "B",
   "C",
 ];
+
+
+
   const attendanceData: TeacherAttendance[] = [
     {
       teacherId: "TCH-001",
@@ -131,7 +131,10 @@ const sectionOptions = [
 
   {/* Batch Dropdown */}
   <div className="relative">
-    <select className="w-[180px] h-[40px] border border-[#E5E7EB] rounded-md px-4 text-[13px] text-[#737373] appearance-none outline-none bg-white">
+    <select
+      aria-label="Select batch"
+      className="w-[180px] h-[40px] border border-[#E5E7EB] rounded-md px-4 text-[13px] text-[#737373] appearance-none outline-none bg-white"
+    >
       <option value="">-Select Batch-</option>
 
       {batchOptions.map((batch) => (
@@ -153,12 +156,13 @@ const sectionOptions = [
       <div className="flex gap-6 mt-10">
   {/* Date */}
   <div>
-    <label className="block text-[20px] font-medium text-[#474747] mb-2">
+    <label htmlFor="attendance-date" className="block text-[20px] font-medium text-[#474747] mb-2">
       Select Date
     </label>
 
     <div className="relative">
       <input
+        id="attendance-date"
         type="date"
         className="max-w-[230px] h-[44px] border border-[#D4D4D4] rounded-md px-3   text-[20px] outline-none"
       />
@@ -172,12 +176,15 @@ const sectionOptions = [
 
   {/* Department Dropdown */}
   <div>
-    <label className="block text-[20px] font-medium text-[#474747] mb-2">
+    <label htmlFor="department-select" className="block text-[20px] font-medium text-[#474747] mb-2">
       Select Department
     </label>
 
     <div className="relative">
-      <select className="max-w-[230px] h-[44px] border border-[#D4D4D4] rounded-md px-3   text-[20px] text-[#525252] appearance-none outline-none bg-white">
+      <select
+        id="department-select"
+        className="max-w-[230px] h-[44px] border border-[#D4D4D4] rounded-md px-3   text-[20px] text-[#525252] appearance-none outline-none bg-white"
+      >
         {departmentOptions.map((department) => (
           <option key={department} value={department}>
             {department}
@@ -194,12 +201,15 @@ const sectionOptions = [
 
   {/* Section Dropdown */}
   <div>
-    <label className="block text-[20px] font-medium text-[#474747] mb-2">
+    <label htmlFor="section-select" className="block text-[20px] font-medium text-[#474747] mb-2">
       Select Section
     </label>
 
     <div className="relative">
-      <select className="w-[230px] h-[44px] border border-[#D4D4D4] rounded-md px-3   text-[20px] text-[#525252] appearance-none outline-none bg-white">
+      <select
+        id="section-select"
+        className="w-[230px] h-[44px] border border-[#D4D4D4] rounded-md px-3   text-[20px] text-[#525252] appearance-none outline-none bg-white"
+      >
         {sectionOptions.map((section) => (
           <option key={section} value={section}>
             {section}
@@ -288,12 +298,18 @@ const sectionOptions = [
                 </td>
 
                 <td className="py-5">
-                  <div className="flex justify-end">
+                  <button
+                    type="button"
+                    className="flex justify-end"
+                    onClick={() => onEdit(item)}
+                    aria-label="Edit attendance"
+                    title="Edit attendance"
+                  >
                     <SquarePen
                       size={15}
                       className="text-[#3B82F6] cursor-pointer"
                     />
-                  </div>
+                  </button>
                 </td>
               </tr>
             ))}
