@@ -14,15 +14,16 @@ interface FinanceStatsProps {
 
 const FinanceStats: React.FC<FinanceStatsProps> = ({ stats }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
+    <div className="grid grid-cols-3 gap-4 mb-6">
       {stats.map((item, index) => (
-        <StatsCard
-          key={index}
-          title={item.title}
-          value={item.value}
-          subtitle={item.subtitle}
-          icon={item.icon}
-        />
+        <div key={index}>
+          <StatsCard
+            title={item.title}
+            value={item.value}
+            subtitle={item.subtitle}
+            icon={item.icon}
+          />
+        </div>
       ))}
     </div>
   );

@@ -46,7 +46,7 @@ const FinancePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#E9EFF8] p-6 pb-12">
+    <div className="min-h-screen">
       <div className="mx-auto max-w-[1400px]">
         <FinanceHeader
           title="Finance"

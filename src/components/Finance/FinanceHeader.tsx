@@ -17,20 +17,21 @@ const FinanceHeader: React.FC<FinanceHeaderProps> = ({
   onAddAdmission,
 }) => {
   return (
-    <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between mb-8">
+    <div className="flex items-center justify-between mb-6">
       <div>
-        <h1 className="text-3xl font-semibold text-[#1F2937]">{title}</h1>
-        <p className="mt-3 max-w-2xl text-sm text-gray-600">{description}</p>
+        <h1 className="font-poppins text-[24px] leading-[32px] font-semibold text-gray-900">
+          {title}
+        </h1>
+        <p className="text-gray-600 text-sm mt-1">{description}</p>
       </div>
-
-      <div className="flex flex-wrap items-center justify-end gap-3">
-        <button className="inline-flex items-center gap-2 rounded-[10px] border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
+      <div className="flex items-center gap-4">
+        <button className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
           <CalendarDays size={16} />
           {dateLabel}
         </button>
         <button
           onClick={onExport}
-          className="inline-flex items-center gap-2 rounded-[10px] border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-[#083b9a] shadow-sm hover:bg-gray-50"
+          className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
         >
           <Download size={16} />
           Export Report
@@ -38,7 +39,7 @@ const FinanceHeader: React.FC<FinanceHeaderProps> = ({
         {onAddAdmission ? (
           <button
             onClick={onAddAdmission}
-            className="inline-flex items-center gap-2 rounded-[10px] bg-[#083b9a] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#062d75]"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md transition-colors"
           >
             + Add Admission
           </button>
