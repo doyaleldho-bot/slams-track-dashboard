@@ -25,14 +25,14 @@ const menuItems: MenuItem[] = [
   { label: "Student Management", icon: Users, path: "/StudentManagement" },
   { label: "Attendance", icon: FileSpreadsheet, path: "/attendance" },
   { label: "Finance", icon: Landmark, path: "/finance" },
- 
+
   { label: "Settings", icon: Settings, path: "/settings" },
 ];
 
 const Sidebar = () => {
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleMouseEnter = (label: string) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -67,7 +67,7 @@ const Sidebar = () => {
       <aside
         className={`
           fixed top-0 left-0 z-50
-          w-[340px] h-screen
+          w-[260px] h-screen
           bg-[#083b9a] text-white
           flex flex-col justify-between
           transform transition-transform duration-300
@@ -77,63 +77,61 @@ const Sidebar = () => {
       >
         {/* HEADER */}
         <div className="flex flex-col flex-1 overflow-hidden">
-         <div className="flex items-center justify-between px-6 py-1 border-b border-white/10">
-  <div className="flex items-center gap-3">
-    <img
-      src={logo}
-      alt="logo"
-      className="w-20 h-20 object-contain"
-    />
+          <div className="flex items-center justify-between px-6 py-1 border-b border-white/10">
+            <div className="flex items-center gap-3">
+              <img
+                src={logo}
+                alt="logo"
+                className="w-20 h-20 object-contain"
+              />
 
-    <div className="flex flex-col">
-      <h1 className="text-[18px] font-semibold leading-none">
-        Slam Track
-      </h1>
-      <p className="text-[16px] font-normal mt-2 leading-none">
-        Dashboard
-      </p>
-    </div>
-  </div>
+              <div className="flex flex-col">
+                <h1 className="text-[18px] font-semibold leading-none">
+                  Slam Track
+                </h1>
+                <p className="text-[16px] font-normal mt-2 leading-none">
+                  Dashboard
+                </p>
+              </div>
+            </div>
 
-  <button
-    onClick={() => setOpen(false)}
-    className="lg:hidden text-white"
-  >
-    <FiX size={20} />
-  </button>
-</div>
+            <button
+              onClick={() => setOpen(false)}
+              className="lg:hidden text-white"
+            >
+              <FiX size={20} />
+            </button>
+          </div>
 
           {/* MENU */}
-          <nav className="mt-10 flex flex-col gap-5 pl-[42px] flex-1 overflow-y-auto pr-3 no-scrollbar">
-    {menuItems.map(({ label, icon: Icon, path }) => (              <NavLink key={label} to={path} onClick={() => setOpen(false)}>
-                {({ isActive }) => (
-                  <div
-                    onMouseEnter={() => handleMouseEnter(label)}
-                    onMouseLeave={handleMouseLeave}
-                    className={`
-                      flex items-center gap-1 px-5 py-5
-                      rounded-md text-[14px]
-                      w-[294px]
-                      transition-all duration-200
-                      ${
-                        isActive || hovered === label
-                          ? "w-[259px] bg-white text-[#083b9a] font-medium"
-                          : "text-white/90 hover:bg-white/30"
-                      }
-                    `}
-                  >
-                    <Icon
-  size={20}
-  className={`transition-all duration-200 ${
-    isActive || hovered === label
-      ? "text-[#083b9a]"
-      : "text-white"
-  }`}
-/>
-                    <span>{label}</span>
-                  </div>
-                )}
-              </NavLink>
+          <nav className="mt-10 flex flex-col gap-5 pl-[24px] flex-1 overflow-y-auto pr-3 no-scrollbar">
+            {menuItems.map(({ label, icon: Icon, path }) => (<NavLink key={label} to={path} onClick={() => setOpen(false)}>
+              {({ isActive }) => (
+                <div
+                  onMouseEnter={() => handleMouseEnter(label)}
+                  onMouseLeave={handleMouseLeave}
+                  className={`
+                        flex items-center gap-3 px-3 py-4
+                        rounded-md text-[14px]
+                        w-[259px]
+                        transition-all duration-200
+                        ${isActive || hovered === label
+                      ? "w-[215px] bg-white text-[#083b9a] font-medium"
+                      : "text-white/90 hover:bg-white/30"
+                    }
+                      `}
+                >
+                  <Icon
+                    size={20}
+                    className={`transition-all duration-200 ${isActive || hovered === label
+                        ? "text-[#083b9a]"
+                        : "text-white"
+                      }`}
+                  />
+                  <span className="whitespace-nowrap overflow-hidden text-ellipsis">{label}</span>
+                </div>
+              )}
+            </NavLink>
             ))}
           </nav>
         </div>

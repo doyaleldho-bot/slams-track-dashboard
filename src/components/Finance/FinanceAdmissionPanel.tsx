@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Search, CalendarDays, Eye, Edit3, Trash2 } from "lucide-react";
 import FinanceAdmissionDetail from "./FinanceAdmissionDetail";
+import StatusBadge from "./StatusBadge";
 import EditAdmissionModal from "./EditAdmissionModal";
 
 interface AdmissionRow {
@@ -217,15 +218,15 @@ const FinanceAdmissionPanel: React.FC = () => {
   };
 
   return (
-    <div className="mt-10 rounded-[32px] bg-white p-6 shadow-sm">
-      <div className="mb-8 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+    <div className="rounded-[10px] bg-white p-6 shadow-sm">
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-[#1F2937]">
             Students Admission
           </h2>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 justify-end">
           <div className="relative w-full sm:w-[260px]">
             <Search
               size={18}
@@ -236,47 +237,42 @@ const FinanceAdmissionPanel: React.FC = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search id or name..."
-              className="h-11 w-full rounded-full border border-[#E5E7EB] bg-[#F8F8F8] pl-11 pr-4 text-sm text-[#444] outline-none focus:border-[#083b9a]"
+              className="h-11 w-full rounded-[10px] border border-[#E5E7EB] bg-white pl-11 pr-4 text-sm text-[#444] outline-none focus:border-[#083b9a]"
             />
           </div>
 
-          <div className="flex items-center gap-4">
-            <label className="inline-flex items-center gap-2 text-sm font-medium text-[#444]">
-              <input
-                type="checkbox"
-                checked={selectAll}
-                onChange={() => setSelectAll((prev) => !prev)}
-                className="h-4 w-4 rounded border-gray-300 text-[#083b9a]"
-              />
-              Select all
-            </label>
-            <button className="inline-flex items-center gap-2 rounded-full border border-[#F74D57] bg-[#FFF5F7] px-4 py-2 text-sm font-semibold text-[#F74D57] hover:bg-[#FFE6EB]">
-              <Trash2 size={16} />
-              Delete all
-            </button>
-          </div>
+          <label className="inline-flex items-center gap-2 text-sm font-medium text-[#444] whitespace-nowrap">
+            <input
+              type="checkbox"
+              checked={selectAll}
+              onChange={() => setSelectAll((prev) => !prev)}
+              className="h-4 w-4 rounded border-gray-300 text-[#083b9a]"
+            />
+            Select all
+          </label>
+
+          <button className="inline-flex items-center gap-2 rounded-[10px] border border-[#F74D57] bg-[#FFF5F7] px-4 py-2 text-sm font-semibold text-[#F74D57] hover:bg-[#FFE6EB]">
+            <Trash2 size={16} />
+            Delete all
+          </button>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3 mb-8">
-        <div className="rounded-3xl border border-[#E5E7EB] bg-[#F8F8F8] p-4">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#6B7280]">
-            Admission Date
-          </p>
-          <div className="mt-3 flex items-center justify-between rounded-2xl border border-[#E5E7EB] bg-white px-4 py-3 text-sm text-[#111827]">
+      <div className="grid gap-4 md:grid-cols-3 mb-6 max-w-[980px]">
+        <div className="flex flex-col gap-2 max-w-[320px]">
+          <p className="text-sm font-medium text-[#111827]">Admission Date</p>
+          <div className="flex items-center justify-between rounded-[10px] border border-[#E5E7EB] bg-white px-4 py-3 text-sm text-[#111827]">
             <span>{selectedDate}</span>
             <CalendarDays size={18} className="text-[#6B7280]" />
           </div>
         </div>
 
-        <div className="rounded-3xl border border-[#E5E7EB] bg-[#F8F8F8] p-4">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#6B7280]">
-            Select Course
-          </p>
+        <div className="flex flex-col gap-2 max-w-[320px]">
+          <p className="text-sm font-medium text-[#111827]">Select Course</p>
           <select
             value={selectedCourse}
             onChange={(e) => setSelectedCourse(e.target.value)}
-            className="mt-3 h-12 w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 text-sm text-[#111827] outline-none"
+            className="h-11 w-full rounded-[10px] border border-[#E5E7EB] bg-white px-4 text-sm text-[#111827] outline-none"
           >
             {courses.map((course) => (
               <option key={course} value={course}>
@@ -286,14 +282,12 @@ const FinanceAdmissionPanel: React.FC = () => {
           </select>
         </div>
 
-        <div className="rounded-3xl border border-[#E5E7EB] bg-[#F8F8F8] p-4">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#6B7280]">
-            Admission ID
-          </p>
+        <div className="flex flex-col gap-2 max-w-[320px]">
+          <p className="text-sm font-medium text-[#111827]">Admission ID</p>
           <select
             value={selectedAdmissionId}
             onChange={(e) => setSelectedAdmissionId(e.target.value)}
-            className="mt-3 h-12 w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 text-sm text-[#111827] outline-none"
+            className="h-11 w-full rounded-[10px] border border-[#E5E7EB] bg-white px-4 text-sm text-[#111827] outline-none"
           >
             {admissionIds.map((id) => (
               <option key={id} value={id}>
@@ -304,8 +298,8 @@ const FinanceAdmissionPanel: React.FC = () => {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-[28px] border border-[#E5E7EB] bg-white p-1">
-        <table className="min-w-[1024px] w-full border-collapse text-left">
+      <div className="rounded-[10px] border border-[#E5E7EB] bg-white p-0 overflow-x-auto">
+        <table className="w-full border-collapse text-left min-w-[800px]">
           <thead>
             <tr className="text-sm uppercase tracking-[0.15em] text-[#6B7280]">
               <th className="px-5 py-4">Admission ID</th>
@@ -348,29 +342,28 @@ const FinanceAdmissionPanel: React.FC = () => {
                   {row.paymentMode}
                 </td>
                 <td className="px-5 py-4">
-                  <span
-                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                  <StatusBadge
+                    label={row.paymentStatus}
+                    variant={
                       row.paymentStatus === "Paid"
-                        ? "bg-emerald-100 text-emerald-700"
+                        ? "paid"
                         : row.paymentStatus === "Pending"
-                          ? "bg-amber-100 text-amber-700"
-                          : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {row.paymentStatus}
-                  </span>
+                          ? "pending"
+                          : "failed"
+                    }
+                  />
                 </td>
                 <td className="px-5 py-4 text-sm text-[#374151]">
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setSelectedAdmission(row)}
-                      className="rounded-full p-2 text-[#0F6FFF] hover:bg-[#ECF4FF]"
+                      className="rounded-[10px] p-2 text-[#0F6FFF] hover:bg-[#ECF4FF]"
                     >
                       <Eye size={16} />
                     </button>
                     <button
                       onClick={() => setEditingAdmission(row)}
-                      className="rounded-full p-2 text-[#0F6FFF] hover:bg-[#ECF4FF]"
+                      className="rounded-[10px] p-2 text-[#0F6FFF] hover:bg-[#ECF4FF]"
                     >
                       <Edit3 size={16} />
                     </button>
@@ -382,24 +375,24 @@ const FinanceAdmissionPanel: React.FC = () => {
         </table>
       </div>
 
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-sm text-[#6B7280]">
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-sm text-[#6B7280]">
         <span>
           Showing {filteredData.length} of {admissionData.length} Students
         </span>
-        <div className="flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-2">
-          <button className="rounded-full px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
+        <div className="flex items-center gap-2 rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2">
+          <button className="rounded-[10px] px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
             Previous
           </button>
-          <button className="rounded-full bg-[#083b9a] px-3 py-1 text-sm font-semibold text-white">
+          <button className="rounded-[10px] bg-[#083b9a] px-3 py-1 text-sm font-semibold text-white">
             1
           </button>
-          <button className="rounded-full px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
+          <button className="rounded-[10px] px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
             2
           </button>
-          <button className="rounded-full px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
+          <button className="rounded-[10px] px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
             3
           </button>
-          <button className="rounded-full px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
+          <button className="rounded-[10px] px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
             Next
           </button>
         </div>

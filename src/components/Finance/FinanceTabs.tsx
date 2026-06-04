@@ -12,15 +12,15 @@ const FinanceTabs: React.FC<FinanceTabsProps> = ({
   onChange,
 }) => {
   return (
-    <div className="inline-flex rounded-full bg-gray-100 p-1">
+    <div className="inline-flex h-11 w-full max-w-[611px] overflow-hidden rounded-full border border-[#E5E7EB] bg-[#F8F8F8] shadow-sm">
       {tabs.map((tab) => (
         <button
           key={tab}
           onClick={() => onChange(tab)}
-          className={`rounded-full px-5 py-2 text-sm font-medium transition-colors ${
+          className={`flex-1 h-full rounded-full px-4 text-sm font-medium transition duration-200 ${
             activeTab === tab
-              ? "bg-[#083b9a] text-white"
-              : "text-gray-600 hover:bg-gray-200"
+              ? "bg-[#474747] text-white"
+              : "text-[#20232A] hover:bg-white"
           }`}
         >
           {tab}

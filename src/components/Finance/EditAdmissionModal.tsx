@@ -36,7 +36,9 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
   const [formData, setFormData] = useState<AdmissionRow>(admission);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -52,14 +54,14 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[32px] bg-white p-8 shadow-xl">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[10px] bg-white p-8 shadow-xl">
         <div className="mb-8 flex items-center justify-between">
           <h2 className="text-2xl font-semibold text-[#1F2937]">
             Edit Admission
           </h2>
           <button
             onClick={onClose}
-            className="rounded-full p-2 text-[#6B7280] hover:bg-[#F3F4F6]"
+            className="rounded-[10px] p-2 text-[#6B7280] hover:bg-[#F3F4F6]"
           >
             <X size={20} />
           </button>

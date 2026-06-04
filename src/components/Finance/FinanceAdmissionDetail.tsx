@@ -1,5 +1,6 @@
 import React from "react";
 import { ArrowLeft, Download } from "lucide-react";
+import StatusBadge from "./StatusBadge";
 
 interface AdmissionDetailProps {
   admission: {
@@ -30,23 +31,23 @@ const FinanceAdmissionDetail: React.FC<AdmissionDetailProps> = ({
   onBack,
 }) => {
   return (
-    <div className="rounded-[32px] bg-white p-6 shadow-sm">
+    <div className="rounded-[10px] bg-white p-6 shadow-sm">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#F8FAFB]"
+          className="inline-flex items-center gap-2 rounded-[10px] border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#F8FAFB]"
         >
           <ArrowLeft size={16} />
           Back
         </button>
-        <button className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-[#374151] shadow-sm hover:bg-[#F8FAFB] border border-[#E5E7EB]">
+        <button className="inline-flex items-center gap-2 rounded-[10px] bg-white px-4 py-2 text-sm font-medium text-[#374151] shadow-sm hover:bg-[#F8FAFB] border border-[#E5E7EB]">
           <Download size={16} />
           Download Receipt
         </button>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <div className="rounded-[24px] border border-[#E5E7EB] bg-[#F8F8F8] p-6">
+        <div className="rounded-[10px] border border-[#E5E7EB] bg-[#F8F8F8] p-6">
           <h3 className="mb-4 text-lg font-semibold text-[#1F2937]">
             Academic
           </h3>
@@ -96,7 +97,7 @@ const FinanceAdmissionDetail: React.FC<AdmissionDetailProps> = ({
           </div>
         </div>
 
-        <div className="rounded-[24px] border border-[#E5E7EB] bg-[#F8F8F8] p-6">
+        <div className="rounded-[10px] border border-[#E5E7EB] bg-[#F8F8F8] p-6">
           <h3 className="mb-4 text-lg font-semibold text-[#1F2937]">Payment</h3>
           <div className="grid gap-3 text-sm text-[#374151] md:grid-cols-2">
             <div className="space-y-1">
@@ -127,24 +128,23 @@ const FinanceAdmissionDetail: React.FC<AdmissionDetailProps> = ({
               <p className="text-xs font-medium uppercase text-[#6B7280]">
                 Payment Status
               </p>
-              <span
-                className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+              <StatusBadge
+                label={admission.paymentStatus}
+                variant={
                   admission.paymentStatus === "Paid"
-                    ? "bg-emerald-100 text-emerald-700"
+                    ? "paid"
                     : admission.paymentStatus === "Pending"
-                      ? "bg-amber-100 text-amber-700"
-                      : "bg-red-100 text-red-700"
-                }`}
-              >
-                {admission.paymentStatus}
-              </span>
+                      ? "pending"
+                      : "failed"
+                }
+              />
             </div>
           </div>
         </div>
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
-        <div className="rounded-[24px] border border-[#E5E7EB] bg-[#F8F8F8] p-6">
+        <div className="rounded-[10px] border border-[#E5E7EB] bg-[#F8F8F8] p-6">
           <h3 className="mb-4 text-lg font-semibold text-[#1F2937]">
             Personal
           </h3>
@@ -186,7 +186,7 @@ const FinanceAdmissionDetail: React.FC<AdmissionDetailProps> = ({
           </div>
         </div>
 
-        <div className="rounded-[24px] border border-[#E5E7EB] bg-[#F8F8F8] p-6">
+        <div className="rounded-[10px] border border-[#E5E7EB] bg-[#F8F8F8] p-6">
           <h3 className="mb-4 text-lg font-semibold text-[#1F2937]">
             Documents
           </h3>
@@ -194,7 +194,7 @@ const FinanceAdmissionDetail: React.FC<AdmissionDetailProps> = ({
             {admission.documents.map((doc) => (
               <button
                 key={doc.label}
-                className="flex items-center justify-between rounded-2xl border border-[#E5E7EB] bg-white px-4 py-4 text-left text-sm font-medium text-[#374151] hover:bg-[#F8FAFB] w-full"
+                className="flex items-center justify-between rounded-[10px] border border-[#E5E7EB] bg-white px-4 py-4 text-left text-sm font-medium text-[#374151] hover:bg-[#F8FAFB] w-full"
               >
                 <span>{doc.label}</span>
                 <Download size={16} className="text-[#6B7280]" />

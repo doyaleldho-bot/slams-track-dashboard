@@ -10,7 +10,7 @@ const FinanceNoteCard: React.FC<FinanceNoteCardProps> = ({
   description,
 }) => {
   return (
-    <div className="mt-8 rounded-3xl border border-orange-200 bg-orange-50 p-6 text-orange-900">
+    <div className="mt-8 rounded-[10px] border border-orange-200 bg-orange-50 p-6 text-orange-900">
       <div className="flex items-center gap-3 text-lg font-semibold">
         {title}
       </div>

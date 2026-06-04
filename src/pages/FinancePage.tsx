@@ -6,6 +6,10 @@ import {
   FinanceTabs,
   FinanceNoteCard,
   FinanceAdmissionPanel,
+  FinanceReportPanel,
+  FinanceStudentReportPanel,
+  FinanceTeacherReportPanel,
+  ReturnVsExpenseChart,
 } from "../components/Finance";
 import type { FinanceStatItem } from "../components/Finance";
 
@@ -42,36 +46,70 @@ const FinancePage: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
-      <FinanceHeader
-        title="Finance"
-        description="Track admissions, payments, and financial records in one place."
-        dateLabel="Today: May 23, 2026"
-        onExport={handleExport}
-        onAddAdmission={
-          activeTab === "Admission" ? handleAddAdmission : undefined
-        }
-      />
+    <div className="min-h-screen bg-[#E9EFF8] p-6 pb-12">
+      <div className="mx-auto max-w-[1400px]">
+        <FinanceHeader
+          title="Finance"
+          description="Track admissions, payments, and financial records in one place."
+          dateLabel="Today: May 23, 2026"
+          onExport={handleExport}
+          onAddAdmission={
+            activeTab === "Admission" ? handleAddAdmission : undefined
+          }
+        />
 
-      <div className="rounded-[32px] bg-[#F3F4F9] p-6 shadow-sm">
-        <FinanceStats stats={statsData} />
+        <div className="space-y-6">
+          <FinanceStats stats={statsData} />
 
-        <div className="mt-8 flex justify-center">
-          <FinanceTabs
-            tabs={tabs}
-            activeTab={activeTab}
-            onChange={setActiveTab}
-          />
-        </div>
+          <div className="flex justify-start">
+            <FinanceTabs
+              tabs={tabs}
+              activeTab={activeTab}
+              onChange={setActiveTab}
+            />
+          </div>
 
-        <div className="mt-8">
           {activeTab === "Admission" ? (
             <FinanceAdmissionPanel />
+          ) : activeTab === "Reports" ? (
+            <div>
+              <div className="mb-4">
+                <div className="inline-flex rounded-full bg-[#F3F4F6] p-1">
+                  <button
+                    onClick={() => setActiveTab((_) => "Reports")}
+                    className={`px-5 py-2 rounded-full text-sm font-medium ${
+                      true ? "text-[#6B7280]" : ""
+                    }`}
+                  >
+                    Course report
+                  </button>
+                  <button
+                    onClick={() => setActiveTab((_) => "Reports")}
+                    className={`px-5 py-2 rounded-full text-sm font-medium ${
+                      true ? "bg-[#474747] text-white rounded-full" : ""
+                    }`}
+                  >
+                    Students report
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid gap-6">
+                <FinanceReportPanel />
+                <FinanceStudentReportPanel />
+                <FinanceTeacherReportPanel />
+              </div>
+              <div className="mt-6">
+                <ReturnVsExpenseChart />
+              </div>
+            </div>
           ) : (
-            <FinanceNoteCard
-              title="Important Note"
-              description="This Page is Under Construction"
-            />
+            <div className="rounded-[10px] bg-white p-6 shadow-sm">
+              <FinanceNoteCard
+                title="Important Note"
+                description="This Page is Under Construction"
+              />
+            </div>
           )}
         </div>
       </div>

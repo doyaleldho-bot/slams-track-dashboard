@@ -181,7 +181,7 @@ const StudentAdmissionTrend = () => {
                 <td className="py-2">
                   <span
                     className={`rounded-md px-3 py-1 text-xs font-medium ${feeBadge(
-                      student.feeStatus
+                      student.feeStatus,
                     )}`}
                   >
                     {student.feeStatus}
@@ -190,7 +190,7 @@ const StudentAdmissionTrend = () => {
 
                 <td
                   className={`py-2 text-xs font-medium ${attendanceColor(
-                    student.attendance
+                    student.attendance,
                   )}`}
                 >
                   {student.attendance}
@@ -199,7 +199,7 @@ const StudentAdmissionTrend = () => {
                 <td className="py-2">
                   <span
                     className={`rounded-md px-3 py-1 text-xs font-medium ${statusBadge(
-                      student.status
+                      student.status,
                     )}`}
                   >
                     {student.status}
