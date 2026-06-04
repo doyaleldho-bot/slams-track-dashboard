@@ -1,6 +1,6 @@
-import { Search, Bell, CalendarDays, ChevronDown } from "lucide-react";
+import {  ChevronDown } from "lucide-react";
 // import NotificationPanel from "../components/NotificationPanel";
-import { useState } from "react";
+// import { useState } from "react";
 import { FiBell } from "react-icons/fi";
 import {Building} from "lucide-react"
 import { Link } from "react-router-dom";
@@ -8,7 +8,7 @@ import { Link } from "react-router-dom";
 
 const Navbar = () => {
   
-const [isOpen, setIsOpen] = useState(false);
+// const [isOpen, setIsOpen] = useState(false);
 
 
 
@@ -36,7 +36,8 @@ const [isOpen, setIsOpen] = useState(false);
 
         {/* NOTIFICATION */}
         <div className="relative cursor-pointer"
-        onClick={() => setIsOpen(true)}>
+        // onClick={() => setIsOpen(true)}
+        >
           <FiBell size={25} className="text-[#000000] " 
           />
           <span className="absolute -top-0 -right-0 w-2 h-2 bg-[#6CEA0C] text-white text-[10px] rounded-full flex items-center justify-center">

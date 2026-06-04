@@ -23,7 +23,7 @@ const menuItems: MenuItem[] = [
   { label: "Staff Management", icon: UserCog, path: "/StaffManagement" },
   { label: "Academic Management", icon: GraduationCap, path: "/AcademicManagement" },
   { label: "Student Management", icon: Users, path: "/StudentManagement" },
-  { label: "Attendance", icon: FileSpreadsheet, path: "/attendance" },
+  { label: "Attendance", icon: FileSpreadsheet, path: "/Attendance" },
   { label: "Finance", icon: Landmark, path: "/finance" },
  
   { label: "Settings", icon: Settings, path: "/settings" },
@@ -32,7 +32,7 @@ const menuItems: MenuItem[] = [
 const Sidebar = () => {
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleMouseEnter = (label: string) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -49,7 +49,9 @@ const Sidebar = () => {
     <>
       {/* MOBILE TOGGLE */}
       <button
+        type="button"
         onClick={() => setOpen(true)}
+        aria-label="Open sidebar"
         className="lg:hidden fixed top-7 left-4 z-50 bg-[#083b9a] text-white p-2 rounded-md"
       >
         <FiMenu size={20} />
@@ -96,7 +98,9 @@ const Sidebar = () => {
   </div>
 
   <button
+    type="button"
     onClick={() => setOpen(false)}
+    aria-label="Close sidebar"
     className="lg:hidden text-white"
   >
     <FiX size={20} />

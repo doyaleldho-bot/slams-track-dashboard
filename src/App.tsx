@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom"
 import DashboardLayout from "./layouts/DashboardLayout"
 import HomePage from "./pages/HomePage"
 import AcademicPage from "./pages/AcademicPage"
+import Attendance from "./pages/Attendance"
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
           {/* MAIN DASHBOARD LAYOUT */}
           <Route path="/" element={<HomePage />} />
           <Route path="/AcademicManagement" element={<AcademicPage />} />
+          <Route path="/Attendance" element={<Attendance />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -7,6 +7,8 @@ interface StatsCardProps {
   subtitle?: string;
   icon: React.ReactNode;
   highlight?: boolean;
+  width?: string;
+  height?: string;
 }
 
 const StatsCard: React.FC<StatsCardProps> = ({
@@ -16,13 +18,15 @@ const StatsCard: React.FC<StatsCardProps> = ({
   subtitle,
   icon,
   highlight = false,
+  width = "252px",
+  height = "172px",
 }) => {
   return (
     <div
       className="bg-white rounded-[14px] border flex flex-col gap-2 shadow-[0_8px_12px_-6px_rgba(0,0,0,0.15)] w-full"
       style={{
-        maxWidth: "318px",
-        minHeight: "172px",
+        maxWidth: width,
+        minHeight: height,
         padding: "25.23px 25.23px 1.25px 25.23px",
         borderWidth: "1.25px",
         borderColor: highlight ? "#3B82F6" : "#E5E7EB",
