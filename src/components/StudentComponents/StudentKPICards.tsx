@@ -51,7 +51,7 @@ totalStudents,
   {
     title: "New Admissions",
     value: newAdmissions,
-    subtitle: "This academic year",
+    change: "This academic year",
     icon: <UserPlus className="w-5 h-5 text-blue-500" />,
   },
   {

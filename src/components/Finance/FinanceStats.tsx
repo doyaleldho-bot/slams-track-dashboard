@@ -22,6 +22,7 @@ const FinanceStats: React.FC<FinanceStatsProps> = ({ stats }) => {
             value={item.value}
             subtitle={item.subtitle}
             icon={item.icon}
+            width="100%"
           />
         </div>
       ))}

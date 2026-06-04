@@ -6,6 +6,9 @@ interface StatsCardProps {
   change?: string;
   subtitle?: string;
   icon: React.ReactNode;
+  highlight?: boolean;
+  width?: string;
+  height?: string;
 }
 
 const StatsCard: React.FC<StatsCardProps> = ({
@@ -14,11 +17,25 @@ const StatsCard: React.FC<StatsCardProps> = ({
   change,
   subtitle,
   icon,
+  highlight = false,
+  width = "252px",
+  height = "172px",
 }) => {
   return (
-    <div className="bg-white rounded-[10px] border border-[#E5E7EB] flex flex-col gap-4 shadow-[0_8px_12px_-6px_rgba(0,0,0,0.12)] w-full min-h-[172px] p-6">
-      <div className="flex items-start justify-between gap-6">
-        <p className="text-[14px] font-medium text-gray-500">{title}</p>
+    <div
+      className="bg-white rounded-[14px] border flex flex-col gap-2 shadow-[0_8px_12px_-6px_rgba(0,0,0,0.15)] w-full"
+      style={{
+        maxWidth: width,
+        minHeight: height,
+        padding: "25.23px 25.23px 1.25px 25.23px",
+        borderWidth: "1.25px",
+        borderColor: highlight ? "#3B82F6" : "#E5E7EB",
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <p className="text-[14px] font-medium text-gray-500">
+          {title}
+        </p>
 
         <div className="w-8 h-8 rounded-full flex items-center justify-center">
           {icon}

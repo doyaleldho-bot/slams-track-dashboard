@@ -4,6 +4,7 @@ import HomePage from "./pages/HomePage"
 import AcademicPage from "./pages/AcademicPage"
 import StudentPage from "./pages/StudentPage"
 import FinancePage from "./pages/FinancePage"
+import Attendance from "./pages/Attendance"
 
 function App() {
   return (
@@ -12,9 +13,12 @@ function App() {
         <Route path="" element={<DashboardLayout />}>
           {/* MAIN DASHBOARD LAYOUT */}
           <Route path="/" element={<HomePage />} />
+          <Route path="/StaffManagement" element={<div>Staff Management Page is on Construction</div>} />
           <Route path="/AcademicManagement" element={<AcademicPage />} />
           <Route path="/finance" element={<FinancePage />} />
           <Route path="/studentManagement" element={<StudentPage />} />
+          <Route path="/Attendance" element={<Attendance />} />
+          <Route path="/settings" element={<div>Settings Page Construction</div>} />
         </Route>
       </Routes>
     </BrowserRouter>
