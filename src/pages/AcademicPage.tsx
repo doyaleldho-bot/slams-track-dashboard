@@ -1,10 +1,11 @@
 import React, { useState } from "react"
-import { Users, UserX, GraduationCap } from "lucide-react"
+import { Users, UserX, GraduationCap, Plus } from "lucide-react"
 import { PiUserList } from "react-icons/pi"
 import StatsCard from "../components/StatsCard"
 
 import SchoolManagement from "../components/AcademicComponents/SchoolManagement"
 import TeacherTimeTable from "../components/AcademicComponents/TacherTimeTable"
+import AddClassModal from "../components/AcademicComponents/AddClassModal"
 
 interface StatsData {
   title: string
@@ -17,6 +18,7 @@ interface StatsData {
 
 const AcademicPage: React.FC = () => {
   const [academitabs, setAcademicTabs] = useState("SchoolMangement")
+  const [openModal, setOpenModal] = useState(false)
 
   const statsData: StatsData[] = [
     {
@@ -43,6 +45,23 @@ const AcademicPage: React.FC = () => {
 
   return (
     <div className="p-6">
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col gap-4">
+          <h1 className="font-poppins text-[24px] font-semibold leading-[16px] tracking-[0.08em]">
+            Academic Management
+          </h1>
+          <span className="font-poppins text-[16px] font-normal leading-[16px] tracking-[0.08em] text-[#474747]">
+            Manage courses, Time table.
+          </span>
+        </div>
+        <button
+          onClick={() => setOpenModal(true)}
+          className="flex h-[48px] w-[186px] items-center justify-center gap-2 rounded-[10px] gradient-btn text-white transition-all "
+        >
+          <Plus size={18} />
+          <span className="text-[14px] font-medium">Add Class</span>
+        </button>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         {statsData.map((card, index) => (
           <StatsCard
@@ -95,6 +114,8 @@ const AcademicPage: React.FC = () => {
           <TeacherTimeTable />
         )}
       </div>
+
+      <AddClassModal isOpen={openModal} onClose={() => setOpenModal(false)} />
     </div>
   )
 }
