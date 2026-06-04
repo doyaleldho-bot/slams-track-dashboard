@@ -1,9 +1,10 @@
-import React, { useState, type ChangeEvent } from "react";
+import React, { useState, useEffect, type ChangeEvent } from "react";
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  onSaved?: () => void;
+  onSaved?: (saved?: any) => void;
+  student?: any; // optional student for edit
 }
 
 const initialData = {
@@ -50,7 +51,7 @@ const initialData = {
   },
 };
 
-const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved }) => {
+const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) => {
   const [step, setStep] = useState<number>(1);
   const [data, setData] = useState<any>(initialData);
   const [files, setFiles] = useState<Record<string, File | null>>({
@@ -63,6 +64,38 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved }) => {
   });
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (student) {
+      setData((prev: any) => ({
+        ...prev,
+        personal: {
+          ...prev.personal,
+          name: student.name || prev.personal.name,
+          email: student.email || prev.personal.email,
+          phone: student.phone || prev.personal.phone,
+        },
+        academic: {
+          ...prev.academic,
+          className: student.class || prev.academic.className,
+          section: student.section || prev.academic.section,
+          admissionId: student.id || prev.academic.admissionId,
+        },
+      }));
+      setStep(1);
+    } else {
+      setData(initialData);
+      setFiles({
+        studentPhoto: null,
+        birthCertificate: null,
+        previousTc: null,
+        aadhar: null,
+        parentProof: null,
+        casteCertificate: null,
+      });
+      setUploadProgress({});
+    }
+  }, [student]);
 
   if (!open) return null;
 
@@ -152,7 +185,8 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved }) => {
       const form = new FormData();
 
       // Append JSON data as a single field
-      form.append("payload", JSON.stringify(data));
+      const payload = student?.id ? { ...data, id: student.id } : data;
+      form.append("payload", JSON.stringify(payload));
 
       // Append files
       Object.entries(files).forEach(([k, v]) => {
@@ -177,7 +211,7 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved }) => {
 
       // success
       setLoading(false);
-      onSaved && onSaved();
+      onSaved && onSaved(payload);
       onClose();
       alert("Student saved successfully");
     } catch (err: any) {

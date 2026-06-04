@@ -20,6 +20,7 @@ export interface Student {
 
 export interface StudentTableProps {
     students?: Student[];
+    onEdit?: (id: string) => void;
 }
 
 
@@ -47,7 +48,7 @@ const StudentPage = () => {
     });
     // const [studentList, setStudentList] = useState([]);
 
-    const studentList: Student[] = [
+    const [studentList, setStudentList] = useState<Student[]>([
         {
             id: "School-1234",
             name: "Aarav Sharma",
@@ -136,7 +137,9 @@ const StudentPage = () => {
             attend: 60,
             status: "Absent",
         },
-    ];
+    ]);
+
+    const [selectedStudent, setSelectedStudent] = useState<any>(null);
 
     //dummy api
     //     const fetchStudents = async (className: string) => {
@@ -199,6 +202,14 @@ const StudentPage = () => {
         throw new Error("Function not implemented.");
     }
 
+    function handleEditStudent(id: string) {
+        const s = studentList.find((st) => st.id === id);
+        if (s) {
+            setSelectedStudent(s);
+            setShowAddModal(true);
+        }
+    }
+
     return (
         <div className=" min-h-screen">
             {/* Header Section with Title, Dropdown, and Add Button */}
@@ -241,7 +252,41 @@ const StudentPage = () => {
                     <button onClick={() => setShowAddModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md transition-colors">
                         + Add Students
                     </button>
-                    <AddStudentModal open={showAddModal} onClose={() => setShowAddModal(false)} onSaved={() => { /* refresh list if needed */ }} />
+                    <AddStudentModal
+                        open={showAddModal}
+                        onClose={() => { setShowAddModal(false); setSelectedStudent(null); }}
+                        student={selectedStudent}
+                        onSaved={(saved) => {
+                            if (!saved) return;
+                            if (selectedStudent) {
+                                // update existing
+                                setStudentList((prev) => prev.map((s) => s.id === selectedStudent.id ? {
+                                    ...s,
+                                    name: saved.personal?.name || s.name,
+                                    class: saved.academic?.className || s.class,
+                                    section: saved.academic?.section || s.section,
+                                    admitted: saved.academic?.admissionDate || s.admitted,
+                                } : s));
+                            } else {
+                                // add new
+                                const newId = saved.id || `School-${Date.now()}`;
+                                const newStudent: Student = {
+                                    id: newId,
+                                    name: saved.personal?.name || "",
+                                    class: saved.academic?.className || "",
+                                    section: saved.academic?.section || "",
+                                    rollNo: "",
+                                    admitted: saved.academic?.admissionDate || new Date().toLocaleDateString(),
+                                    feeStatus: "Pending",
+                                    attend: 0,
+                                    status: "Present",
+                                };
+                                setStudentList((prev) => [newStudent, ...prev]);
+                            }
+                            setSelectedStudent(null);
+                            setShowAddModal(false);
+                        }}
+                    />
                 </div>
             </div>
 
@@ -269,7 +314,7 @@ const StudentPage = () => {
 
             {/* Student Table Section */}
             <div className="overflow-x-auto">
-                <StudentTable students={filteredStudents}/>
+                <StudentTable students={filteredStudents} onEdit={handleEditStudent} />
             </div>
         </div>
     );
