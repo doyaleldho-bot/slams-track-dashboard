@@ -11,7 +11,6 @@ function App() {
         <Route path="" element={<DashboardLayout />}>
           {/* MAIN DASHBOARD LAYOUT */}
           <Route path="/" element={<HomePage />} />
-          <Route path="/StaffManagement" element={<StudentPage />} />
           <Route path="/AcademicManagement" element={<AcademicPage />} />
           <Route path="/studentManagement" element={<StudentPage />} />
         </Route>
