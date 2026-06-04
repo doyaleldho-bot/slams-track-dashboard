@@ -3,7 +3,8 @@ import { Eye, Edit } from "lucide-react";
 import type { StudentTableProps } from "../../pages/StudentPage";
 import StudentDetailsModal from "./StudentDetailsModal";
 
-const StudentTable: React.FC<StudentTableProps> = ({ students }) => {
+
+const StudentTable: React.FC<StudentTableProps> = ({ students, onEdit }) => {
     const [showModal, setShowModal] = useState(false);
     const [studentDetails, setStudentDetails] = useState<any>(null);
     const [loading, setLoading] = useState(false);
@@ -128,7 +129,7 @@ const StudentTable: React.FC<StudentTableProps> = ({ students }) => {
                                         <button onClick={() => handleViewStudent(student.id)} className="text-gray-500 hover:text-gray-700">
                                             <Eye className="w-4 h-4" />
                                         </button>
-                                        <button className="text-gray-500 hover:text-gray-700">
+                                        <button onClick={() => onEdit && onEdit(student.id)} className="text-gray-500 hover:text-gray-700">
                                             <Edit className="w-4 h-4" />
                                         </button>
                                     </div>

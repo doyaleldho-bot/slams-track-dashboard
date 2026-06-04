@@ -36,14 +36,14 @@ const FinanceHeader: React.FC<FinanceHeaderProps> = ({
           <Download size={16} />
           Export Report
         </button>
-        {onAddAdmission ? (
+        {/* {onAddAdmission ? (
           <button
             onClick={onAddAdmission}
             className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md transition-colors"
           >
             + Add Admission
           </button>
-        ) : null}
+        ) : null} */}
       </div>
     </div>
   );

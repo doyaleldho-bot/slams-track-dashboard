@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Search, CalendarDays, Eye, Edit3, Trash2 } from "lucide-react";
+import { Search, CalendarDays, Eye, Edit3 } from "lucide-react";
 import FinanceAdmissionDetail from "./FinanceAdmissionDetail";
 import StatusBadge from "./StatusBadge";
 import EditAdmissionModal from "./EditAdmissionModal";
@@ -181,7 +181,6 @@ const FinanceAdmissionPanel: React.FC = () => {
   const [selectedCourse, setSelectedCourse] = useState("All Course");
   const [selectedAdmissionId, setSelectedAdmissionId] =
     useState("All Admission ID");
-  const [selectAll, setSelectAll] = useState(false);
   const [selectedAdmission, setSelectedAdmission] =
     useState<AdmissionRow | null>(null);
   const [editingAdmission, setEditingAdmission] = useState<AdmissionRow | null>(
@@ -240,21 +239,6 @@ const FinanceAdmissionPanel: React.FC = () => {
               className="h-11 w-full rounded-[10px] border border-[#E5E7EB] bg-white pl-11 pr-4 text-sm text-[#444] outline-none focus:border-[#083b9a]"
             />
           </div>
-
-          <label className="inline-flex items-center gap-2 text-sm font-medium text-[#444] whitespace-nowrap">
-            <input
-              type="checkbox"
-              checked={selectAll}
-              onChange={() => setSelectAll((prev) => !prev)}
-              className="h-4 w-4 rounded border-gray-300 text-[#083b9a]"
-            />
-            Select all
-          </label>
-
-          <button className="inline-flex items-center gap-2 rounded-[10px] border border-[#F74D57] bg-[#FFF5F7] px-4 py-2 text-sm font-semibold text-[#F74D57] hover:bg-[#FFE6EB]">
-            <Trash2 size={16} />
-            Delete all
-          </button>
         </div>
       </div>
 

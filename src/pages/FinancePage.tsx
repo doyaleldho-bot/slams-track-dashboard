@@ -47,7 +47,7 @@ const FinancePage: React.FC = () => {
 
   return (
     <div className="min-h-screen">
-      <div className="mx-auto max-w-[1400px]">
+      <div className="mx-auto">
         <FinanceHeader
           title="Finance"
           description="Track admissions, payments, and financial records in one place."
