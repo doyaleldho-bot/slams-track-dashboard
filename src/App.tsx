@@ -5,6 +5,7 @@ import AcademicPage from "./pages/AcademicPage"
 import StudentPage from "./pages/StudentPage"
 import FinancePage from "./pages/FinancePage"
 import Attendance from "./pages/Attendance"
+import SettingPage from "./pages/settingPage"
 
 function App() {
   return (
@@ -18,7 +19,7 @@ function App() {
           <Route path="/finance" element={<FinancePage />} />
           <Route path="/studentManagement" element={<StudentPage />} />
           <Route path="/Attendance" element={<Attendance />} />
-          <Route path="/settings" element={<div>Settings Page Construction</div>} />
+          <Route path="/settings" element={<SettingPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
