@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Users,
   SquareChartGantt,
@@ -17,32 +16,37 @@ const HomePage = () => {
     {
       title: "Total Students",
       value: 1250,
-      subtitle: "+15% from last month",
+      change: "+15%",
+      subtitle: "from last month",
       icon: <Users size={18} className="" />,
-      // highlight: true,
+      highlight: true,
     },
     {
       title: "Total Teachers",
       value: 45,
-      subtitle: "15 new openings today",
+      change: "+5%",
+      subtitle: "openings this week",
       icon: <PiUserList size={18} className="" />,
     },
     {
       title: "Non Teaching Staffs",
       value: 70,
-      subtitle: "+24% from last month",
+      change: "+24%",
+      subtitle: "from last month",
       icon: <UserX size={18} className="" />,
     },
     {
       title: "Active Students",
       value: 85,
-      subtitle: "+230 this week",
+      change: "+230",
+      subtitle: "this week",
       icon: <GraduationCap size={18} className="" />,
     },
     {
       title: "New Admission",
       value: 120,
-      subtitle: "+24% from last month",
+      change: "+24%",
+      subtitle: "from last month",
       icon: <SquareChartGantt size={18} className="" />,
     },
   ];
