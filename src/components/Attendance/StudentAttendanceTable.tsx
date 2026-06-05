@@ -1,5 +1,5 @@
 import { Search, ChevronDown, CalendarDays } from "lucide-react";
-
+import React, { useState } from "react";
 interface StudentAttendance {
   classId: string;
   className: string;
@@ -37,6 +37,10 @@ const StudentAttendanceTable = () => {
     "6th Std",
     "7th Std",
   ];
+  const [searchTerm, setSearchTerm] = useState("");
+const [selectedClass, setSelectedClass] = useState("All Class");
+const [selectedDate, setSelectedDate] = useState("");
+
 
   const attendanceData: StudentAttendance[] = [
     {
@@ -142,6 +146,19 @@ const StudentAttendanceTable = () => {
       },
     },
   ];
+  
+
+   const filteredAttendanceData = attendanceData.filter((student) => {
+  const matchesSearch =
+    student.classId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.className.toLowerCase().includes(searchTerm.toLowerCase());
+
+  const matchesClass =
+    selectedClass === "All Class" ||
+    student.className.toLowerCase() === selectedClass.toLowerCase();
+
+  return matchesSearch && matchesClass;
+});
 
   return (
     <div className="bg-white rounded-[10px] p-6 border border-[#E5E7EB]">
@@ -164,6 +181,8 @@ const StudentAttendanceTable = () => {
               aria-label="Search by id or name"
               title="Search by id or name"
               placeholder="Search id or name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-[220px] h-[40px] pl-9 pr-3 border border-[#E5E7EB] rounded-md text-[13px] outline-none"
             />
           </div>
@@ -199,16 +218,18 @@ const StudentAttendanceTable = () => {
           </label>
 
           <div className="relative">
-            <input
-              id="attendanceDate"
-              type="date"
-              className="w-[240px] h-[44px] border border-[#D4D4D4] rounded-md px-3 text-[16px] outline-none"
-            />
+           <input
+  id="attendanceDate"
+  type="date"
+  value={selectedDate}
+  onChange={(e) => setSelectedDate(e.target.value)}
+  className="w-[240px] h-[44px] border border-[#D4D4D4] rounded-md px-3 text-[16px] outline-none"
+/>
 
-            <CalendarDays
+            {/* <CalendarDays
               size={16}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none"
-            />
+            /> */}
           </div>
         </div>
 
@@ -221,6 +242,8 @@ const StudentAttendanceTable = () => {
           <div className="relative">
             <select
               id="classSelect"
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
               className="w-[240px] h-[44px] border border-[#D4D4D4] rounded-md px-3 text-[16px] text-[#525252] appearance-none outline-none bg-white"
             >
               {classOptions.map((item) => (
@@ -279,12 +302,13 @@ const StudentAttendanceTable = () => {
             </tr>
           </thead>
 
-          <tbody>
-            {attendanceData.map((item) => (
-              <tr
-                key={item.classId}
-                className="border-b border-[#E5E7EB]"
-              >
+        <tbody>
+  {filteredAttendanceData.length > 0 ? (
+    filteredAttendanceData.map((item) => (
+      <tr
+        key={item.classId}
+        className="border-b border-[#E5E7EB]"
+      >
                 <td className="py-4 text-[15px] text-[#525252]">
                   {item.classId}
                 </td>
@@ -336,9 +360,19 @@ const StudentAttendanceTable = () => {
                     </span>
                   </div>
                 </td>
-              </tr>
-            ))}
-          </tbody>
+                </tr>
+    ))
+  ) : (
+    <tr>
+      <td
+        colSpan={9}
+        className="py-8 text-center text-[#737373]"
+      >
+        No classes found
+      </td>
+    </tr>
+  )}
+</tbody>
         </table>
       </div>
     </div>
