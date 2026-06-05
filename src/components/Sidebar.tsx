@@ -104,7 +104,7 @@ const Sidebar = () => {
           </div>
 
           {/* MENU */}
-          <nav className="mt-10 flex flex-col gap-5 pl-[24px] flex-1 overflow-y-auto pr-3 no-scrollbar">
+          <nav className="mt-10 flex flex-col gap-5 pl-[15px] flex-1 overflow-y-auto pr-3 no-scrollbar">
             {menuItems.map(({ label, icon: Icon, path }) => (<NavLink key={label} to={path} onClick={() => setOpen(false)}>
               {({ isActive }) => (
                 <div
@@ -113,10 +113,10 @@ const Sidebar = () => {
                   className={`
                         flex items-center gap-3 px-3 py-4
                         rounded-md text-[14px]
-                        w-[259px]
+                        w-full
                         transition-all duration-200
                         ${isActive || hovered === label
-                      ? "w-[212px] bg-white text-[#083b9a] font-medium"
+                      ? "full bg-white text-[#083b9a] font-medium"
                       : "text-white/90 hover:bg-white/30"
                     }
                       `}

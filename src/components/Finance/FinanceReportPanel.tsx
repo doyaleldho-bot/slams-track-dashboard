@@ -132,7 +132,7 @@ const FinanceReportPanel: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 mb-6 max-w-[680px]">
+      <div className="grid gap-4 md:grid-cols-2 mb-6 max-w-[480px]">
         <div className="flex flex-col gap-2 max-w-[340px]">
           <p className="text-sm font-medium text-[#111827]">
             Select Course & Standard
@@ -170,10 +170,10 @@ const FinanceReportPanel: React.FC = () => {
         <table className="w-full border-collapse text-left min-w-[900px]">
           <thead>
             <tr className="text-sm uppercase tracking-[0.15em] text-[#6B7280]">
-              <th className="px-5 py-4">Course & Standard</th>
+              <th className="px-5 py-4">Course & Std</th>
               <th className="px-5 py-4">Duration</th>
-              <th className="px-5 py-4">Active Students</th>
-              <th className="px-5 py-4">Completed Students</th>
+              <th className="px-5 py-4">Active Stud</th>
+              <th className="px-5 py-4">Completed Stud</th>
               <th className="px-5 py-4">Revenue Generated</th>
               <th className="px-5 py-4">Pending Fees</th>
               <th className="px-5 py-4">Total Teachers</th>

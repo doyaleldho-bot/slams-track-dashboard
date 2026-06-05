@@ -54,13 +54,13 @@ const FinanceAdmissionDetail: React.FC<AdmissionDetailProps> = ({
           <div className="grid gap-3 text-sm text-[#374151] md:grid-cols-2">
             <div className="space-y-1">
               <p className="text-xs font-medium uppercase text-[#6B7280]">
-                Admission ID
+                ADM ID
               </p>
               <p className="font-semibold">{admission.id}</p>
             </div>
             <div className="space-y-1">
               <p className="text-xs font-medium uppercase text-[#6B7280]">
-                Student Name
+                STD Name
               </p>
               <p className="font-semibold">{admission.studentName}</p>
             </div>
