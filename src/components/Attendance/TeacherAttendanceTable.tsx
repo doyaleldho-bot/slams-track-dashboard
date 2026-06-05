@@ -1,23 +1,21 @@
-import React from "react";
+import React, { useState } from "react";
+import type { TeacherAttendance } from "./types/TeacherAttendance";
 import {
   Search,
   ChevronDown,
-  CalendarDays,
   SquarePen,
 } from "lucide-react";
 
-interface TeacherAttendance {
-  teacherId: string;
-  teacherName: string;
-  section: string;
-  status: "Present" | "Absent" | "Late";
-  checkIn: string;
-  checkOut: string;
-  remark: string;
+
+
+interface TeacherAttendanceTableProps {
+  onEdit: (teacher: TeacherAttendance) => void;
 }
 
-const TeacherAttendanceTab = () => {
-    const batchOptions = [
+const TeacherAttendanceTab: React.FC<TeacherAttendanceTableProps> = ({
+  onEdit,
+}) => {
+        const batchOptions = [
   "2025-2026",
   "2024-2025",
   "2023-2024",
@@ -36,6 +34,17 @@ const sectionOptions = [
   "B",
   "C",
 ];
+
+const institutionType = localStorage.getItem("institutionType");
+
+const isSchool = institutionType === "school";
+const isCollege = institutionType === "college";
+const [searchTerm, setSearchTerm] = useState("");
+const [selectedDate, setSelectedDate] = useState("");
+const [selectedDepartment, setSelectedDepartment] = useState("All departments");
+const [selectedSection, setSelectedSection] = useState("All Section");
+
+
   const attendanceData: TeacherAttendance[] = [
     {
       teacherId: "TCH-001",
@@ -93,6 +102,23 @@ const sectionOptions = [
     },
   ];
 
+const filteredAttendanceData = attendanceData.filter((teacher) => {
+  const matchesSearch =
+    teacher.teacherId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    teacher.teacherName.toLowerCase().includes(searchTerm.toLowerCase());
+
+  const matchesDepartment =
+    selectedDepartment === "All departments" ||
+    teacher.section === selectedDepartment;
+
+  const matchesSection =
+    selectedSection === "All Section" ||
+    teacher.section === selectedSection;
+
+  return matchesSearch && matchesDepartment && matchesSection;
+});
+
+
   const getStatusClass = (status: string) => {
     switch (status) {
       case "Present":
@@ -122,16 +148,22 @@ const sectionOptions = [
       className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A3A3A3]"
     />
 
-    <input
-      type="text"
-      placeholder="Search id or name..."
-      className="w-[220px] h-[40px] pl-9 pr-3 border border-[#E5E7EB] rounded-md text-[13px] outline-none"
-    />
+   <input
+  type="text"
+  placeholder="Search id or name..."
+  value={searchTerm}
+  onChange={(e) => setSearchTerm(e.target.value)}
+  className="w-[220px] h-[40px] pl-9 pr-3 border border-[#E5E7EB] rounded-md text-[13px] outline-none"
+/>
   </div>
 
   {/* Batch Dropdown */}
+  {isCollege && (
   <div className="relative">
-    <select className="w-[180px] h-[40px] border border-[#E5E7EB] rounded-md px-4 text-[13px] text-[#737373] appearance-none outline-none bg-white">
+    <select
+      aria-label="Select batch"
+      className="w-[180px] h-[40px] border border-[#E5E7EB] rounded-md px-4 text-[13px] text-[#737373] appearance-none outline-none bg-white"
+    >
       <option value="">-Select Batch-</option>
 
       {batchOptions.map((batch) => (
@@ -146,6 +178,7 @@ const sectionOptions = [
       className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#737373]"
     />
   </div>
+  )}
 </div>
       </div>
 
@@ -153,15 +186,18 @@ const sectionOptions = [
       <div className="flex gap-6 mt-10">
   {/* Date */}
   <div>
-    <label className="block text-[20px] font-medium text-[#474747] mb-2">
+    <label htmlFor="attendance-date" className="block text-[20px] font-medium text-[#474747] mb-2">
       Select Date
     </label>
 
     <div className="relative">
       <input
-        type="date"
-        className="max-w-[230px] h-[44px] border border-[#D4D4D4] rounded-md px-3   text-[20px] outline-none"
-      />
+  id="attendance-date"
+  type="date"
+  value={selectedDate}
+  onChange={(e) => setSelectedDate(e.target.value)}
+  className="max-w-[230px] h-[44px] border border-[#D4D4D4] rounded-md px-3 text-[20px] outline-none"
+/>
 
       {/* <CalendarDays
         size={16}
@@ -171,41 +207,57 @@ const sectionOptions = [
   </div>
 
   {/* Department Dropdown */}
+  
+
+  {isCollege && (
   <div>
-    <label className="block text-[20px] font-medium text-[#474747] mb-2">
+    <label htmlFor="department-select" className="block text-[20px] font-medium text-[#474747] mb-2">
       Select Department
     </label>
 
-    <div className="relative">
-      <select className="max-w-[230px] h-[44px] border border-[#D4D4D4] rounded-md px-3   text-[20px] text-[#525252] appearance-none outline-none bg-white">
-        {departmentOptions.map((department) => (
-          <option key={department} value={department}>
-            {department}
-          </option>
-        ))}
-      </select>
+   <div className="relative">
+  <select
+    id="department-select"
+    value={selectedDepartment}
+    onChange={(e) => setSelectedDepartment(e.target.value)}
+    className="w-full h-[44px] border border-[#D4D4D4] rounded-md px-3 pr-10 text-[20px] text-[#525252] appearance-none outline-none bg-white"
+  >
+    {departmentOptions.map((department) => (
+      <option key={department} value={department}>
+        {department}
+      </option>
+    ))}
+  </select>
 
-      <ChevronDown
-        size={16}
-        className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
-      />
-    </div>
-  </div>
+  <ChevronDown
+    size={16}
+    className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#525252]"
+  />
+</div>
+  </div> 
+)}
+  
 
   {/* Section Dropdown */}
+  
   <div>
-    <label className="block text-[20px] font-medium text-[#474747] mb-2">
+    <label htmlFor="section-select" className="block text-[20px] font-medium text-[#474747] mb-2">
       Select Section
     </label>
 
     <div className="relative">
-      <select className="w-[230px] h-[44px] border border-[#D4D4D4] rounded-md px-3   text-[20px] text-[#525252] appearance-none outline-none bg-white">
-        {sectionOptions.map((section) => (
-          <option key={section} value={section}>
-            {section}
-          </option>
-        ))}
-      </select>
+     <select
+  id="section-select"
+  value={selectedSection}
+  onChange={(e) => setSelectedSection(e.target.value)}
+  className="w-[230px] h-[44px] border border-[#D4D4D4] rounded-md px-3 text-[20px] text-[#525252] appearance-none outline-none bg-white"
+>
+  {sectionOptions.map((section) => (
+    <option key={section} value={section}>
+      {section}
+    </option>
+  ))}
+</select>
 
       <ChevronDown
         size={16}
@@ -213,6 +265,7 @@ const sectionOptions = [
       />
     </div>
   </div>
+  
 </div>
 
       {/* Table */}
@@ -247,10 +300,10 @@ const sectionOptions = [
             </tr>
           </thead>
 
-          <tbody>
-            {attendanceData.map((item) => (
-              <tr
-                key={item.teacherId}
+         <tbody>
+  {filteredAttendanceData.length > 0 ? (
+    filteredAttendanceData.map((item) => (
+      <tr key={item.teacherId}
                 className="border-b border-[#E5E7EB]"
               >
                 <td className="py-5    text-[20px]text-[#525252]">
@@ -288,15 +341,31 @@ const sectionOptions = [
                 </td>
 
                 <td className="py-5">
-                  <div className="flex justify-end">
+                  <button
+                    type="button"
+                    className="flex justify-end"
+                    onClick={() => onEdit(item)}
+                    aria-label="Edit attendance"
+                    title="Edit attendance"
+                  >
                     <SquarePen
                       size={15}
                       className="text-[#3B82F6] cursor-pointer"
                     />
-                  </div>
+                  </button>
                 </td>
               </tr>
-            ))}
+    ))
+  ) : (
+    <tr>
+      <td
+        colSpan={8}
+        className="py-8 text-center text-[#737373]"
+      >
+        No teachers found
+      </td>
+    </tr>
+  )}
           </tbody>
         </table>
       </div>

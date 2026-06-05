@@ -15,6 +15,9 @@ interface CollectionData {
 }
 
 const data: CollectionData[] = [
+  { month: "Jan", amount: 60000 },
+  { month: "Feb", amount: 170000 },
+  { month: "Mar", amount: 160000 },
   { month: "Apr", amount: 160000 },
   { month: "May", amount: 150000 },
   { month: "Jun", amount: 240000 },
@@ -22,6 +25,9 @@ const data: CollectionData[] = [
   { month: "Aug", amount: 265000 },
   { month: "Sep", amount: 270000 },
   { month: "Oct", amount: 305000 },
+  { month: "Nov", amount: 160000 },
+  { month: "Dec", amount: 200000 },
+
 ];
 
 const CustomTooltip = ({ active, payload }: any) => {

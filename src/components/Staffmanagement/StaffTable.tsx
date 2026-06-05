@@ -2,8 +2,8 @@ import React from "react";
 import { FiSearch, FiEdit2 } from "react-icons/fi";
 import { FaUser } from "react-icons/fa";
 import AssignSubstitute from ".//stafftabs/AssignSubstitute";
-import NonTeachingTable from "../Staff/Tabs/NonTeachingTable";
-import SubstituteList from "../Staff/Tabs/SubstituteList";
+import NonTeachingTable from "../Staffmanagement/NonTeachingTable";
+import SubstituteList from "../Staffmanagement/stafftabs/SubstituteList";
 import type { SubstituteDetails } from "./SubstituteDetailsModal";
 
 interface Props {
