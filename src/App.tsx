@@ -11,7 +11,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="" element={<DashboardLayout />}>
-          {/* MAIN DASHBOARD LAYOUT */}
+          {/* MAIN DASHBOARD LAYOUT */}``
           <Route path="/" element={<HomePage />} />
           <Route path="/StaffManagement" element={<div>Staff Management Page is on Construction</div>} />
           <Route path="/AcademicManagement" element={<AcademicPage />} />

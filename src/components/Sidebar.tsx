@@ -84,31 +84,28 @@ const Sidebar = () => {
               <img
                 src={logo}
                 alt="logo"
-                className="w-20 h-20 object-contain"
+                className="w-16 h-16 object-contain"
               />
 
-              <div className="flex flex-col">
-                <h1 className="text-[18px] font-semibold leading-none">
-                  Slam Track
-                </h1>
-                <p className="text-[16px] font-normal mt-2 leading-none">
+              <div>
+                <p className="text-[20px] font-semibold leading-tight">
                   Dashboard
                 </p>
               </div>
             </div>
 
-  <button
-    type="button"
-    onClick={() => setOpen(false)}
-    aria-label="Close sidebar"
-    className="lg:hidden text-white"
-  >
-    <FiX size={20} />
-  </button>
-</div>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Close sidebar"
+              className="lg:hidden text-white"
+            >
+              <FiX size={20} />
+            </button>
+          </div>
 
           {/* MENU */}
-          <nav className="mt-10 flex flex-col gap-5 pl-[24px] flex-1 overflow-y-auto pr-3 no-scrollbar">
+          <nav className="mt-10 flex flex-col gap-5 pl-[15px] flex-1 overflow-y-auto pr-3 no-scrollbar">
             {menuItems.map(({ label, icon: Icon, path }) => (<NavLink key={label} to={path} onClick={() => setOpen(false)}>
               {({ isActive }) => (
                 <div
@@ -117,10 +114,10 @@ const Sidebar = () => {
                   className={`
                         flex items-center gap-3 px-3 py-4
                         rounded-md text-[14px]
-                        w-[259px]
+                        w-full
                         transition-all duration-200
                         ${isActive || hovered === label
-                      ? "w-[212px] bg-white text-[#083b9a] font-medium"
+                      ? "w-full bg-white text-[#083b9a] font-medium"
                       : "text-white/90 hover:bg-white/30"
                     }
                       `}
@@ -128,8 +125,8 @@ const Sidebar = () => {
                   <Icon
                     size={20}
                     className={`transition-all duration-200 ${isActive || hovered === label
-                        ? "text-[#083b9a]"
-                        : "text-white"
+                      ? "text-[#083b9a]"
+                      : "text-white"
                       }`}
                   />
                   <span className="whitespace-nowrap overflow-hidden text-ellipsis">{label}</span>
