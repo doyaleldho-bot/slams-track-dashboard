@@ -34,6 +34,11 @@ const sectionOptions = [
   "C",
 ];
 
+const institutionType = localStorage.getItem("institutionType");
+
+const isSchool = institutionType === "school";
+const isCollege = institutionType === "college";
+
 
 
   const attendanceData: TeacherAttendance[] = [
@@ -130,6 +135,7 @@ const sectionOptions = [
   </div>
 
   {/* Batch Dropdown */}
+  {isCollege && (
   <div className="relative">
     <select
       aria-label="Select batch"
@@ -149,6 +155,7 @@ const sectionOptions = [
       className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#737373]"
     />
   </div>
+  )}
 </div>
       </div>
 
@@ -175,6 +182,7 @@ const sectionOptions = [
   </div>
 
   {/* Department Dropdown */}
+  
   <div>
     <label htmlFor="department-select" className="block text-[20px] font-medium text-[#474747] mb-2">
       Select Department
@@ -200,6 +208,7 @@ const sectionOptions = [
   </div>
 
   {/* Section Dropdown */}
+  {isCollege && (
   <div>
     <label htmlFor="section-select" className="block text-[20px] font-medium text-[#474747] mb-2">
       Select Section
@@ -223,6 +232,7 @@ const sectionOptions = [
       />
     </div>
   </div>
+  )}
 </div>
 
       {/* Table */}
