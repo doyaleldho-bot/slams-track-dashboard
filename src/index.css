@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Arimo:wght@400;500;600;700&display=swap");
 
 @tailwind base;
@@ -11,23 +11,86 @@
   }
 }
 
-
 .no-scrollbar {
-  -ms-overflow-style: none;     /* IE + Edge */
-  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none; /* IE + Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
 .no-scrollbar::-webkit-scrollbar {
-  display: none;                /* Chrome, Safari */
+  display: none; /* Chrome, Safari */
 }
 
-
 .filter-blue {
-  filter: brightness(0) saturate(100%)
-          invert(18%)
-          sepia(96%)
-          saturate(3200%)
-          hue-rotate(205deg)
-          brightness(92%)
-          contrast(110%);
+  filter: brightness(0) saturate(100%) invert(18%) sepia(96%) saturate(3200%)
+    hue-rotate(205deg) brightness(92%) contrast(110%);
+}
+
+/* Recharts v3 accessibility focus ring */
+.recharts-wrapper:focus-visible,
+.recharts-surface:focus-visible,
+.recharts-cartesian-axis:focus-visible,
+.recharts-area:focus-visible {
+  outline: none !important;
+}
+
+/* Remove SVG focus ring */
+svg:focus,
+svg:focus-visible {
+  outline: none !important;
+}
+
+/* custom scrollbar styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #b7c0cc;
+  border-radius: 10px;
+}
+
+/* Remove all scrollbar buttons */
+.custom-scrollbar::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-button:start:decrement,
+.custom-scrollbar::-webkit-scrollbar-button:end:increment,
+.custom-scrollbar::-webkit-scrollbar-button:vertical:start:decrement,
+.custom-scrollbar::-webkit-scrollbar-button:vertical:end:increment {
+  display: none !important;
+  height: 0 !important;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #b7c0cc transparent;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Firefox */
+.hide-scrollbar {
+  scrollbar-width: none;
+}
+
+/* IE & Edge */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+}
+
+.gradient-btn {
+  background: linear-gradient(90deg, #2b7fff 0%, #9810fa 100%);
+}
+
+.gradient-btn:hover {
+  opacity: 0.9;
 }
