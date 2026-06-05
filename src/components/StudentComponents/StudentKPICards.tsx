@@ -74,7 +74,7 @@ totalStudents,
           <StatsCard
             title={kpi.title}
             value={kpi.value}
-            change={kpi.change}
+            // change={kpi.change}
             subtitle={kpi.subtitle}
             icon={kpi.icon}
           />
