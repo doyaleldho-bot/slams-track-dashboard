@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import type { TeacherAttendance } from "./types/TeacherAttendance";
 import {
   Search,
@@ -28,6 +28,7 @@ const StaffAttendanceTable: React.FC<StaffAttendanceTableProps> = ({
     "B",
     "C",
   ];
+  const [searchTerm, setSearchTerm] = useState("");
 
   const staffData: TeacherAttendance[] = [
     {
@@ -85,6 +86,10 @@ const StaffAttendanceTable: React.FC<StaffAttendanceTableProps> = ({
       remark: "Casual Leave",
     },
   ];
+  const filteredAttendanceData = staffData.filter((teacher) =>
+  teacher.teacherId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  teacher.teacherName.toLowerCase().includes(searchTerm.toLowerCase())
+);
 
   const getStatusClass = (status: string) => {
     switch (status) {
@@ -113,12 +118,13 @@ const StaffAttendanceTable: React.FC<StaffAttendanceTableProps> = ({
             className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A3A3A3]"
           />
 
-          <input
-            type="text"
-            aria-label="Search id or name"
-            placeholder="Search id or name..."
-            className="w-[220px] h-[40px] pl-9 pr-3 border border-[#E5E7EB] rounded-md text-[13px] outline-none"
-          />
+         <input
+  type="text"
+  placeholder="Search id or name..."
+  value={searchTerm}
+  onChange={(e) => setSearchTerm(e.target.value)}
+  className="w-[220px] h-[40px] pl-9 pr-3 border border-[#E5E7EB] rounded-md text-[13px] outline-none"
+/>
         </div>
       </div>
 
@@ -223,12 +229,13 @@ const StaffAttendanceTable: React.FC<StaffAttendanceTableProps> = ({
             </tr>
           </thead>
 
-          <tbody>
-            {staffData.map((item) => (
-              <tr
-                key={item.teacherId}
-                className="border-b border-[#E5E7EB]"
-              >
+        <tbody>
+  {filteredAttendanceData.length > 0 ? (
+    filteredAttendanceData.map((item) => (
+      <tr
+        key={item.teacherId}
+        className="border-b border-[#E5E7EB]"
+      >
                 <td className="py-5 text-[20px] text-[#525252]">
                   {item.teacherId}
                 </td>
@@ -289,8 +296,18 @@ const StaffAttendanceTable: React.FC<StaffAttendanceTableProps> = ({
                     />
                   </button>
                 </td>
-              </tr>
-            ))}
+               </tr>
+    ))
+  ) : (
+    <tr>
+      <td
+        colSpan={9}
+        className="py-8 text-center text-[#737373]"
+      >
+        No staff found
+      </td>
+    </tr>
+  )}
           </tbody>
         </table>
       </div>
