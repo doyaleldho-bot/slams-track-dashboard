@@ -205,7 +205,7 @@ const FinanceTeacherReportPanel: React.FC = () => {
               <th className="px-5 py-4">Joined Date</th>
               <th className="px-5 py-4">Gender</th>
               <th className="px-5 py-4">Salary</th>
-              <th className="px-5 py-4">Attendance Percentage</th>
+              <th className="px-5 py-4">Attendance %</th>
               <th className="px-5 py-4">In-charge Classes</th>
               <th className="px-5 py-4">Teacher Number</th>
               <th className="px-5 py-4">Status</th>
