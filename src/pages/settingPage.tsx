@@ -1,10 +1,9 @@
 import React, { useState } from "react"
-
 import Profile from "../components/settings/Profile"
 import UnderMain from "../components/UnderMain"
 import Security from "../components/settings/Security"
 
-const settingPage: React.FC = () => {
+const SettingPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("Profile")
 
   const tabs = ["Profile", "Finance", "Security"]
@@ -63,4 +62,4 @@ const settingPage: React.FC = () => {
   )
 }
 
-export default settingPage
+export default SettingPage

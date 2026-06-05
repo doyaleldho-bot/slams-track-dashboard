@@ -6,7 +6,7 @@ import StaffManagement from "./pages/StaffManagement";
 import AcademicPage from "./pages/AcademicPage"
 import StudentPage from "./pages/StudentPage"
 import FinancePage from "./pages/FinancePage"
-import SettingPage from "./pages/settingPage"
+import SettingPage from "./pages/SettingPage"
 
 
 function App() {
