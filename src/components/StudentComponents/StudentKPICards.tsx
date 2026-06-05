@@ -29,36 +29,41 @@ totalStudents,
   feePending,
   feePendingChange,
 }) => {
- const kpiData = [
+ const kpiData: Array<{ title: string; value: number; change: string; icon: React.ReactNode; subtitle?: string }> = [
   {
     title: "Total Students",
     value: totalStudents,
     change: totalStudentsChange,
     icon: <Users className="w-5 h-5 text-gray-600" />,
+    subtitle: undefined,
   },
   {
     title: "Absent Students",
     value: absentStudents,
     change: absentStudentsChange,
     icon: <UserX className="w-5 h-5 text-red-500" />,
+    subtitle: undefined,
   },
   {
     title: "Present Students",
     value: presentStudents,
     change: presentStudentsChange,
     icon: <UserCheck className="w-5 h-5 text-green-500" />,
+    subtitle: undefined,
   },
   {
     title: "New Admissions",
     value: newAdmissions,
-    subtitle: "This academic year",
+    change: "This academic year",
     icon: <UserPlus className="w-5 h-5 text-blue-500" />,
+    subtitle: undefined,
   },
   {
     title: "Fee Pending",
     value: feePending,
     change: feePendingChange,
     icon: <Clock className="w-5 h-5 text-orange-500" />,
+    subtitle: undefined,
   },
 ];
 

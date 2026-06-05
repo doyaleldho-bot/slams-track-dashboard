@@ -23,7 +23,7 @@ const menuItems: MenuItem[] = [
   { label: "Staff Management", icon: UserCog, path: "/StaffManagement" },
   { label: "Academic Management", icon: GraduationCap, path: "/AcademicManagement" },
   { label: "Student Management", icon: Users, path: "/StudentManagement" },
-  { label: "Attendance", icon: FileSpreadsheet, path: "/attendance" },
+  { label: "Attendance", icon: FileSpreadsheet, path: "/Attendance" },
   { label: "Finance", icon: Landmark, path: "/finance" },
 
   { label: "Settings", icon: Settings, path: "/settings" },
@@ -49,7 +49,9 @@ const Sidebar = () => {
     <>
       {/* MOBILE TOGGLE */}
       <button
+        type="button"
         onClick={() => setOpen(true)}
+        aria-label="Open sidebar"
         className="lg:hidden fixed top-7 left-4 z-50 bg-[#083b9a] text-white p-2 rounded-md"
       >
         <FiMenu size={20} />
@@ -82,21 +84,20 @@ const Sidebar = () => {
               <img
                 src={logo}
                 alt="logo"
-                className="w-20 h-20 object-contain"
+                className="w-16 h-16 object-contain"
               />
 
-              <div className="flex flex-col">
-                <h1 className="text-[18px] font-semibold leading-none">
-                  Slam Track
-                </h1>
-                <p className="text-[16px] font-normal mt-2 leading-none">
+              <div>
+                <p className="text-[20px] font-semibold leading-tight">
                   Dashboard
                 </p>
               </div>
             </div>
 
             <button
+              type="button"
               onClick={() => setOpen(false)}
+              aria-label="Close sidebar"
               className="lg:hidden text-white"
             >
               <FiX size={20} />
@@ -116,7 +117,7 @@ const Sidebar = () => {
                         w-full
                         transition-all duration-200
                         ${isActive || hovered === label
-                      ? "full bg-white text-[#083b9a] font-medium"
+                      ? "w-full bg-white text-[#083b9a] font-medium"
                       : "text-white/90 hover:bg-white/30"
                     }
                       `}
@@ -124,8 +125,8 @@ const Sidebar = () => {
                   <Icon
                     size={20}
                     className={`transition-all duration-200 ${isActive || hovered === label
-                        ? "text-[#083b9a]"
-                        : "text-white"
+                      ? "text-[#083b9a]"
+                      : "text-white"
                       }`}
                   />
                   <span className="whitespace-nowrap overflow-hidden text-ellipsis">{label}</span>

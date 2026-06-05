@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { ArrowUpDown } from "lucide-react";
 import StudentKPICards from "../components/StudentComponents/StudentKPICards";
 import StudentSearchBar from "../components/StudentComponents/StudentSearchBar";
@@ -30,7 +30,7 @@ const StudentPage = () => {
   >("All");
   const [selectedClass, setSelectedClass] = useState("1");
   const [showAddModal, setShowAddModal] = useState(false);
-  const [kpiData, setKpiData] = useState({
+  const [kpiData] = useState({
     totalStudents: 0,
     totalStudentsChange: "+12% from last year",
 

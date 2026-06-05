@@ -7,10 +7,9 @@ import StudentDetailsModal from "./StudentDetailsModal";
 const StudentTable: React.FC<StudentTableProps> = ({ students, onEdit }) => {
     const [showModal, setShowModal] = useState(false);
     const [studentDetails, setStudentDetails] = useState<any>(null);
-    const [loading, setLoading] = useState(false);
     const handleViewStudent = async (studentId: string) => {
         try {
-            setLoading(true);
+            // In a real app, studentId would be used to fetch details
 
             // API
             // const res = await api.get(`/students/${studentId}`);
@@ -19,7 +18,7 @@ const StudentTable: React.FC<StudentTableProps> = ({ students, onEdit }) => {
             // Dummy Data
             setStudentDetails({
                 name: "Aarav Sharma",
-                studentId: "School-1234",
+                studentId,
                 dob: "15 August 2010",
                 gender: "Male",
                 bloodGroup: "A+",
@@ -43,8 +42,6 @@ const StudentTable: React.FC<StudentTableProps> = ({ students, onEdit }) => {
             setShowModal(true);
         } catch (error) {
             console.error(error);
-        } finally {
-            setLoading(false);
         }
     };
     return (
