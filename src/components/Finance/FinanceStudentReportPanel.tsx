@@ -204,14 +204,14 @@ const FinanceStudentReportPanel: React.FC = () => {
         <table className="w-full border-collapse text-left min-w-[900px]">
           <thead>
             <tr className="text-sm uppercase tracking-[0.15em] text-[#6B7280]">
-              <th className="px-5 py-4">Course & Standard</th>
-              <th className="px-5 py-4">Student Name</th>
-              <th className="px-5 py-4">Admission Number</th>
+              <th className="px-5 py-4">Course & Std</th>
+              <th className="px-5 py-4">Stud Name</th>
+              <th className="px-5 py-4">Adm Number</th>
               <th className="px-5 py-4">Gender</th>
-              <th className="px-5 py-4">Collected Fees</th>
-              <th className="px-5 py-4">Attendance Percentage</th>
+              <th className="px-5 py-4"> Fees</th>
+              <th className="px-5 py-4">Attendance %</th>
               <th className="px-5 py-4">Batch</th>
-              <th className="px-5 py-4">Parent Number</th>
+              <th className="px-5 py-4">Parent phno</th>
               <th className="px-5 py-4">Status</th>
             </tr>
           </thead>

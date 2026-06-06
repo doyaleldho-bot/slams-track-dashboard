@@ -177,7 +177,9 @@ const admissionIds = [
 
 const FinanceAdmissionPanel: React.FC = () => {
   const [search, setSearch] = useState("");
-  const selectedDate = "23 May, 2026";
+  const [selectedDate, setSelectedDate] = useState(() =>
+    new Date().toISOString().slice(0, 10),
+  );
   const [selectedCourse, setSelectedCourse] = useState("All Course");
   const [selectedAdmissionId, setSelectedAdmissionId] =
     useState("All Admission ID");
@@ -242,13 +244,27 @@ const FinanceAdmissionPanel: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3 mb-6 max-w-[980px]">
+      <div className="grid gap-4 md:grid-cols-3 mb-6 max-w-[680px]">
         <div className="flex flex-col gap-2 max-w-[320px]">
           <p className="text-sm font-medium text-[#111827]">Admission Date</p>
-          <div className="flex items-center justify-between rounded-[10px] border border-[#E5E7EB] bg-white px-4 py-3 text-sm text-[#111827]">
-            <span>{selectedDate}</span>
-            <CalendarDays size={18} className="text-[#6B7280]" />
-          </div>
+          <label className="relative flex items-center justify-between rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-3 text-sm text-[#111827] cursor-pointer">
+            <span>
+              {new Date(selectedDate).toLocaleDateString("en-US", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
+            </span>
+            <div className="flex items-center gap-2 text-[#6B7280]">
+              <CalendarDays size={18} />
+            </div>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+            />
+          </label>
         </div>
 
         <div className="flex flex-col gap-2 max-w-[320px]">
@@ -283,14 +299,14 @@ const FinanceAdmissionPanel: React.FC = () => {
       </div>
 
       <div className="rounded-[10px] border border-[#E5E7EB] bg-white p-0 overflow-x-auto">
-        <table className="w-full border-collapse text-left min-w-[800px]">
+        <table className="w-full border-collapse text-left">
           <thead>
             <tr className="text-sm uppercase tracking-[0.15em] text-[#6B7280]">
-              <th className="px-5 py-4">Admission ID</th>
-              <th className="px-5 py-4">Student Name</th>
-              <th className="px-5 py-4">Course & Standard</th>
-              <th className="px-5 py-4">Admission Date</th>
-              <th className="px-5 py-4">Admission Amount</th>
+              <th className="px-5 py-4">Adm ID</th>
+              <th className="px-5 py-4">Stud Name</th>
+              <th className="px-5 py-4">Course & Std</th>
+              <th className="px-5 py-4">Adm Date</th>
+              <th className="px-5 py-4">Adm Amount</th>
               <th className="px-5 py-4">Paid Amount</th>
               <th className="px-5 py-4">Payment Mode</th>
               <th className="px-5 py-4">Payment Status</th>

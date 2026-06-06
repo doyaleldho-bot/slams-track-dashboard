@@ -15,6 +15,9 @@ import type { FinanceStatItem } from "../components/Finance";
 
 const FinancePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("Payroll");
+  const [selectedDate, setSelectedDate] = useState(() =>
+    new Date().toISOString().slice(0, 10),
+  );
 
   const statsData: FinanceStatItem[] = [
     {
@@ -51,7 +54,8 @@ const FinancePage: React.FC = () => {
         <FinanceHeader
           title="Finance"
           description="Track admissions, payments, and financial records in one place."
-          dateLabel="Today: May 23, 2026"
+          selectedDate={selectedDate}
+          onSelectedDateChange={setSelectedDate}
           onExport={handleExport}
           onAddAdmission={
             activeTab === "Admission" ? handleAddAdmission : undefined
@@ -74,7 +78,7 @@ const FinancePage: React.FC = () => {
           ) : activeTab === "Reports" ? (
             <div>
               <div className="mb-4">
-                <div className="inline-flex rounded-full bg-[#F3F4F6] p-1">
+                {/* <div className="inline-flex rounded-full bg-[#F3F4F6] p-1">
                   <button
                     onClick={() => setActiveTab((_) => "Reports")}
                     className={`px-5 py-2 rounded-full text-sm font-medium ${
@@ -91,7 +95,7 @@ const FinancePage: React.FC = () => {
                   >
                     Students report
                   </button>
-                </div>
+                </div> */}
               </div>
 
               <div className="grid gap-6">
