@@ -1,8 +1,73 @@
 {
-  "hash": "df90053f",
+  "hash": "96853c33",
   "configHash": "368c7eba",
-  "lockfileHash": "632b37d3",
-  "browserHash": "bde0a0a3",
-  "optimized": {},
-  "chunks": {}
+  "lockfileHash": "c98965ef",
+  "browserHash": "223f1466",
+  "optimized": {
+    "react/jsx-dev-runtime": {
+      "src": "../../node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "d94f4d4a",
+      "needsInterop": true
+    },
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "9e4d78b7",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "22cc4cac",
+      "needsInterop": true
+    },
+    "react-router-dom": {
+      "src": "../../node_modules/react-router-dom/dist/index.mjs",
+      "file": "react-router-dom.js",
+      "fileHash": "0f97c1f5",
+      "needsInterop": false
+    },
+    "lucide-react": {
+      "src": "../../node_modules/lucide-react/dist/esm/lucide-react.js",
+      "file": "lucide-react.js",
+      "fileHash": "d03a2e41",
+      "needsInterop": false
+    },
+    "react-icons/pi": {
+      "src": "../../node_modules/react-icons/pi/index.mjs",
+      "file": "react-icons_pi.js",
+      "fileHash": "7bc239bd",
+      "needsInterop": false
+    },
+    "react-icons/fi": {
+      "src": "../../node_modules/react-icons/fi/index.mjs",
+      "file": "react-icons_fi.js",
+      "fileHash": "978f0a0c",
+      "needsInterop": false
+    },
+    "recharts": {
+      "src": "../../node_modules/recharts/es6/index.js",
+      "file": "recharts.js",
+      "fileHash": "78c761f9",
+      "needsInterop": false
+    },
+    "react-icons/fa": {
+      "src": "../../node_modules/react-icons/fa/index.mjs",
+      "file": "react-icons_fa.js",
+      "fileHash": "baaa5586",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-FCQLZAJO": {
+      "file": "chunk-FCQLZAJO.js"
+    },
+    "chunk-P7YOETE4": {
+      "file": "chunk-P7YOETE4.js"
+    },
+    "chunk-WYYPSHNY": {
+      "file": "chunk-WYYPSHNY.js"
+    }
+  }
 }

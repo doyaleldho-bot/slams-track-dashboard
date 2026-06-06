@@ -23,7 +23,7 @@ const HomePage = () => {
       change: "+15%",
       subtitle: "from last month",
       icon: <Users size={18} className="" />,
-      highlight: true,
+      highlight: false,
     },
     {
       title: "Total Teachers",
