@@ -1,4 +1,3 @@
-import React from "react"
 import { Users, SquareChartGantt, UserX, GraduationCap } from "lucide-react"
 import StatsCard from "../components/StatsCard"
 import { PiUserList } from "react-icons/pi"
