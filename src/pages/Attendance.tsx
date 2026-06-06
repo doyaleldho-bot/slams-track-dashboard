@@ -103,27 +103,41 @@ const handleSaveTeacher = (updatedTeacher: TeacherAttendance) => {
 const [teachers, setTeachers] =
   useState<TeacherAttendance[]>(initialTeachers);
 
-     const statsData = [
+type AttendanceStatsCard = {
+  title: string;
+  value: string;
+  subtitle?: string;
+  icon: React.ReactNode;
+  change?: string;
+  highlight?: boolean;
+};
+
+     const statsData: AttendanceStatsCard[] = [
     {
       title: "Student Attendance Today",
       value: "842/900",
       subtitle: "Attendance rate 92%",
       icon: <Users size={18} className="" />,
-      // highlight: true,
+      change: undefined,
+      highlight: false,
     },
     {
       title: "Teachers Attendance Today",
       value: "33/44",
       subtitle: "Attendance rate 75%",
       icon: <PiUserList size={18} className="" />,
+      change: undefined,
+      highlight: false,
     },
     {
       title: "Staff Attendance Today",
       value: "18/20",
       subtitle: "Attendance rate 90%",
       icon: <UserX size={18} className="" />,
+      change: undefined,
+      highlight: false,
     },
-  
+
   ];
 
   return (

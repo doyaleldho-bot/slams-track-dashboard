@@ -43,20 +43,12 @@ const StatsCard: React.FC<StatsCardProps> = ({
       </div>
 
       <div className="pt-6">
-        <h2 className="text-[20px] font-medium">
-          {value}
-        </h2>
+        <h2 className="text-[20px] font-medium">{value}</h2>
 
-        {change && (
-          <p className="text-xs text-green-600">
-            {change}
-          </p>
-        )}
+        {change && <p className="text-xs text-green-600">{change}</p>}
 
         {subtitle && (
-          <p className="text-[14px] text-[#1B84FF] pt-2">
-            {subtitle}
-          </p>
+          <p className="text-[14px] text-[#1B84FF] pt-2">{subtitle}</p>
         )}
       </div>
     </div>

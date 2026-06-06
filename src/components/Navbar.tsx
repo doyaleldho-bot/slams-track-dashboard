@@ -24,14 +24,16 @@ const Navbar = () => {
       {/* RIGHT */}
       <div className="flex items-center gap-6 lg:gap-[60px] min-w-fit pr-4 md:pr-6">
         {/* NOTIFICATION */}
-        <div
-          className="relative cursor-pointer"
-          // onClick={() => setIsOpen(true)}
+        {/* <div className="relative cursor-pointer"
+        onClick={() => setIsOpen(true)}
         >
-          <FiBell size={25} className="text-[#000000] " />
-          <span className="absolute -top-0 -right-0 w-2 h-2 bg-[#6CEA0C] text-white text-[10px] rounded-full flex items-center justify-center"></span>
-        </div>
-
+          <FiBell size={25} className="text-[#000000] " 
+          />
+          <span className="absolute -top-0 -right-0 w-2 h-2 bg-[#6CEA0C] text-white text-[10px] rounded-full flex items-center justify-center">
+            
+          </span>
+        </div>  */}
+  
         {/* PROFILE */}
         <Link
           to="/settingsw"
