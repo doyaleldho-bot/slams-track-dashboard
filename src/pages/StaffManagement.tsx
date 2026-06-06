@@ -207,11 +207,11 @@ const StaffManagement = () => {
       : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
 
   return (
-    <div className="px-6 xl:px-10 2xl:px-14 max-w-[1445px] mx-auto">
+    <div className="p-6">
       {/* HEADER */}
       <div className="flex justify-between">
         <div>
-          <h2 className="font-bold text-[24px] tracking-wide leading-[32px] text-[#2F2F2F]">
+          <h2 className="font-bold text-[24px] tracking-wider leading-[32px] text-[#2F2F2F]">
             Staff Management
           </h2>
           <p className="text-[14px] text-[#767676] pt-2">
