@@ -72,6 +72,7 @@ const AcademicPage: React.FC = () => {
             subtitle={card.subtitle}
             icon={card.icon}
             highlight={card.highlight}
+            width="318px"
           />
         ))}
       </div>

@@ -1,4 +1,3 @@
-import React from "react"
 import { Users, SquareChartGantt, UserX, GraduationCap } from "lucide-react"
 import StatsCard from "../components/StatsCard"
 import { PiUserList } from "react-icons/pi"
@@ -7,15 +6,24 @@ import BatchWiseStudentCountChart from "../components/Homepage/BatchWiseStudentC
 import StudentAdmissionTrendChart from "../components/Homepage/StudentAdmissionTrendChart"
 import StudentAdmissionTrend from "../components/Homepage/StudentAdmissionTrend"
 
+interface HomeStatsCard {
+  title: string;
+  value: number;
+  subtitle?: string;
+  icon: React.ReactNode;
+  change?: string | undefined;
+  highlight?: boolean;
+}
+
 const HomePage = () => {
-  const statsData = [
+  const statsData: HomeStatsCard[] = [
     {
       title: "Total Students",
       value: 1250,
       change: "+15%",
       subtitle: "from last month",
       icon: <Users size={18} className="" />,
-      highlight: true,
+      highlight: false,
     },
     {
       title: "Total Teachers",
@@ -23,6 +31,7 @@ const HomePage = () => {
       change: "+5%",
       subtitle: "openings this week",
       icon: <PiUserList size={18} className="" />,
+      highlight: false,
     },
     {
       title: "Non Teaching Staffs",
@@ -30,6 +39,7 @@ const HomePage = () => {
       change: "+24%",
       subtitle: "from last month",
       icon: <UserX size={18} className="" />,
+      highlight: false,
     },
     {
       title: "Active Students",
@@ -37,6 +47,7 @@ const HomePage = () => {
       change: "+230",
       subtitle: "this week",
       icon: <GraduationCap size={18} className="" />,
+      highlight: false,
     },
     {
       title: "New Admission",
@@ -44,6 +55,7 @@ const HomePage = () => {
       change: "+24%",
       subtitle: "from last month",
       icon: <SquareChartGantt size={18} className="" />,
+      highlight: false,
     },
   ]
 

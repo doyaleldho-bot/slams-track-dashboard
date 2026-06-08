@@ -8,12 +8,12 @@ const DashboardLayout: React.FC = () => {
     <div className="min-h-screen bg-[#F6F5FA]">
       <Sidebar />
 
-      <div className="lg:ml-[340px] flex flex-col min-h-screen">
+      <div className="lg:ml-[260px] flex flex-col min-h-screen">
         <div className="sticky top-0 z-20 bg-white">
           <Navbar />
         </div>
 
-        <main className="flex-1 overflow-y-auto p-4">
+        <main className="flex-1 overflow-y-auto p-6">
           <Outlet />
         </main>
       </div>
