@@ -198,6 +198,7 @@ const Divider = () => <hr className="border-gray-100 my-4" />;
 export default function AddStaffModal({ onClose, onSave, initialForm }: Props) {
   const [form, setForm] = useState<AddStaffFormData>({
     ...initialForm,
+    ...initialForm,
     ...(initialForm ? initialForm : undefined),
   } as AddStaffFormData);
   const [photoName, setPhotoName] = useState("Choose Files");
@@ -267,7 +268,12 @@ export default function AddStaffModal({ onClose, onSave, initialForm }: Props) {
   };
 
   const resetForm = () => {
-    setForm(initialForm);
+    setForm(
+      ({
+        ...initialForm,
+        ...initialPermissions,
+      } as unknown) as AddStaffFormData
+    );
     setPhotoName("Choose Files");
     setPermissions(initialPermissions);
     setErrors({});
@@ -297,13 +303,48 @@ export default function AddStaffModal({ onClose, onSave, initialForm }: Props) {
 
   const handleSave = (closeAfterSave: boolean) => {
     // run quick validation for fields that need format checks
-    validateField("email", form.email);
-    validateField("phoneNumber", form.phoneNumber);
+    const emailOk = validateField("email", form.email);
+    const phoneOk = validateField("phoneNumber", form.phoneNumber);
 
-    if (!isFormComplete()) {
+    // mark required fields missing (for toast/UX)
+    const requiredKeys: (keyof AddStaffFormData)[] = [
+      "teacherName",
+      "phoneNumber",
+      "email",
+      "gender",
+      "dob",
+      "address",
+      "qualification",
+      "experienceYear",
+      "specialization",
+      "courseExpertise",
+      "joiningDate",
+      "employmentType",
+      "department",
+      "salaryType",
+      "monthlySalary",
+      "bankAccountNumber",
+      "bankName",
+      "ifscCode",
+      "role",
+      "staffId",
+      "temporaryPassword",
+    ];
+
+    let missingRequired = false;
+    for (const k of requiredKeys) {
+      const v = form[k];
+      if (typeof v === "string" && v.trim() === "") {
+        missingRequired = true;
+        setErrors((p) => ({ ...p, [k as string]: "This field is required" }));
+      }
+    }
+
+    if (!emailOk || !phoneOk || !isFormComplete()) {
       toast.error("Please fill all the fields.");
       return;
     }
+
 
     onSave?.(form);
 
