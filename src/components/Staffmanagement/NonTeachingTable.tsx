@@ -1,59 +1,64 @@
 import React from "react";
-import { FiSearch, FiEdit2 } from "react-icons/fi";
+import { FiSearch, FiEdit2, FiTrash2 } from "react-icons/fi";
 import { FaUser } from "react-icons/fa";
 
 const NonTeachingTable: React.FC<{ data?: any[] }> = ({ data }) => {
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [departmentFilter, setDepartmentFilter] = React.useState("All Department");
+  const [departmentFilter, setDepartmentFilter] = React.useState(
+    "All Department"
+  );
   const [statusFilter, setStatusFilter] = React.useState("All Status");
 
-  const items = data && data.length ? data : [
-    {
-      id: "NTS001",
-      name: "Ayesha Khan",
-      phone: "+1 234-567-8901",
-      email: "ayesha.k@school.com",
-      department: "Administration",
-      attendance: "95%",
-      status: "Active",
-    },
-    {
-      id: "NTS002",
-      name: "Ravi Patel",
-      phone: "+1 234-567-8902",
-      email: "ravi.p@school.com",
-      department: "Library",
-      attendance: "92%",
-      status: "Active",
-    },
-    {
-      id: "NTS003",
-      name: "Meera Singh",
-      phone: "+1 234-567-8903",
-      email: "meera.s@school.com",
-      department: "Transport",
-      attendance: "88%",
-      status: "Inactive",
-    },
-    {
-      id: "NTS004",
-      name: "John Doe",
-      phone: "+1 234-567-8904",
-      email: "john.d@school.com",
-      department: "Front Office",
-      attendance: "90%",
-      status: "Active",
-    },
-    {
-      id: "NTS005",
-      name: "Sara Nair",
-      phone: "+1 234-567-8905",
-      email: "sara.n@school.com",
-      department: "Cafeteria",
-      attendance: "93%",
-      status: "Active",
-    },
-  ];
+  const items =
+    data && data.length
+      ? data
+      : [
+          {
+            id: "NTS001",
+            name: "Ayesha Khan",
+            phone: "+1 234-567-8901",
+            email: "ayesha.k@school.com",
+            department: "Administration",
+            attendance: "95%",
+            status: "Active",
+          },
+          {
+            id: "NTS002",
+            name: "Ravi Patel",
+            phone: "+1 234-567-8902",
+            email: "ravi.p@school.com",
+            department: "Library",
+            attendance: "92%",
+            status: "Active",
+          },
+          {
+            id: "NTS003",
+            name: "Meera Singh",
+            phone: "+1 234-567-8903",
+            email: "meera.s@school.com",
+            department: "Transport",
+            attendance: "88%",
+            status: "Inactive",
+          },
+          {
+            id: "NTS004",
+            name: "John Doe",
+            phone: "+1 234-567-8904",
+            email: "john.d@school.com",
+            department: "Front Office",
+            attendance: "90%",
+            status: "Active",
+          },
+          {
+            id: "NTS005",
+            name: "Sara Nair",
+            phone: "+1 234-567-8905",
+            email: "sara.n@school.com",
+            department: "Cafeteria",
+            attendance: "93%",
+            status: "Active",
+          },
+        ];
 
   const filteredItems = items.filter((item) => {
     const query = searchQuery.trim().toLowerCase();
@@ -68,6 +73,7 @@ const NonTeachingTable: React.FC<{ data?: any[] }> = ({ data }) => {
       statusFilter === "All Status" || item.status === statusFilter;
     return matchesSearch && matchesDepartment && matchesStatus;
   });
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col xl:flex-row items-center gap-4 bg-[#F4F6F8] rounded-[18px] p-4">
@@ -160,10 +166,18 @@ const NonTeachingTable: React.FC<{ data?: any[] }> = ({ data }) => {
                       {item.status}
                     </span>
                   </td>
-                  <td>
-                    <button className="text-indigo-600">
-                      <FiEdit2 />
-                    </button>
+                  <td className="text-center">
+                    <div className="inline-flex items-center justify-center gap-4">
+                      <button className="text-indigo-600" aria-label="Edit staff">
+                        <FiEdit2 />
+                      </button>
+                      <button
+                        className="text-red-600"
+                        aria-label="Delete staff"
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -172,7 +186,9 @@ const NonTeachingTable: React.FC<{ data?: any[] }> = ({ data }) => {
         </div>
 
         <div className="flex justify-between items-center mt-4 text-sm text-[#767676]">
-          <p>Showing {filteredItems.length} of {items.length} Staff</p>
+          <p>
+            Showing {filteredItems.length} of {items.length} Staff
+          </p>
           <div className="flex gap-2">
             <button className="px-2 py-1 border rounded">Previous</button>
             <button className="px-2 py-1 bg-indigo-600 text-white rounded">1</button>
@@ -187,3 +203,4 @@ const NonTeachingTable: React.FC<{ data?: any[] }> = ({ data }) => {
 };
 
 export default NonTeachingTable;
+
