@@ -42,7 +42,7 @@ const HomePage = () => {
       highlight: false,
     },
     {
-      title: "Active Students",
+      title: "Active Students",   
       value: 85,
       change: "+230",
       subtitle: "this week",
