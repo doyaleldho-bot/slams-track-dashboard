@@ -5,6 +5,8 @@ import {
   Download,
   ChevronDown,
 } from "lucide-react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export type AddStaffFormData = {
   // Personal
@@ -88,7 +90,9 @@ const initialPermissions: PermissionsMap = {
 interface Props {
   onClose?: () => void;
   onSave?: (form: AddStaffFormData) => void;
+  initialForm?: Partial<AddStaffFormData>;
 }
+
 
 /* ─── Shared field styles ─── */
 const inputCls =
@@ -107,6 +111,7 @@ const SelectField = ({
   placeholder,
   options,
   onChange,
+  error,
 }: {
   label: string;
   name: string;
@@ -114,6 +119,7 @@ const SelectField = ({
   placeholder: string;
   options: string[];
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  error?: string;
 }) => (
   <div>
     <label className={labelCls}>
@@ -141,6 +147,7 @@ const SelectField = ({
         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
       />
     </div>
+    {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
   </div>
 );
 
@@ -152,6 +159,7 @@ const InputField = ({
   type = "text",
   required = true,
   onChange,
+  error,
 }: {
   label: string;
   name: string;
@@ -160,6 +168,7 @@ const InputField = ({
   type?: string;
   required?: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  error?: string;
 }) => (
   <div>
     <label className={labelCls}>
@@ -174,6 +183,7 @@ const InputField = ({
       onChange={onChange}
       className={inputCls}
     />
+    {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
   </div>
 );
 
@@ -185,10 +195,15 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
 /* ─── Divider ─── */
 const Divider = () => <hr className="border-gray-100 my-4" />;
 
-export default function AddStaffModal({ onClose, onSave }: Props) {
-  const [form, setForm] = useState<AddStaffFormData>(initialForm);
+export default function AddStaffModal({ onClose, onSave, initialForm }: Props) {
+  const [form, setForm] = useState<AddStaffFormData>({
+    ...initialForm,
+    ...initialForm,
+    ...(initialForm ? initialForm : undefined),
+  } as AddStaffFormData);
   const [photoName, setPhotoName] = useState("Choose Files");
   const [permissions, setPermissions] = useState<PermissionsMap>(initialPermissions);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -204,12 +219,36 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
   ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    // clear field-specific error on change
+    if (typeof value === "string" && value.trim() !== "") {
+      setErrors((p) => ({ ...p, [name]: "" }));
+    }
+  };
+
+  const validateField = (name: string, value: any) => {
+    let err = "";
+    if (name === "email") {
+      // simple email regex
+      const re = /^\S+@\S+\.\S+$/;
+      if (!re.test(String(value || ""))) err = "Email not valid";
+    }
+
+    if (name === "phoneNumber") {
+      const digits = String(value || "").replace(/\D/g, "");
+      if (digits.length !== 10) err = "Number not valid";
+    }
+
+    setErrors((prev) => ({ ...prev, [name]: err }));
+    return err === "";
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     setForm((prev) => ({ ...prev, photo: file }));
     setPhotoName(file ? file.name : "Choose Files");
+    // validate photo presence
+    if (!file) setErrors((p) => ({ ...p, photo: "Photo is required" }));
+    else setErrors((p) => ({ ...p, photo: "" }));
   };
 
   const handleToggle = () =>
@@ -229,12 +268,84 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
   };
 
   const resetForm = () => {
-    setForm(initialForm);
+    setForm(
+      ({
+        ...initialForm,
+        ...initialPermissions,
+      } as unknown) as AddStaffFormData
+    );
     setPhotoName("Choose Files");
     setPermissions(initialPermissions);
+    setErrors({});
+  };
+
+  const isFormComplete = () => {
+    // require all string fields to be non-empty and photo to be present
+    for (const key of Object.keys(form) as (keyof AddStaffFormData)[]) {
+      const val = form[key];
+      if (key === "photo") {
+        if (!val) return false;
+        continue;
+      }
+
+      if (typeof val === "string") {
+        if (val.trim() === "") return false;
+      }
+    }
+
+    // ensure no validation errors
+    for (const k of Object.keys(errors)) {
+      if (errors[k]) return false;
+    }
+
+    return true;
   };
 
   const handleSave = (closeAfterSave: boolean) => {
+    // run quick validation for fields that need format checks
+    const emailOk = validateField("email", form.email);
+    const phoneOk = validateField("phoneNumber", form.phoneNumber);
+
+    // mark required fields missing (for toast/UX)
+    const requiredKeys: (keyof AddStaffFormData)[] = [
+      "teacherName",
+      "phoneNumber",
+      "email",
+      "gender",
+      "dob",
+      "address",
+      "qualification",
+      "experienceYear",
+      "specialization",
+      "courseExpertise",
+      "joiningDate",
+      "employmentType",
+      "department",
+      "salaryType",
+      "monthlySalary",
+      "bankAccountNumber",
+      "bankName",
+      "ifscCode",
+      "role",
+      "staffId",
+      "temporaryPassword",
+    ];
+
+    let missingRequired = false;
+    for (const k of requiredKeys) {
+      const v = form[k];
+      if (typeof v === "string" && v.trim() === "") {
+        missingRequired = true;
+        setErrors((p) => ({ ...p, [k as string]: "This field is required" }));
+      }
+    }
+
+    if (!emailOk || !phoneOk || !isFormComplete()) {
+      toast.error("Please fill all the fields.");
+      return;
+    }
+
+
     onSave?.(form);
 
     if (closeAfterSave) {
@@ -280,6 +391,7 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
         </div>
 
         {/* ── Scrollable body ── */}
+        <ToastContainer />
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
 
           {/* ────────────────────────────────
@@ -295,7 +407,10 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
               name="teacherName"
               value={form.teacherName}
               placeholder="Name"
-              onChange={handleChange}
+              onChange={(e) => {
+                handleChange(e);
+              }}
+              error={errors.teacherName}
             />
 
             {/* Phone Number */}
@@ -305,7 +420,11 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
               value={form.phoneNumber}
               placeholder="+91234567895555"
               type="tel"
-              onChange={handleChange}
+              onChange={(e) => {
+                handleChange(e);
+                validateField("phoneNumber", e.currentTarget.value);
+              }}
+              error={errors.phoneNumber}
             />
 
             {/* Email */}
@@ -315,7 +434,11 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
               value={form.email}
               placeholder="Enter email"
               type="email"
-              onChange={handleChange}
+              onChange={(e) => {
+                handleChange(e);
+                validateField("email", e.currentTarget.value);
+              }}
+              error={errors.email}
             />
 
             {/* Gender */}
@@ -326,6 +449,7 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
               placeholder="Select gender"
               options={["Male", "Female", "Other"]}
               onChange={handleChange}
+              error={errors.gender}
             />
 
             {/* DOB */}
@@ -367,6 +491,7 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
                   className="hidden"
                 />
               </label>
+              {errors.photo && <p className="text-red-500 text-xs mt-1">{errors.photo}</p>}
             </div>
 
             {/* Address — full width */}
@@ -382,6 +507,7 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
                 onChange={handleChange}
                 className={inputCls}
               />
+              {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
             </div>
           </div>
 
@@ -401,6 +527,7 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
               value={form.qualification}
               placeholder="eg: Ph-D"
               onChange={handleChange}
+              error={errors.qualification}
             />
 
             {/* Experience Year */}
@@ -410,6 +537,7 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
               value={form.experienceYear}
               placeholder="6 years"
               onChange={handleChange}
+              error={errors.experienceYear}
             />
 
             {/* Specialization */}
@@ -420,6 +548,7 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
               placeholder="Select type"
               options={["Science", "Mathematics", "Arts", "Commerce", "Languages"]}
               onChange={handleChange}
+              error={errors.specialization}
             />
 
             {/* Course/Subject Expertise */}
@@ -430,6 +559,7 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
               placeholder="Select subject"
               options={["Physics", "Chemistry", "Biology", "History", "English"]}
               onChange={handleChange}
+              error={errors.courseExpertise}
             />
 
             {/* Joining Date */}
@@ -460,10 +590,11 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
               placeholder="Select type"
               options={["Full-time", "Part-time", "Contract", "Intern"]}
               onChange={handleChange}
+              error={errors.employmentType}
             />
 
             {/* Department — full width */}
-            <div className="sm:col-span-2">
+              <div className="sm:col-span-2">
               <label className={labelCls}>
                 Department<span className="text-red-500">*</span>
               </label>
@@ -490,6 +621,7 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
                 />
               </div>
+              {errors.department && <p className="text-red-500 text-xs mt-1">{errors.department}</p>}
             </div>
           </div>
 
@@ -510,6 +642,7 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
               placeholder="salary type"
               options={["Monthly", "Hourly", "Daily"]}
               onChange={handleChange}
+              error={errors.salaryType}
             />
 
             {/* Monthly Salary */}
@@ -519,6 +652,7 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
               value={form.monthlySalary}
               placeholder="Enter amount"
               onChange={handleChange}
+              error={errors.monthlySalary}
             />
 
             {/* Bank Account Number */}
@@ -528,6 +662,7 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
               value={form.bankAccountNumber}
               placeholder="Enter number"
               onChange={handleChange}
+              error={errors.bankAccountNumber}
             />
 
             {/* Bank Name */}
@@ -537,6 +672,7 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
               value={form.bankName}
               placeholder="Enter bank name"
               onChange={handleChange}
+              error={errors.bankName}
             />
 
             {/* IFSC Code */}
@@ -567,6 +703,7 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
                 />
               </div>
+              {errors.ifscCode && <p className="text-red-500 text-xs mt-1">{errors.ifscCode}</p>}
             </div>
 
             {/* Payroll Applicable toggle */}
@@ -622,6 +759,7 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
                   />
                 </div>
+                {errors.role && <p className="text-red-500 text-xs mt-1">{errors.role}</p>}
               </div>
 
               {/* Temporary Password */}
@@ -646,6 +784,7 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
                   />
                 </div>
+                {errors.temporaryPassword && <p className="text-red-500 text-xs mt-1">{errors.temporaryPassword}</p>}
               </div>
             </div>
 
@@ -665,6 +804,7 @@ export default function AddStaffModal({ onClose, onSave }: Props) {
                   onChange={handleChange}
                   className={inputCls}
                 />
+                {errors.staffId && <p className="text-red-500 text-xs mt-1">{errors.staffId}</p>}
               </div>
 
               {/* All Permissions table */}

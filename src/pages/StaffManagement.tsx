@@ -1,6 +1,8 @@
 import React from "react";
 import StatsCard from "../components/StatsCard";
-import AddStaffModal from "../components/Staffmanagement/AddStaffModal";
+import AddStaffModal, {
+  type AddStaffFormData,
+} from "../components/Staffmanagement/AddStaffModal";
 import StaffTable from "../components/Staffmanagement/StaffTable";
 import type { SubstituteDetails } from "../components/Staffmanagement/SubstituteDetailsModal";
 
@@ -11,19 +13,38 @@ import {
   ClipboardList,
   Users,
   UserCheck,
-  UserX,
   UserPlus,
   UserCog,
+  UserX,
 } from "lucide-react";
 
 const StaffManagement = () => {
   const [mainTab, setMainTab] = React.useState("Teaching Staff");
   const [staffTypeTab, setStaffTypeTab] = React.useState("Teacher");
   const [subTab, setSubTab] = React.useState("Assign Substitute");
+
   const [isAddStaffModalOpen, setIsAddStaffModalOpen] = React.useState(false);
+
+  // edit mode
+  const [isEditStaffMode, setIsEditStaffMode] = React.useState(false);
+  const [editingStaffId, setEditingStaffId] = React.useState<string | null>(null);
+  const [editingStaff, setEditingStaff] = React.useState<
+    | {
+        id: string;
+        name: string;
+        phone: string;
+        email: string;
+        department: string;
+        attendance?: string;
+        status?: string;
+      }
+    | null
+  >(null);
+
   const [substituteAssignments, setSubstituteAssignments] = React.useState<
     SubstituteDetails[]
   >([]);
+
   const [teacherList, setTeacherList] = React.useState<any[]>([
     {
       id: "TCH001",
@@ -102,6 +123,33 @@ const StaffManagement = () => {
     },
   ]);
 
+  const openEditModal = (staff: any) => {
+    setIsEditStaffMode(true);
+    setEditingStaffId(staff.id);
+    setEditingStaff({
+      id: staff.id,
+      name: staff.name,
+      phone: staff.phone,
+      email: staff.email,
+      department: staff.department,
+      attendance: staff.attendance,
+      status: staff.status,
+    });
+    setIsAddStaffModalOpen(true);
+  };
+
+  const deleteStaff = (staffId: string) => {
+    // eslint-disable-next-line no-alert
+    const ok = window.confirm("Are you sure you want to delete this staff member?");
+    if (!ok) return;
+
+    if (mainTab === "Non-Teaching Staff") {
+      setNonTeachingList((cur) => cur.filter((s: any) => s.id !== staffId));
+    } else {
+      setTeacherList((cur) => cur.filter((s: any) => s.id !== staffId));
+    }
+  };
+
   const handleSubstituteAssigned = (assignment: SubstituteDetails) => {
     setSubstituteAssignments((current) => [assignment, ...current]);
     setSubTab("Substitute List");
@@ -118,25 +166,25 @@ const StaffManagement = () => {
       title: "Teaching Staff",
       value: "120",
       subtitle: "-3% from this month",
-      icon:<UserPlus size={18} /> ,
+      icon: <UserPlus size={18} />,
     },
     {
       title: "Non-Teaching Staff",
       value: "45",
       subtitle: "+8% from this month",
-      icon: <UserCog size={18} /> ,
+      icon: <UserCog size={18} />,
     },
     {
       title: "Present",
       value: "60",
       subtitle: "+5 this month",
-      icon:<UserCheck size={18} />,
+      icon: <UserCheck size={18} />,
     },
     {
       title: "Absent",
       value: "60",
       subtitle: "Requires attention",
-      icon:<UserX size={18} />,
+      icon: <UserX size={18} />,
     },
   ];
 
@@ -206,12 +254,42 @@ const StaffManagement = () => {
       ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
       : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
 
+  const initialForm: Partial<AddStaffFormData> | undefined =
+    isEditStaffMode && editingStaff
+      ? {
+          teacherName: editingStaff.name,
+          staffId: editingStaff.id,
+          phoneNumber: editingStaff.phone,
+          email: editingStaff.email,
+          department: editingStaff.department,
+          // required but not stored in list rows
+          gender: "",
+          dob: "",
+          photo: null,
+          address: "",
+          qualification: "",
+          experienceYear: "",
+          specialization: "",
+          courseExpertise: "",
+          joiningDate: "",
+          employmentType: "",
+          salaryType: "",
+          monthlySalary: "",
+          bankAccountNumber: "",
+          bankName: "",
+          ifscCode: "",
+          payrollApplicable: false,
+          role: "",
+          temporaryPassword: "",
+        }
+      : undefined;
+
   return (
-    <div className="px-6 xl:px-10 2xl:px-14 max-w-[1445px] mx-auto">
+    <div className="p-6">
       {/* HEADER */}
       <div className="flex justify-between">
         <div>
-          <h2 className="font-bold text-[24px] tracking-wide leading-[32px] text-[#2F2F2F]">
+          <h2 className="font-bold text-[24px] tracking-wider leading-[32px] text-[#2F2F2F]">
             Staff Management
           </h2>
           <p className="text-[14px] text-[#767676] pt-2">
@@ -220,7 +298,12 @@ const StaffManagement = () => {
         </div>
 
         <button
-          onClick={() => setIsAddStaffModalOpen(true)}
+          onClick={() => {
+            setIsEditStaffMode(false);
+            setEditingStaff(null);
+            setEditingStaffId(null);
+            setIsAddStaffModalOpen(true);
+          }}
           className="h-9 px-4 rounded-[10px] bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm"
         >
           + Add Staff
@@ -229,26 +312,52 @@ const StaffManagement = () => {
 
       {isAddStaffModalOpen && (
         <AddStaffModal
-          onClose={() => setIsAddStaffModalOpen(false)}
+          initialForm={initialForm}
+          onClose={() => {
+            setIsAddStaffModalOpen(false);
+            setIsEditStaffMode(false);
+            setEditingStaff(null);
+            setEditingStaffId(null);
+          }}
           onSave={(form) => {
-            // build a minimal staff record from the form
             const record = {
               id: form.staffId || `STF${Date.now().toString().slice(-5)}`,
               name: form.teacherName || "-",
               phone: form.phoneNumber || "-",
               email: form.email || "-",
               department: form.department || "-",
-              attendance: "0%",
-              status: "Active",
+              attendance:
+                isEditStaffMode && editingStaff
+                  ? editingStaff.attendance ?? "0%"
+                  : "0%",
+              status:
+                isEditStaffMode && editingStaff
+                  ? editingStaff.status ?? "Active"
+                  : "Active",
             };
 
-            if (mainTab === "Non-Teaching Staff") {
-              setNonTeachingList((cur) => [record, ...cur]);
+            if (isEditStaffMode && editingStaff) {
+              if (mainTab === "Non-Teaching Staff") {
+                setNonTeachingList((cur) =>
+                  cur.map((s: any) => (s.id === editingStaff.id ? record : s))
+                );
+              } else {
+                setTeacherList((cur) =>
+                  cur.map((s: any) => (s.id === editingStaff.id ? record : s))
+                );
+              }
             } else {
-              // default goes to teacher list
-              setTeacherList((cur) => [record, ...cur]);
+              if (mainTab === "Non-Teaching Staff") {
+                setNonTeachingList((cur) => [record, ...cur]);
+              } else {
+                setTeacherList((cur) => [record, ...cur]);
+              }
             }
+
             setIsAddStaffModalOpen(false);
+            setIsEditStaffMode(false);
+            setEditingStaff(null);
+            setEditingStaffId(null);
           }}
         />
       )}
@@ -293,7 +402,7 @@ const StaffManagement = () => {
               key={tab}
               onClick={() => {
                 setStaffTypeTab(tab);
-                setSubTab("Assign Substitute"); // reset
+                setSubTab("Assign Substitute");
               }}
               className={`pb-3 flex items-center gap-2 ${
                 staffTypeTab === tab
@@ -338,6 +447,8 @@ const StaffManagement = () => {
           onSubstituteAssigned={handleSubstituteAssigned}
           teacherList={teacherList}
           nonTeachingList={nonTeachingList}
+          onEditStaff={(staff) => openEditModal(staff)}
+          onDeleteStaff={(id) => deleteStaff(id)}
         />
       </div>
     </div>
@@ -345,3 +456,4 @@ const StaffManagement = () => {
 };
 
 export default StaffManagement;
+

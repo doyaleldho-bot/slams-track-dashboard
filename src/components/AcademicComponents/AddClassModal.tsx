@@ -31,6 +31,7 @@ const AddClassModal: React.FC<AddClassModalProps> = ({ isOpen, onClose }) => {
     batch: "",
   })
 
+  const [subjectInput, setSubjectInput] = useState("")
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
 
   useEffect(() => {
@@ -183,10 +184,10 @@ const AddClassModal: React.FC<AddClassModalProps> = ({ isOpen, onClose }) => {
                   onChange={handleChange}
                   placeholder="e.g. Class-10"
                   className="h-12 w-full rounded-xl border border-[#E5E5E5] px-4 outline-none md:h-14"
-                />
+                /> 
                 {errors.classId && (
                   <p className="mt-1 text-sm text-red-500">{errors.classId}</p>
-                )}        
+                )}
               </div>
 
               {/* Level */}
@@ -310,20 +311,31 @@ const AddClassModal: React.FC<AddClassModalProps> = ({ isOpen, onClose }) => {
             <div className="mt-6">
               <label className="mb-2 block font-medium">Subject *</label>
 
-              <CustomDropdown
-                value=""
-                placeholder="Select Subjects"
-                options={subjectsList}
-                onChange={(value) => {
-                  if (!selectedSubjects.includes(value)) {
-                    setSelectedSubjects((prev) => [...prev, value])
-                  }
+              <input
+                type="text"
+                value={subjectInput}
+                onChange={(e) => setSubjectInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && subjectInput.trim()) {
+                    e.preventDefault()
 
-                  setErrors((prev) => ({
-                    ...prev,
-                    subjects: "",
-                  }))
+                    if (!selectedSubjects.includes(subjectInput.trim())) {
+                      setSelectedSubjects((prev) => [
+                        ...prev,
+                        subjectInput.trim(),
+                      ])
+                    }
+
+                    setSubjectInput("")
+
+                    setErrors((prev) => ({
+                      ...prev,
+                      subjects: "",
+                    }))
+                  }
                 }}
+                placeholder="Type subject and press Enter"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
               />
 
               <div className="mt-4 flex flex-wrap gap-2">

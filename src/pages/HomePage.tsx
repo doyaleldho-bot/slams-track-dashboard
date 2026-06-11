@@ -1,4 +1,3 @@
-import React from "react"
 import { Users, SquareChartGantt, UserX, GraduationCap } from "lucide-react"
 import StatsCard from "../components/StatsCard"
 import { PiUserList } from "react-icons/pi"
@@ -24,7 +23,7 @@ const HomePage = () => {
       change: "+15%",
       subtitle: "from last month",
       icon: <Users size={18} className="" />,
-      highlight: true,
+      highlight: false,
     },
     {
       title: "Total Teachers",
@@ -43,7 +42,7 @@ const HomePage = () => {
       highlight: false,
     },
     {
-      title: "Active Students",
+      title: "Active Students",   
       value: 85,
       change: "+230",
       subtitle: "this week",

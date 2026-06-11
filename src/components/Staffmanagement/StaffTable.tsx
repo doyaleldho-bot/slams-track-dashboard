@@ -1,5 +1,5 @@
 import React from "react";
-import { FiSearch, FiEdit2 } from "react-icons/fi";
+import { FiEdit2, FiSearch, FiTrash2 } from "react-icons/fi";
 import { FaUser } from "react-icons/fa";
 import AssignSubstitute from ".//stafftabs/AssignSubstitute";
 import NonTeachingTable from "../Staffmanagement/NonTeachingTable";
@@ -28,6 +28,22 @@ const sampleData = [
   },
 ];
 
+type StaffRecord = {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  department: string;
+  attendance?: string;
+  status?: string;
+  [key: string]: any;
+};
+
+type StaffTableProps = Props & {
+  onEditStaff?: (staff: StaffRecord) => void;
+  onDeleteStaff?: (id: string) => void;
+};
+
 const StaffTable = ({
   mainTab,
   staffTypeTab,
@@ -36,14 +52,22 @@ const StaffTable = ({
   onSubstituteAssigned,
   teacherList,
   nonTeachingList,
-}: Props) => {
+  onEditStaff,
+  onDeleteStaff,
+}: Props & {
+  onEditStaff?: (staff: any) => void;
+  onDeleteStaff?: (id: string) => void;
+}) => {
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [departmentFilter, setDepartmentFilter] = React.useState("All Department");
+  const [departmentFilter, setDepartmentFilter] = React.useState(
+    "All Department"
+  );
   const [statusFilter, setStatusFilter] = React.useState("All Status");
 
-  const items = teacherList && teacherList.length ? teacherList : sampleData;
+  const items: StaffRecord[] =
+    teacherList && teacherList.length ? (teacherList as StaffRecord[]) : sampleData;
 
-  const filteredItems = items.filter((item: any) => {
+  const filteredItems = items.filter((item: StaffRecord) => {
     const query = searchQuery.trim().toLowerCase();
     const matchesSearch =
       query === "" ||
@@ -138,7 +162,7 @@ const StaffTable = ({
             </thead>
 
             <tbody>
-              {filteredItems.map((item: any, index: number) => (
+              {filteredItems.map((item, index) => (
                 <tr key={index} className="border-b hover:bg-gray-50">
                   <td className="py-3 text-indigo-600 font-medium">{item.id}</td>
                   <td>
@@ -150,18 +174,45 @@ const StaffTable = ({
                   <td>{item.phone}</td>
                   <td>{item.email}</td>
                   <td>{item.department}</td>
-                  <td className={`font-medium ${item.attendance === "92%" ? "text-green-600" : item.attendance === "82%" ? "text-blue-600" : "text-orange-500"}`}>
+                  <td
+                    className={`font-medium ${
+                      item.attendance === "92%"
+                        ? "text-green-600"
+                        : item.attendance === "82%"
+                        ? "text-blue-600"
+                        : "text-orange-500"
+                    }`}
+                  >
                     {item.attendance}
                   </td>
                   <td>
-                    <span className={`px-3 py-1 rounded-full text-xs ${item.status === "Active" ? "bg-green-100 text-green-600" : "bg-gray-200 text-gray-600"}`}>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs ${
+                        item.status === "Active"
+                          ? "bg-green-100 text-green-600"
+                          : "bg-gray-200 text-gray-600"
+                      }`}
+                    >
                       {item.status}
                     </span>
                   </td>
-                  <td>
-                    <button className="text-indigo-600">
-                      <FiEdit2 />
-                    </button>
+                  <td className="text-center">
+                    <div className="inline-flex items-center justify-center gap-4">
+<button
+                        className="text-indigo-600"
+                        aria-label="Edit staff"
+                        onClick={() => onEditStaff?.(item)}
+                      >
+                        <FiEdit2 />
+                      </button>
+                      <button
+                        className="text-red-600"
+                        aria-label="Delete staff"
+                        onClick={() => onDeleteStaff?.(item.id)}
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -170,7 +221,9 @@ const StaffTable = ({
         </div>
 
         <div className="flex justify-between items-center mt-4 text-sm text-[#767676]">
-          <p>Showing {filteredItems.length} of {items.length} Staff</p>
+          <p>
+            Showing {filteredItems.length} of {items.length} Staff
+          </p>
 
           <div className="flex gap-2">
             <button className="px-2 py-1 border rounded">Previous</button>
@@ -186,3 +239,4 @@ const StaffTable = ({
 };
 
 export default StaffTable;
+
