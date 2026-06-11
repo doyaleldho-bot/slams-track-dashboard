@@ -97,8 +97,8 @@ api.interceptors.response.use(
       originalRequest.url?.includes("/refresh-token") ||
       originalRequest.url?.includes("/logout")
     ) {
-      localStorage.clear();
-      window.location.href = "/login";
+      // localStorage.clear();
+      // window.location.href = "/login";
       return Promise.reject(error);
     }
 
@@ -125,8 +125,8 @@ api.interceptors.response.use(
         return api(originalRequest);
 
       } catch (err) {
-        localStorage.clear();
-        window.location.href = "/login";
+        // localStorage.clear();
+        // window.location.href = "/login";
         return Promise.reject(err);
       }
     }

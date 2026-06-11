@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState,useEffect } from 'react'
 import StatsCard from '../components/StatsCard'
 import { PiUserList } from "react-icons/pi";
 import type { TeacherAttendance } from "../components/Attendance/types/TeacherAttendance";
+import api from "../api/axios"; // adjust path
 
 import {
   Users,
@@ -31,6 +32,15 @@ const handleEdit = (teacher: TeacherAttendance) => {
   day: "2-digit",
   year: "numeric",
 });
+
+interface TeacherAttendanceTableProps {
+  onEdit: (teacher: TeacherAttendance) => void;
+  selectedDate: string;
+  setSelectedDate: React.Dispatch<
+    React.SetStateAction<string>
+  >;
+  refreshKey: number;
+}
 
 const initialTeachers: TeacherAttendance[] = [
   {
@@ -89,56 +99,86 @@ const initialTeachers: TeacherAttendance[] = [
   },
 ];
 
-const handleSaveTeacher = (updatedTeacher: TeacherAttendance) => {
-  setTeachers((prev) =>
-    prev.map((teacher) =>
-      teacher.teacherId === updatedTeacher.teacherId
-        ? updatedTeacher
-        : teacher
-    )
-  );
+const [refreshKey, setRefreshKey] = useState(0);
 
+const handleSaveTeacher = () => {
+  setRefreshKey((prev) => prev + 1);
   setIsModalOpen(false);
 };
 const [teachers, setTeachers] =
   useState<TeacherAttendance[]>(initialTeachers);
 
-type AttendanceStatsCard = {
+interface AttendanceKPI {
   title: string;
-  value: string;
-  subtitle?: string;
-  icon: React.ReactNode;
-  change?: string;
-  highlight?: boolean;
-};
+  present: number;
+  total: number;
+  count: string;
+  attendance_rate: number;
+}
 
-     const statsData: AttendanceStatsCard[] = [
-    {
-      title: "Student Attendance Today",
-      value: "842/900",
-      subtitle: "Attendance rate 92%",
-      icon: <Users size={18} className="" />,
-      change: undefined,
-      highlight: false,
-    },
-    {
-      title: "Teachers Attendance Today",
-      value: "33/44",
-      subtitle: "Attendance rate 75%",
-      icon: <PiUserList size={18} className="" />,
-      change: undefined,
-      highlight: false,
-    },
-    {
-      title: "Staff Attendance Today",
-      value: "18/20",
-      subtitle: "Attendance rate 90%",
-      icon: <UserX size={18} className="" />,
-      change: undefined,
-      highlight: false,
-    },
+interface AttendanceKPIResponse {
+  status: boolean;
+  message: string;
+  data: AttendanceKPI[];
+}
 
-  ];
+    const [statsData, setStatsData] = useState<AttendanceStatsCard[]>([]);
+const [statsLoading, setStatsLoading] = useState(true);
+const [selectedDate, setSelectedDate] = useState(
+  new Date().toISOString().split("T")[0]
+);
+
+
+useEffect(() => {
+  const fetchAttendanceStats = async () => {
+    try {
+      setStatsLoading(true);
+
+      const response = await api.get<AttendanceKPIResponse>(
+        `/attendance-kpi-cards/?date=${selectedDate}`
+      );
+
+      const formattedData: AttendanceStatsCard[] =
+        response.data.data.map((item) => {
+          let icon;
+
+          switch (item.title) {
+            case "Student Attendance Today":
+              icon = <Users size={18} />;
+              break;
+
+            case "Teachers Attendance Today":
+              icon = <PiUserList size={18} />;
+              break;
+
+            case "Staff Attendance Today":
+              icon = <UserX size={18} />;
+              break;
+
+            default:
+              icon = <Users size={18} />;
+          }
+
+          return {
+            title: item.title,
+            value: item.count,
+            subtitle: `Attendance rate ${item.attendance_rate}%`,
+            icon,
+            highlight: false,
+          };
+        });
+
+      setStatsData(formattedData);
+    } catch (error) {
+      console.error("Failed to fetch attendance KPI cards:", error);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  fetchAttendanceStats();
+}, [selectedDate]);
+
 
   return (
     
@@ -178,20 +218,25 @@ Track and manage attendance for teachers, students, and staff      </p>
 
 
 
-<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-6 pt-10">  {statsData.map((card, index) => (
-          <StatsCard
-            key={index}
-            title={card.title}
-            value={card.value}
-            change={card.change}
-            subtitle={card.subtitle}
-            icon={card.icon}
-            highlight={card.highlight}
-             width="450px"
-  height="200px"
-          />
-        ))}
-      </div>
+<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-6 pt-10">
+  {statsLoading ? (
+    <div>Loading...</div>
+  ) : (
+    statsData.map((card, index) => (
+      <StatsCard
+        key={index}
+        title={card.title}
+        value={card.value}
+        change={card.change}
+        subtitle={card.subtitle}
+        icon={card.icon}
+        highlight={card.highlight}
+        width="450px"
+        height="200px"
+      />
+    ))
+  )}
+</div>
 
 
  <div className="pt-10">
@@ -206,8 +251,12 @@ Track and manage attendance for teachers, students, and staff      </p>
 
       <div className="mt-10">
         {activeTab === "Teacher Attendance" && (
-<TeacherAttendanceTab onEdit={handleEdit} />    
-    )}
+<TeacherAttendanceTab
+  onEdit={handleEdit}
+  selectedDate={selectedDate}
+  setSelectedDate={setSelectedDate}
+  refreshKey={refreshKey}
+/>   )}
 
         {activeTab === "Student Attendance" && (
           <StudentAttendanceTable />

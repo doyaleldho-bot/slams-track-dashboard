@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import type { TeacherAttendance } from "../types/TeacherAttendance";
 import { X } from "lucide-react";
-
+import api from "../../../api/axios";
 interface ActionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -24,9 +24,34 @@ const ActionModal: React.FC<ActionModalProps> = ({
 
   if (!isOpen || !formData) return null;
 
-  const handleSave = () => {
-    onSave(formData);
-  };
+const handleSave = async () => {
+  try {
+    const payload = {
+      teacher_id: formData.id,
+      date: formData.attendanceDate,
+      status: formData.status,
+      remarks: formData.remark,
+      checked_in_time: formData.checkIn,
+      checked_out_time: formData.checkOut || undefined,
+    };
+
+    await api.post(
+      "/mark-teacher-attendance/",
+      payload
+    );
+
+    onSave({
+      ...formData,
+    });
+
+    onClose();
+  } catch (error) {
+    console.error(
+      "Failed to update attendance",
+      error
+    );
+  }
+};
 
 
 

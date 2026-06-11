@@ -5,7 +5,7 @@ const ProtectedRoute = () => {
   const refreshToken = localStorage.getItem("refresh_token");
 
   if (!accessToken || !refreshToken) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return <Outlet />;

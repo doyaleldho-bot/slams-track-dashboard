@@ -19,12 +19,12 @@ function App() {
 
       <Routes>
         {/* public */}
-        <Route path="/" element={<LoginPage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
         {/* protected */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/app" element={<DashboardLayout />}>
+          <Route path="/" element={<DashboardLayout />}>
             <Route index element={<HomePage />} />
             <Route path="Staffmanagement" element={<StaffManagement />} />
             <Route path="AcademicManagement" element={<AcademicPage />} />

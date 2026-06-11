@@ -1,9 +1,13 @@
 export interface TeacherAttendance {
+  id?: number;
   teacherId: string;
   teacherName: string;
   section: string;
-  status: "Present" | "Absent" | "Late";
+  status: "Present" | "Absent" | "Late" | "Half Day";
   checkIn: string;
   checkOut: string;
   remark: string;
+
+  profileId?: number;
+  attendanceDate?: string;
 }
