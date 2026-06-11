@@ -24,7 +24,7 @@ function App() {
 
         {/* protected */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/app" element={<DashboardLayout />}>
+          <Route path="/" element={<DashboardLayout />}>
             <Route index element={<HomePage />} />
             <Route path="Staffmanagement" element={<StaffManagement />} />
             <Route path="AcademicManagement" element={<AcademicPage />} />
