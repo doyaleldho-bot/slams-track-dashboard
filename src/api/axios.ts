@@ -94,7 +94,7 @@ api.interceptors.response.use(
 
     // Avoid infinite loop
     if (
-      originalRequest.url?.includes("/refresh-token") ||
+      originalRequest.url?.includes("/token-refresh/") ||
       originalRequest.url?.includes("/logout")
     ) {
       localStorage.clear();
@@ -109,7 +109,7 @@ api.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem("refresh_token");
 
-        const res = await api.post("/refresh-token", {
+        const res = await api.post("/token-refresh/", {
           refresh: refreshToken,
         });
 

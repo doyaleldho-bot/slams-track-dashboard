@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import api from "../api/axios";
 // import axios from "axios";
 
 const OTP_DURATION = 5 * 60; // 5 minutes
@@ -69,7 +70,7 @@ const ForgotPasswordPage = () => {
         if (newErrors.email) return;
 
         try {
-            // await axios.post("/api/auth/send-otp", { email });
+            await api.post("/forgot-password/", { email });
 
             setOtpSent(true);
             setOtpVerified(false);
@@ -78,6 +79,7 @@ const ForgotPasswordPage = () => {
 
             setTimeLeft(OTP_DURATION);
             setCanResend(false);
+            console.log("ok");
         } catch (error) {
             console.error(error);
         }
@@ -122,16 +124,17 @@ const ForgotPasswordPage = () => {
         }
 
         try {
-            // await axios.post("/api/auth/verify-otp", {
-            //   email,
-            //   otp: enteredOtp,
-            // });
+            await api.post("/verify-otp/", {
+              email,
+              otp: enteredOtp,
+            });
 
             setOtpVerified(true);
             setTimeLeft(0);
             setCanResend(false);
 
             setOtpMessage("OTP verified successfully.");
+             setOtp(["", "", "", "", "", ""]);
 
             setErrors({
                 email: "",
@@ -139,6 +142,7 @@ const ForgotPasswordPage = () => {
                 password: "",
                 confirmPassword: "",
             });
+            
         } catch (error) {
             setErrors({
                 email: "",
@@ -151,7 +155,7 @@ const ForgotPasswordPage = () => {
 
     const handleResendOtp = async () => {
         try {
-            // await axios.post("/api/auth/resend-otp", { email });
+            await api.post("/forgot-password/resend-otp/", { email });
 
             setOtp(["", "", "", "", "", ""]);
             setOtpVerified(false);
