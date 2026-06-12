@@ -15,28 +15,24 @@ import ProtectedRoute from "./layouts/ProtectedRoute";
 function App() {
   return (
     <BrowserRouter>
-      <ToastContainer />
-
+    <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="light" />
       <Routes>
-        {/* public */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-        {/* protected */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/" element={<DashboardLayout />}>
-            <Route index element={<HomePage />} />
-            <Route path="Staffmanagement" element={<StaffManagement />} />
-            <Route path="AcademicManagement" element={<AcademicPage />} />
-            <Route path="finance" element={<FinancePage />} />
-            <Route path="studentManagement" element={<StudentPage />} />
-            <Route path="Attendance" element={<Attendance />} />
-            <Route path="settings" element={<SettingPage />} />
-          </Route>
+       <Route element={<ProtectedRoute />}>
+        <Route path="/" element={<DashboardLayout />}>
+          <Route index element={<HomePage />} />
+          <Route path="Staffmanagement" element={<StaffManagement />} />
+          <Route path="AcademicManagement" element={<AcademicPage />} />
+          <Route path="finance" element={<FinancePage />} />
+          <Route path="studentManagement" element={<StudentPage />} />
+          <Route path="Attendance" element={<Attendance />} />
+          <Route path="settings" element={<SettingPage />} />
+        </Route>
         </Route>
 
-        {/* fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );

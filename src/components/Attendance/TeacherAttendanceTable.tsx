@@ -121,7 +121,7 @@ const TeacherAttendanceTab: React.FC<
       | "Present"
       | "Absent"
       | "Late"
-      | "Half Day",
+      | "Half day",
 
     checkIn: teacher.checked_in_time || "",
 
@@ -179,7 +179,7 @@ const TeacherAttendanceTab: React.FC<
         return "border border-[#F97316] text-[#F97316]";
       case "Late":
         return "border border-[#F59E0B] text-[#F59E0B]";
-      case "Half Day":
+      case "Half day":
         return "border border-[#3B82F6] text-[#3B82F6]";
       default:
         return "";

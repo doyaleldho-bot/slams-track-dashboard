@@ -23,15 +23,34 @@ const [isModalOpen, setIsModalOpen] = useState(false);
 const [selectedTeacher, setSelectedTeacher] =
   useState<TeacherAttendance | null>(null);
 
-const handleEdit = (teacher: TeacherAttendance) => {
-  setSelectedTeacher(teacher);
-  setIsModalOpen(true);
-};
+
     const today = new Date().toLocaleDateString("en-US", {
   month: "long",
   day: "2-digit",
   year: "numeric",
 });
+
+const [attendanceType, setAttendanceType] =
+  useState<"teacher" | "staff">(
+    "teacher"
+  );
+
+  const handleTeacherEdit = (
+  teacher: TeacherAttendance
+) => {
+  setAttendanceType("teacher");
+  setSelectedTeacher(teacher);
+  setIsModalOpen(true);
+};
+
+const handleStaffEdit = (
+  staff: TeacherAttendance
+) => {
+   console.log("Staff Row", staff);
+  setAttendanceType("staff");
+  setSelectedTeacher(staff);
+  setIsModalOpen(true);
+};
 
 interface TeacherAttendanceTableProps {
   onEdit: (teacher: TeacherAttendance) => void;
@@ -98,6 +117,57 @@ const initialTeachers: TeacherAttendance[] = [
     remark: "Casual Leave",
   },
 ];
+
+const handleExport = async () => {
+  try {
+    let endpoint = "";
+    let filename = "";
+
+    switch (activeTab) {
+      case "Teacher Attendance":
+        endpoint = `/export-teachers-attendance/?date=${selectedDate}`;
+        filename = "teacher-attendance.xlsx";
+        break;
+
+      case "Staff Attendance":
+        endpoint = `/export-staff-attendance/?date=${selectedDate}`;
+        filename = "staff-attendance.xlsx";
+        break;
+
+      case "Student Attendance":
+        endpoint = `/export-students-attendance/?date=${selectedDate}`;
+        filename = "student-attendance.xlsx";
+        break;
+
+      default:
+        return;
+    }
+
+    const response = await api.get(endpoint, {
+      responseType: "blob",
+    });
+
+    const blob = new Blob([response.data], {
+      type:
+        response.headers["content-type"] ||
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    const url = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+
+    document.body.appendChild(link);
+    link.click();
+
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Export failed:", error);
+  }
+};
 
 const [refreshKey, setRefreshKey] = useState(0);
 
@@ -203,8 +273,10 @@ Track and manage attendance for teachers, students, and staff      </p>
         Today: {today}
       </button>
       <div className="pl-2">
-      <button        
- className="flex gap-2 justify-center items-center h-9 rounded-[10px] text-[14px] leading-[20px] font-normal  px-4 border bg-[#1F1F1F] text-white">
+    <button
+  onClick={handleExport}
+  className="flex gap-2 justify-center items-center h-9 rounded-[10px] text-[14px] leading-[20px] font-normal px-4 border bg-[#1F1F1F] text-white"
+>
     <Download size={18} className="" />
        Export report
       </button>
@@ -252,7 +324,7 @@ Track and manage attendance for teachers, students, and staff      </p>
       <div className="mt-10">
         {activeTab === "Teacher Attendance" && (
 <TeacherAttendanceTab
-  onEdit={handleEdit}
+  onEdit={handleTeacherEdit}
   selectedDate={selectedDate}
   setSelectedDate={setSelectedDate}
   refreshKey={refreshKey}
@@ -262,10 +334,12 @@ Track and manage attendance for teachers, students, and staff      </p>
           <StudentAttendanceTable />
         )}
 
-        {activeTab === "Staff Attendance" && (
-<StaffAttendanceTable
-  onEdit={handleEdit}
-/>        )}
+       {activeTab === "Staff Attendance" && (
+  <StaffAttendanceTable
+    onEdit={handleStaffEdit}
+    refreshKey={refreshKey}
+  />
+)}
       </div>
     </div>
 
@@ -273,8 +347,8 @@ Track and manage attendance for teachers, students, and staff      </p>
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         teacher={selectedTeacher}
-          onSave={handleSaveTeacher}
-
+        onSave={handleSaveTeacher}
+        attendanceType={attendanceType}
       />
 
     </div>

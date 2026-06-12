@@ -3,7 +3,7 @@ export interface TeacherAttendance {
   teacherId: string;
   teacherName: string;
   section: string;
-  status: "Present" | "Absent" | "Late" | "Half Day";
+  status: "Present" | "Absent" | "Late" | "Half day";
   checkIn: string;
   checkOut: string;
   remark: string;

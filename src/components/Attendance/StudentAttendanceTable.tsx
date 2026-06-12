@@ -1,5 +1,6 @@
 import { Search, ChevronDown, CalendarDays } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
+import api from "../../api/axios";
 interface StudentAttendance {
   classId: string;
   className: string;
@@ -39,113 +40,91 @@ const StudentAttendanceTable = () => {
   ];
   const [searchTerm, setSearchTerm] = useState("");
 const [selectedClass, setSelectedClass] = useState("All Class");
-const [selectedDate, setSelectedDate] = useState("");
+const [selectedDate, setSelectedDate] = useState(
+  new Date().toISOString().split("T")[0]
+);
+interface StudentAttendanceApi {
+  class_id: number;
+  class_code: string;
+  class_name: string;
+  section: string;
+  total_students: number;
+  present: number;
+  absent: number;
+  half_day: number;
+  attendance_taken_by: {
+    id: number;
+    name: string;
+  } | null;
+  incharge: {
+    id: number;
+    name: string;
+  } | null;
+}
 
+interface StudentAttendanceResponse {
+  status: boolean;
+  message: string;
+  data: StudentAttendanceApi[];
+}
 
-  const attendanceData: StudentAttendance[] = [
-    {
-      classId: "CLS-001",
-      className: "5th std",
-      section: "A",
-      totalStudents: 60,
-      present: 52,
-      absent: 8,
-      halfDay: 2,
-      attendanceTakenBy: {
-        name: "Devika",
-        id: "TCH-001",
-      },
-      incharge: {
-        name: "Devika",
-        id: "TCH-001",
-      },
-    },
-    {
-      classId: "CLS-002",
-      className: "UKG",
-      section: "A",
-      totalStudents: 58,
-      present: 49,
-      absent: 9,
-      halfDay: 1,
-      attendanceTakenBy: {
-        name: "Cinda",
-        id: "TCH-005",
-      },
-      incharge: {
-        name: "Devika",
-        id: "TCH-001",
-      },
-    },
-    {
-      classId: "CLS-003",
-      className: "6th std",
-      section: "B",
-      totalStudents: 60,
-      present: 55,
-      absent: 5,
-      halfDay: 0,
-      attendanceTakenBy: {
-        name: "Doyal",
-        id: "TCH-014",
-      },
-      incharge: {
-        name: "Doyal",
-        id: "TCH-014",
-      },
-    },
-    {
-      classId: "CLS-004",
-      className: "2nd std",
-      section: "A",
-      totalStudents: 62,
-      present: 56,
-      absent: 6,
-      halfDay: 0,
-      attendanceTakenBy: {
-        name: "Anoop",
-        id: "TCH-025",
-      },
-      incharge: {
-        name: "Anoop",
-        id: "TCH-025",
-      },
-    },
-    {
-      classId: "CLS-005",
-      className: "LKG",
-      section: "B",
-      totalStudents: 57,
-      present: 50,
-      absent: 7,
-      halfDay: 2,
-      attendanceTakenBy: {
-        name: "Amal km",
-        id: "TCH-011",
-      },
-      incharge: {
-        name: "Amal",
-        id: "TCH-011",
-      },
-    },
-    {
-      classId: "CLS-006",
-      className: "7th std",
-      section: "B",
-      totalStudents: 59,
-      present: 51,
-      absent: 6,
-      halfDay: 3,
-      attendanceTakenBy: {
-        name: "Ashwin",
-        id: "TCH-029",
-      },
-      incharge: {
-        name: "Ashwin",
-        id: "TCH-029",
-      },
-    },
-  ];
+const [attendanceData, setAttendanceData] = useState<StudentAttendance[]>([]);
+const [loading, setLoading] = useState(false);
+
+useEffect(() => {
+  fetchStudentAttendance();
+}, [selectedDate]);
+
+const fetchStudentAttendance = async () => {
+  try {
+    setLoading(true);
+
+    const response =
+      await api.get<StudentAttendanceResponse>(
+        `/students-attendance-list/?date=${selectedDate}`
+      );
+
+    const formattedData: StudentAttendance[] =
+      response.data.data.map((item) => ({
+        classId: item.class_code,
+        className: item.class_name,
+        section: item.section,
+
+        totalStudents: item.total_students,
+        present: item.present,
+        absent: item.absent,
+        halfDay: item.half_day,
+
+        attendanceTakenBy: {
+          name:
+            item.attendance_taken_by?.name ||
+            "---",
+          id:
+            item.attendance_taken_by?.id?.toString() ||
+            "---",
+        },
+
+        incharge: {
+          name:
+            item.incharge?.name ||
+            "---",
+          id:
+            item.incharge?.id?.toString() ||
+            "---",
+        },
+      }));
+
+    setAttendanceData(formattedData);
+  } catch (error) {
+    console.error(
+      "Failed to fetch student attendance",
+      error
+    );
+    setAttendanceData([]);
+  } finally {
+    setLoading(false);
+  }
+};
   
 
    const filteredAttendanceData = attendanceData.filter((student) => {
@@ -303,8 +282,17 @@ const [selectedDate, setSelectedDate] = useState("");
           </thead>
 
         <tbody>
-  {filteredAttendanceData.length > 0 ? (
-    filteredAttendanceData.map((item) => (
+{loading ? (
+  <tr>
+    <td
+      colSpan={9}
+      className="py-8 text-center text-[#737373]"
+    >
+      Loading...
+    </td>
+  </tr>
+) : filteredAttendanceData.length > 0 ? (
+      filteredAttendanceData.map((item) => (
       <tr
         key={item.classId}
         className="border-b border-[#E5E7EB]"

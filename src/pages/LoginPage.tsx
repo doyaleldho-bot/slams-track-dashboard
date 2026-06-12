@@ -56,7 +56,7 @@ const LoginPage = () => {
             }
 
             toast.success("Login successful!");
-            navigate("/app");
+            navigate("/");
         } catch (error:any) {
              toast.error(error?.response?.data?.message || "Login failed");
         }
