@@ -555,7 +555,7 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
               </button>
             )}
           </div>
-        </div> 
+        </div>
       </div>
     </div>
   );
