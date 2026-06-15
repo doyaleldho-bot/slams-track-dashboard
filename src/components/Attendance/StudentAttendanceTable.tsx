@@ -26,18 +26,7 @@ const StudentAttendanceTable = () => {
     "2023-2024",
   ];
 
-  const classOptions = [
-    "All Class",
-    "LKG",
-    "UKG",
-    "1st Std",
-    "2nd Std",
-    "3rd Std",
-    "4th Std",
-    "5th Std",
-    "6th Std",
-    "7th Std",
-  ];
+ 
   const [searchTerm, setSearchTerm] = useState("");
 const [selectedClass, setSelectedClass] = useState("All Class");
 const [selectedDate, setSelectedDate] = useState(
@@ -70,6 +59,17 @@ interface StudentAttendanceResponse {
 
 const [attendanceData, setAttendanceData] = useState<StudentAttendance[]>([]);
 const [loading, setLoading] = useState(false);
+
+const classOptions = [
+  "All Class",
+  ...Array.from(
+    new Set(
+      attendanceData
+        .map((item) => item.className)
+        .filter(Boolean)
+    )
+  ),
+];
 
 useEffect(() => {
   fetchStudentAttendance();

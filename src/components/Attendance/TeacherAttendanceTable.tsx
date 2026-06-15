@@ -58,19 +58,6 @@ const TeacherAttendanceTab: React.FC<
     "2023-2024",
   ];
 
-  const departmentOptions = [
-    "All departments",
-    "Science",
-    "Commerce",
-    "Humanities",
-  ];
-
-  const sectionOptions = [
-    "All Section",
-    "A",
-    "B",
-    "C",
-  ];
 
   const institutionType = localStorage.getItem("institutionType");
 
@@ -92,6 +79,29 @@ const TeacherAttendanceTab: React.FC<
 
   const [loading, setLoading] = useState(false);
 
+   const departmentOptions = [
+  "All departments",
+  ...Array.from(
+    new Set(
+      attendanceData
+        .map((teacher) => teacher.department)
+        .filter(Boolean)
+    )
+  ),
+];
+
+const sectionOptions = [
+  "All Section",
+  ...Array.from(
+    new Set(
+      attendanceData
+        .map((teacher) => teacher.section)
+        .filter(Boolean)
+    )
+  ),
+];
+
+
   const fetchTeacherAttendance = async (date?: string) => {
     try {
       setLoading(true);
@@ -112,10 +122,12 @@ const TeacherAttendanceTab: React.FC<
     teacherId: teacher.teacher_id,
     teacherName: teacher.teacher_name,
 
-    section:
-      teacher.level?.length > 0
-        ? teacher.level.join(", ")
-        : "---",
+  department: teacher.teacher_department,
+
+section:
+  teacher.level?.length > 0
+    ? teacher.level[0]
+    : "---",
 
     status: teacher.status as
       | "Present"
@@ -155,9 +167,9 @@ const TeacherAttendanceTab: React.FC<
           .toLowerCase()
           .includes(searchTerm.toLowerCase());
 
-      const matchesDepartment =
-        selectedDepartment === "All departments" ||
-        teacher.section === selectedDepartment;
+    const matchesDepartment =
+  selectedDepartment === "All departments" ||
+  teacher.department === selectedDepartment;
 
       const matchesSection =
         selectedSection === "All Section" ||
