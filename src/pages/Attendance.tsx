@@ -355,4 +355,4 @@ Track and manage attendance for teachers, students, and staff      </p>
   );
 };
 
-export default Attendance;
+export default Attendance; 

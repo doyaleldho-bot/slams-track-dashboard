@@ -1,95 +1,60 @@
 import React, { useEffect, useState } from "react"
 import { Download, ChevronLeft, ChevronRight } from "lucide-react"
+import api from "../../api/axios";
+import * as XLSX from "xlsx";
+import { toast } from "react-toastify";
 
-const activeSessions = [
-  {
-    device: "Chrome-PC-1",
-    location: "Kochi, INDIA",
-    status: "Active Now",
-  },
-  {
-    device: "Chrome-PC-2",
-    location: "Riyadh, Saudi",
-    status: "Last Seen",
-  },
-  {
-    device: "Chrome-PC-3",
-    location: "Goa, India",
-    status: "Offline",
-  },
-]
+interface DashboardData {
+  total_logins: number;
+  total_failed_logins: number;
+  active_sessions: number;
+  password_resets: number;
+}
 
-const loginHistory = [
-  {
-    date: "21-05-2025",
-    name: "Devan",
-    loginTime: "11:00 AM",
-    logoutTime: "11:00 PM",
-    device: "Mobile",
-    browser: "Android App",
-    ip: "192.168.1.20",
-    location: "Kochi",
-    status: "Successful",
-  },
-  {
-    date: "21-05-2025",
-    name: "Devan",
-    loginTime: "11:00 AM",
-    logoutTime: "11:00 PM",
-    device: "Mobile",
-    browser: "Android App",
-    ip: "192.168.1.25",
-    location: "Kochi",
-    status: "Failed",
-  },
-  {
-    date: "21-05-2025",
-    name: "Devan",
-    loginTime: "11:00 AM",
-    logoutTime: "11:00 PM",
-    device: "Mobile",
-    browser: "Android App",
-    ip: "192.168.1.15",
-    location: "Kochi",
-    status: "Successful",
-  },
-  {
-    date: "21-05-2025",
-    name: "Devan",
-    loginTime: "11:00 AM",
-    logoutTime: "11:00 PM",
-    device: "Mobile",
-    browser: "Android App",
-    ip: "192.168.1.35",
-    location: "Kochi",
-    status: "Successful",
-  },
-]
+interface Staff {
+  id: number;
+  user_id: string;
+  staff_name: string;
+  designation: string;
+  photo: string | null;
+}
 
-const staffs = [
-  {
-    id: "SUPADM1234",
-    name: "Devan Thomas",
-    role: "Super Admin",
-    initial: "D",
-  },
-  {
-    id: "EMP1001",
-    name: "Arun Kumar",
-    role: "Teacher",
-    initial: "A",
-  },
-  {
-    id: "EMP1002",
-    name: "Athira",
-    role: "Accountant",
-    initial: "AT",
-  },
-]
+interface LoginHistory {
+  id: number;
+  user_id: string;
+  fullname: string;
+  role: string;
+  login_time: string;
+  logout_time: string | null;
+  device_name: string;
+  browser: string | null;
+  ip_address: string;
+  location: string;
+  login_status: string;
+}
+
+interface ActiveSession {
+  id: number;
+  user_id: string;
+  fullname: string;
+  role: string;
+  device_name: string;
+  browser: string;
+  ip_address: string;
+  location: string;
+  is_active: boolean;
+}
+
+
+
+
+
 
 const Security = () => {
-  const [selectedStaff, setSelectedStaff] = useState<any | null>(null)
+const [selectedStaff, setSelectedStaff] =
+  useState<Staff | null>(null);
 
+const [staffs, setStaffs] = useState<Staff[]>([]);
   const [searchName, setSearchName] = useState("")
   const [searchDate, setSearchDate] = useState("")
 
@@ -97,34 +62,203 @@ const Security = () => {
 
   const itemsPerPage = 7
 
-  const handleResetPassword = () => {
-    alert(
-      `Password reset link sent for ${selectedStaff?.name || "the selected staff"}`,
-    )
+  const handleResetPassword = async () => {
+  if (!selectedStaff) return;
+
+  try {
+    const response = await api.post(
+      "/security/reset-password/",
+      {
+        user_id: selectedStaff.user_id,
+        send_email: true,
+        remarks: "Password reset requested by admin",
+      }
+    );
+
+    toast.success(
+      // `Temporary Password: ${response.data.temporary_password}`
+      "temporary password was send successfully"
+    );
+  } catch (error) {
+    console.error(error);
   }
+};
 
-  //filtering logic
-  const filteredLoginHistory = loginHistory.filter((item) => {
-    const matchName = item?.name
-      .toLowerCase()
-      .includes(searchName.toLowerCase())
+  const [dashboard, setDashboard] =
+  useState<DashboardData | null>(null);
 
-    const formattedDate = item.date // 21-05-2025
+const [activeSessions, setActiveSessions] =
+  useState<ActiveSession[]>([]);
 
-    const matchDate = searchDate
-      ? (() => {
-          const [year, month, day] = searchDate.split("-")
-          const selectedDate = `${day}-${month}-${year}`
-          return formattedDate === selectedDate
-        })()
-      : true
+const [loginHistory, setLoginHistory] =
+  useState<LoginHistory[]>([]);
+const [loading, setLoading] = useState(false);
 
-    return matchName && matchDate
-  })
+
+const fetchStaffs = async () => {
+  try {
+    const response = await api.get(
+      "/list-teaching-staff/"
+    );
+
+    setStaffs(response.data.data);
+
+    if (response.data.data.length > 0) {
+      setSelectedStaff(response.data.data[0]);
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+
+const fetchDashboard = async () => {
+  try {
+    const response = await api.get(
+      "/security/dashboard/"
+    );
+
+    setDashboard(response.data.data);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const fetchActiveSessions = async () => {
+  try {
+    const response = await api.get(
+      "/security/active-sessions/"
+    );
+
+    setActiveSessions(response.data.data);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+
+const fetchLoginHistory = async () => {
+  try {
+    const params = new URLSearchParams();
+
+    if (searchName) {
+      params.append("name", searchName);
+    }
+
+    if (searchDate) {
+      params.append("login_date", searchDate);
+    }
+
+    const response = await api.get(
+      `/security/login-history/?${params.toString()}`
+    );
+console.log(response.data);
+
+    setLoginHistory(response.data.data || []);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+
+const handleSignoutSession = async (
+  sessionId: number
+) => {
+  try {
+    await api.post(
+      "/security/session-signout/",
+      {
+        session_id: sessionId,
+      }
+    );
+
+    fetchActiveSessions();
+  } catch (error) {
+    console.error(error);
+  }
+};
+const handleExport = () => {
+  try {
+    const exportData = loginHistory.map((item) => ({
+      "Login Date": new Date(item.login_time).toLocaleDateString(),
+      Name: item.fullname,
+      "Login Time": new Date(item.login_time).toLocaleTimeString(),
+      "Logout Time": item.logout_time
+        ? new Date(item.logout_time).toLocaleTimeString()
+        : "--",
+      "Device Type": item.device_name,
+      "Browser / App": item.browser || "--",
+      "IP Address": item.ip_address,
+      Location: item.location || "--",
+      "Login Status": item.login_status,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(
+      workbook,
+      worksheet,
+      "Login History"
+    );
+
+    XLSX.writeFile(
+      workbook,
+      `login-history-${new Date()
+        .toISOString()
+        .split("T")[0]}.xlsx`
+    );
+  } catch (error) {
+    console.error("Export Error:", error);
+  }
+};
+
+
+// const handleLogoutAllDevices = async () => {
+//   try {
+//     const response = await api.post(
+//       "/security/logout-all-devices/"
+//     );
+
+//     alert(response.data.message);
+
+//     fetchActiveSessions();
+//     fetchLoginHistory();
+//   } catch (error) {
+//     console.error(error);
+//   }
+// };
+
+// const handleForceLogout = async () => {
+//   try {
+//     const response = await api.post(
+//       "/security/force-logout/"
+//     );
+
+//     alert(response.data.message);
+
+//     fetchActiveSessions();
+//     fetchLoginHistory();
+//   } catch (error) {
+//     console.error(error);
+//   }
+// };
+
+
+
+
+
+
+
+
+  const filteredLoginHistory = loginHistory || [];
 
   //pagination logic
-  const totalPages = Math.ceil(filteredLoginHistory.length / itemsPerPage)
-
+const totalPages = Math.max(
+  1,
+  Math.ceil(filteredLoginHistory.length / itemsPerPage)
+)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
 
@@ -150,9 +284,16 @@ const Security = () => {
 
   const endRecord = Math.min(currentPage * itemsPerPage, totalRecords)
 
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [searchName, searchDate])
+ useEffect(() => {
+  fetchStaffs();
+  fetchDashboard();
+  fetchActiveSessions();
+}, []);
+
+useEffect(() => {
+  fetchLoginHistory();
+  setCurrentPage(1);
+}, [searchName, searchDate]);
 
   return (
     <div className="space-y-6 p-6 w-full max-w-[1200px]">
@@ -163,16 +304,17 @@ const Security = () => {
             <label className="mb-2 block text-sm font-semibold">Staff ID</label>
 
             <select
-              value={selectedStaff?.id || ""}
-              onChange={(e) => {
-                const staff = staffs.find((s) => s.id === e.target.value)
+value={selectedStaff?.user_id || ""}              onChange={(e) => {
+               const staff = staffs.find(
+  (s) => s.user_id === e.target.value
+)
                 if (staff) setSelectedStaff(staff)
               }}
               className="h-12 w-full rounded-xl border border-[#D9D9D9] px-4 outline-none"
             >
               {staffs.map((staff) => (
-                <option key={staff.id} value={staff.id}>
-                  {staff.id}
+                <option key={staff.user_id} value={staff.user_id}>
+                 {staff.user_id}
                 </option>
               ))}
             </select>
@@ -184,7 +326,7 @@ const Security = () => {
 
             <input
               readOnly
-              value={selectedStaff?.name || ""}
+              value={selectedStaff?.staff_name || ""}
               className="h-12 w-full rounded-xl border border-[#D9D9D9] px-4"
             />
           </div>
@@ -205,15 +347,19 @@ const Security = () => {
         <div className="rounded-2xl bg-white p-6 shadow-sm">
           <div className="flex flex-col items-center gap-4 md:flex-row">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 text-2xl font-semibold text-white shadow-lg">
-              {selectedStaff.initial}
+              {selectedStaff.staff_name
+  ?.split(" ")
+  .map((n) => n[0])
+  .join("")
+  .slice(0, 2)}
             </div>
 
             <div>
               <h2 className="text-xl font-semibold text-[#2F2F2F]">
-                {selectedStaff.name}
+                {selectedStaff.staff_name}
               </h2>
 
-              <p className="text-sm text-[#767676]">{selectedStaff.role}</p>
+              <p className="text-sm text-[#767676]">{selectedStaff.designation}</p>
             </div>
           </div>
         </div>
@@ -231,7 +377,9 @@ const Security = () => {
           <table className="w-full min-w-max border-separate border-spacing-0">
             <thead>
               <tr className="bg-[#8FAAE5] text-left text-sm text-white">
-                <th className="rounded-tl-xl px-6 py-3">Device</th>
+                <th className="rounded-tl-xl px-6 py-3">Name</th>
+                <th className=" px-6 py-3">ID</th>
+                <th className=" px-6 py-3">Device</th>
                 <th className="px-6 py-3">Location</th>
                 <th className="px-6 py-3">Status</th>
                 <th className="rounded-tr-xl px-6 py-3 text-right">Action</th>
@@ -248,34 +396,53 @@ const Security = () => {
                       : ""
                   }`}
                 >
-                  <td className="px-6 py-4">{session.device}</td>
+                  <td className="px-6 py-4">{session.fullname}</td>
+                  <td className="px-6 py-4">{session.user_id}</td>
+                  <td className="px-6 py-4">{session.device_name}</td>
 
                   <td className="px-6 py-4">{session.location}</td>
 
-                  <td className="px-6 py-4">
-                    <span
-                      className={`font-medium ${
-                        session.status === "Active Now"
-                          ? "text-green-600"
-                          : session.status === "Last Seen"
-                            ? "text-blue-600"
-                            : "text-gray-500"
-                      }`}
-                    >
-                      {session.status}
-                    </span>
-                  </td>
+                 <td className="px-6 py-4">
+  <span
+    className={`font-medium ${
+      session.is_active
+        ? "text-green-600"
+        : "text-gray-500"
+    }`}
+  >
+    {session.is_active ? "Active Now" : "Inactive"}
+  </span>
+</td>
 
                   <td className="px-6 py-4 text-right">
-                    <button className="text-red-500 hover:text-red-600">
-                      Sign Out
-                    </button>
+                    <button className="text-[#E7000B] border p-2 rounded-lg hover:bg-red-200"
+  onClick={() =>
+    handleSignoutSession(session.id)
+  }
+>
+  Sign Out
+</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+
+<div className="flex gap-5">
+
+{/* <button
+  onClick={handleForceLogout}
+  className="text-[#E7000B] text-[14px] border p-2 rounded-lg hover:bg-red-200"
+>
+  Force Logout
+</button>  */}
+{/* <button
+onClick={() => handleLogoutAllDevices}
+ className="text-[#E7000B] text-[14px] border p-2 rounded-lg hover:bg-red-200">
+  Logout From All Devices
+  </button>   */}
+  </div>
       </div>
 
       {/* Login History */}
@@ -286,8 +453,10 @@ const Security = () => {
             Login History
           </h3>
 
-          <button className="flex items-center gap-2 rounded-lg border border-[#D9D9D9] bg-white px-4 py-2 text-sm text-[#444] hover:bg-gray-50">
-            <Download size={16} />
+         <button
+  onClick={handleExport}
+  className="flex items-center gap-2 rounded-lg border border-[#D9D9D9] bg-white px-4 py-2 text-sm text-[#444] hover:bg-gray-50"
+>
             Export Report
           </button>
         </div>
@@ -358,35 +527,35 @@ const Security = () => {
             </thead>
 
             <tbody>
-              {filteredLoginHistory.map((item, index) => (
+              {paginatedData.map((item, index) => (
                 <tr
                   key={index}
                   className="border-b border-[#E5E5E5] text-[15px]"
                 >
-                  <td className="py-4">{item.date}</td>
-                  <td className="py-4">{item.name}</td>
-                  <td className="py-4">{item.loginTime}</td>
-                  <td className="py-4">{item.logoutTime}</td>
-                  <td className="py-4">{item.device}</td>
+                  <td className="py-4">{new Date(item.login_time).toLocaleDateString()}</td>
+                  <td className="py-4">{item.fullname}</td>
+                  <td className="py-4">{new Date(item.login_time).toLocaleTimeString()}</td>
+                  <td className="py-4">{item.logout_time
+  ? new Date(item.logout_time).toLocaleTimeString()
+  : "--"}</td>
+                  <td className="py-4">{item.device_name}</td>
                   <td className="py-4">{item.browser}</td>
-                  <td className="py-4">{item.ip}</td>
+                  <td className="py-4">{item.ip_address}</td>
 
                   <td className="py-4 text-[#A0A0A0]">
-                    Kochi,
-                    <br />
-                    Kerala
+                  {item.location || "--"}
                   </td>
 
                   <td className="py-4">
                     <span
                       className={`inline-flex min-w-[100px] justify-center rounded-lg border px-3 py-1 text-sm font-medium ${
-                        item.status === "Successful"
+                        item.login_status === "SUCCESS"
                           ? "border-green-500 text-green-600"
                           : "border-red-500 text-red-500"
                       }`}
                     >
-                      {item.status}
-                    </span>
+                    {item.login_status}                   
+ </span>
                   </td>
                 </tr>
               ))}
