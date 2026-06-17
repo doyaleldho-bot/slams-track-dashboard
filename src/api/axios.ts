@@ -55,16 +55,12 @@ import axios from "axios";
 const api = axios.create({
   baseURL: "/api",
   withCredentials: true,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  // Note: Do NOT set Content-Type here — axios sets it automatically
+  // per request (e.g. multipart/form-data with boundary for FormData,
+  // or application/json for plain objects).
 });
 
-
-// ===============================
-// 1. REQUEST INTERCEPTOR
-// Attach access token to every request
-// ===============================
+// Request Interceptor
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("access_token");
@@ -78,56 +74,58 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-
-// ===============================
-// 2. RESPONSE INTERCEPTOR
-// Handle 401 + refresh token
-// ===============================
+// Response Interceptor
 api.interceptors.response.use(
-  (res) => res,
+  (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
+    // No response at all = network error (server down, CORS, etc.)
     if (!error.response) {
+      console.error("[API] Network error (no response):", error.message, error.code);
       return Promise.reject(error);
     }
 
-    // Avoid infinite loop
+    // Prevent refresh loops
     if (
       originalRequest.url?.includes("/token-refresh/") ||
-      originalRequest.url?.includes("/logout")
+      originalRequest.url?.includes("/logout/")
     ) {
-      localStorage.clear();
-      window.location.href = "/login";
       return Promise.reject(error);
     }
 
-    // Handle expired access token
-    if (error.response.status === 401 && !originalRequest._retry) {
+    if (
+      error.response.status === 401 &&
+      !originalRequest._retry
+    ) {
       originalRequest._retry = true;
 
       try {
         const refreshToken = localStorage.getItem("refresh_token");
 
-        const res = await api.post("/token-refresh/", {
+        if (!refreshToken) {
+          // No refresh token — reject with the original 401 error (not a new one)
+          return Promise.reject(error);
+        }
+
+        console.log("Refreshing token...");
+
+        const refreshRes = await api.post("/token-refresh/", {
           refresh: refreshToken,
         });
 
-        const newAccessToken = res.data.access;
-
-        // store new access token
+        const newAccessToken = refreshRes.data.tokens.access;
         localStorage.setItem("access_token", newAccessToken);
-
-        // update header for retry
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
-        // retry original request
         return api(originalRequest);
-
-      } catch (err) {
-        localStorage.clear();
-        window.location.href = "/login";
-        return Promise.reject(err);
+      } catch (refreshError: any) {
+        // Refresh failed — clear tokens and reject with the ORIGINAL error
+        // so callers see the 401, not an unrelated refresh network error
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        console.error("[API] Token refresh failed:", refreshError?.message);
+        return Promise.reject(error); // ← original error, not refreshError
       }
     }
 

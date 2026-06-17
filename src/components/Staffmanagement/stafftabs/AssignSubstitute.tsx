@@ -1,6 +1,7 @@
 import React from "react";
-import { Check } from "lucide-react";
+import { Check, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import type { SubstituteDetails } from "../SubstituteDetailsModal";
+import api from "../../../api/axios";
 
 type AbsentTeacher = {
   id: string;
@@ -8,6 +9,7 @@ type AbsentTeacher = {
   subject: string;
   reason: string;
   date: string;
+  teacher_id?: number;
 };
 
 type TimetableRow = {
@@ -27,39 +29,7 @@ type FreeTeacher = {
   workload: string;
 };
 
-const absentTeachers: AbsentTeacher[] = [
-  {
-    id: "TCH003",
-    name: "Sarah Johnson",
-    subject: "Mathematics",
-    reason: "Medical Leave",
-    date: "30-05-2026",
-  },
-  {
-    id: "TCH005",
-    name: "Mrs. Priya Sharma",
-    subject: "English",
-    reason: "Personal Emergency",
-    date: "30-05-2026",
-  },
-];
 
-const timetableRows: TimetableRow[] = [
-  {
-    teacherId: "TCH003",
-    period: "Period 1",
-    batch: "2024 Batch",
-    className: "Class 10-A",
-    subject: "Mathematics",
-  },
-  {
-    teacherId: "TCH005",
-    period: "Period 2",
-    batch: "2024 Batch",
-    className: "Class 9-A",
-    subject: "Mathematics",
-  },
-];
 
 const freeTeachers: FreeTeacher[] = [
   {
@@ -90,10 +60,155 @@ type AssignSubstituteProps = {
   onSubstituteAssigned?: (assignment: SubstituteDetails) => void;
 };
 
+const getNoTimetableMessage = (errorResponse: any): string | null => {
+  if (!errorResponse) return null;
+  let data = errorResponse.data;
+  if (typeof data === "string") {
+    try {
+      data = JSON.parse(data);
+    } catch (e) {
+      return null;
+    }
+  }
+  if (
+    data &&
+    (data.status === false || !data.status) &&
+    data.message &&
+    typeof data.message === "string" &&
+    data.message.toLowerCase().includes("no timetable found")
+  ) {
+    return data.message;
+  }
+  return null;
+};
+
 const AssignSubstitute = ({ onSubstituteAssigned }: AssignSubstituteProps) => {
   const [step, setStep] = React.useState(1);
-  const [selectedTeacher, setSelectedTeacher] = React.useState(absentTeachers[0]);
-  const [selectedTimetable, setSelectedTimetable] = React.useState(timetableRows[0]);
+  const [teachersList, setTeachersList] = React.useState<AbsentTeacher[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [fetchError, setFetchError] = React.useState<string | null>(null);
+
+  const [selectedTeacher, setSelectedTeacher] = React.useState<AbsentTeacher | null>(null);
+  const [selectedTimetable, setSelectedTimetable] = React.useState<TimetableRow | null>(null);
+
+  const [timetableList, setTimetableList] = React.useState<TimetableRow[]>([]);
+  const [isTimetableLoading, setIsTimetableLoading] = React.useState(false);
+  const [timetableError, setTimetableError] = React.useState<string | null>(null);
+  const [timetableEmptyMessage, setTimetableEmptyMessage] = React.useState<string | null>(null);
+
+  const fetchAbsentTeachers = React.useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setFetchError(null);
+      const response = await api.get("/todays-absent-teachers/");
+      if (response.data && response.data.status) {
+        const mapped: AbsentTeacher[] = (response.data.absent_teachers || []).map((t: any) => ({
+          id: t.user_id || String(t.teacher_id),
+          name: t.teacher_name || "Unknown",
+          subject: t.role || "Teacher",
+          reason: t.leave_reason || "Not specified",
+          date: t.leave_start_date || response.data.date || "",
+          teacher_id: t.teacher_id,
+        }));
+        setTeachersList(mapped);
+      } else {
+        setFetchError(response.data?.message || "Failed to fetch today's absent teachers.");
+      }
+    } catch (err: any) {
+      console.error("Error fetching absent teachers:", err);
+      setFetchError(
+        err?.response?.data?.message ||
+        err?.message ||
+        "An error occurred while fetching absent teachers."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const fetchTeacherTimetable = React.useCallback(async (teacherId: number | string) => {
+    try {
+      setIsTimetableLoading(true);
+      setTimetableError(null);
+      setTimetableEmptyMessage(null);
+      
+      let response;
+      const urlWithSlash = `/teacher-todays-timetable/${teacherId}/`;
+      
+      try {
+        response = await api.get(urlWithSlash);
+      } catch (err: any) {
+        const msg = getNoTimetableMessage(err?.response);
+        if (msg) {
+          response = { data: { status: false, message: msg } };
+        } else if (err?.response?.status === 404) {
+          // Retry without trailing slash if it was a generic 404
+          const urlWithoutSlash = `/teacher-todays-timetable/${teacherId}`;
+          try {
+            response = await api.get(urlWithoutSlash);
+          } catch (retryErr: any) {
+            const retryMsg = getNoTimetableMessage(retryErr?.response);
+            if (retryMsg) {
+              response = { data: { status: false, message: retryMsg } };
+            } else {
+              throw retryErr;
+            }
+          }
+        } else {
+          throw err;
+        }
+      }
+
+      if (response.data) {
+        if (response.data.status) {
+          const mapped: TimetableRow[] = (response.data.data || []).map((item: any) => {
+            const className = item.class_assigned
+              ? `${item.class_assigned.class_name}-${item.class_assigned.section}`
+              : "Unknown";
+            return {
+              id: item.id,
+              teacherId: String(teacherId),
+              period: item.period ? `Period ${item.period}` : "Unknown",
+              batch: "2024 Batch",
+              className: className,
+              subject: item.subject || "Unknown",
+            };
+          });
+          setTimetableList(mapped);
+        } else {
+          setTimetableList([]);
+          setTimetableEmptyMessage(response.data.message || "No timetable found.");
+        }
+      } else {
+        setTimetableError("Failed to fetch today's timetable.");
+      }
+    } catch (err: any) {
+      const msg = getNoTimetableMessage(err?.response);
+      if (msg) {
+        setTimetableList([]);
+        setTimetableEmptyMessage(msg);
+      } else {
+        console.error("Error fetching teacher timetable:", err);
+        setTimetableError(
+          err?.response?.data?.message ||
+          err?.message ||
+          "An error occurred while fetching teacher timetable."
+        );
+      }
+    } finally {
+      setIsTimetableLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchAbsentTeachers();
+  }, [fetchAbsentTeachers]);
+
+  React.useEffect(() => {
+  if (selectedTeacher?.teacher_id) {
+    fetchTeacherTimetable(selectedTeacher.teacher_id);
+  }
+}, [selectedTeacher, fetchTeacherTimetable]); 
 
   const handleAssign = (teacher: AbsentTeacher) => {
     setSelectedTeacher(teacher);
@@ -106,6 +221,7 @@ const AssignSubstitute = ({ onSubstituteAssigned }: AssignSubstituteProps) => {
   };
 
   const handleSelectTeacher = (teacher: FreeTeacher) => {
+    if (!selectedTeacher || !selectedTimetable) return;
     onSubstituteAssigned?.(
       createSubstituteAssignment(selectedTeacher, selectedTimetable, teacher)
     );
@@ -153,15 +269,31 @@ const AssignSubstitute = ({ onSubstituteAssigned }: AssignSubstituteProps) => {
       </div>
 
       <div className="rounded-[10px] bg-white px-6 py-6">
-        {step === 1 && <StepOne onAssign={handleAssign} />}
-        {step === 2 && (
-          <StepTwo
-            selectedTeacher={selectedTeacher}
-            onBack={() => setStep(1)}
-            onNeedSubstitute={handleNeedSubstitute}
+        {step === 1 && (
+          <StepOne
+            teachers={teachersList}
+            isLoading={isLoading}
+            error={fetchError}
+            onAssign={handleAssign}
+            onRetry={fetchAbsentTeachers}
           />
         )}
-        {step === 3 && (
+        {step === 2 && selectedTeacher && (
+          <StepTwo
+            selectedTeacher={selectedTeacher}
+            timetableRows={timetableList}
+            isLoading={isTimetableLoading}
+            error={timetableError}
+            emptyMessage={timetableEmptyMessage}
+            onBack={() => setStep(1)}
+            onNeedSubstitute={handleNeedSubstitute}
+            onRetry={() => {
+              const idToFetch = selectedTeacher.teacher_id || selectedTeacher.id;
+              fetchTeacherTimetable(idToFetch);
+            }}
+          />
+        )}
+        {step === 3 && selectedTimetable && (
           <StepThree
             onBack={() => setStep(2)}
             onSelectTeacher={handleSelectTeacher}
@@ -173,12 +305,34 @@ const AssignSubstitute = ({ onSubstituteAssigned }: AssignSubstituteProps) => {
   );
 };
 
-const StepOne = ({ onAssign }: { onAssign: (teacher: AbsentTeacher) => void }) => {
+const StepOne = ({
+  teachers,
+  isLoading,
+  error,
+  onAssign,
+  onRetry,
+}: {
+  teachers: AbsentTeacher[];
+  isLoading: boolean;
+  error: string | null;
+  onAssign: (teacher: AbsentTeacher) => void;
+  onRetry: () => void;
+}) => {
   return (
     <div>
-      <h3 className="mb-6 text-[16px] font-medium text-[#2F2F2F]">
-        Step 1: Today&apos;s Absent Teachers
-      </h3>
+      <div className="mb-6 flex items-center justify-between">
+        <h3 className="text-[16px] font-medium text-[#2F2F2F]">
+          Step 1: Today&apos;s Absent Teachers
+        </h3>
+        <button
+          onClick={onRetry}
+          disabled={isLoading}
+          className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-600 disabled:opacity-50"
+        >
+          <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
+          Refresh
+        </button>
+      </div>
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[820px] text-sm">
@@ -186,36 +340,69 @@ const StepOne = ({ onAssign }: { onAssign: (teacher: AbsentTeacher) => void }) =
             <tr>
               <th className="py-3 text-left">Teacher ID</th>
               <th className="text-left">Teacher Name</th>
-              <th className="text-left">Subject</th>
-              <th className="text-left">Reason</th>
+              <th className="text-left">Role / Designation</th>
+              <th className="text-left">Leave Reason</th>
               <th className="text-left">Date</th>
-              <th className="text-left">Status</th>
+              <th className="text-left">Action</th>
             </tr>
           </thead>
 
           <tbody>
-            {absentTeachers.map((teacher) => (
-              <tr key={teacher.id} className="border-b">
-                <td className="py-4 text-[#454545]">{teacher.id}</td>
-                <td className="text-[#2F2F2F]">{teacher.name}</td>
-                <td className="text-[#454545]">{teacher.subject}</td>
-                <td>
-                  <span className="rounded-full border border-orange-300 px-3 py-1 text-xs text-orange-500">
-                    {teacher.reason}
-                  </span>
-                </td>
-                <td className="text-[#454545]">{teacher.date}</td>
-                <td>
-                  <button
-                    type="button"
-                    onClick={() => onAssign(teacher)}
-                    className="rounded-[6px] border border-blue-500 px-3 py-1 text-xs text-blue-500 transition hover:bg-blue-50"
-                  >
-                    Assign
-                  </button>
+            {isLoading ? (
+              <tr>
+                <td colSpan={6} className="py-10 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2 text-gray-500">
+                    <Loader2 className="animate-spin text-blue-500" size={24} />
+                    <span>Fetching today's absent teachers...</span>
+                  </div>
                 </td>
               </tr>
-            ))}
+            ) : error ? (
+              <tr>
+                <td colSpan={6} className="py-10 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2 text-red-500">
+                    <AlertCircle size={24} />
+                    <span className="font-medium">Error loading list</span>
+                    <span className="text-xs text-gray-500">{error}</span>
+                    <button
+                      onClick={onRetry}
+                      className="mt-2 rounded bg-red-100 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-200"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ) : teachers.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-10 text-center text-gray-500">
+                  No absent teachers recorded for today.
+                </td>
+              </tr>
+            ) : (
+              teachers.map((teacher) => (
+                <tr key={teacher.id} className="border-b">
+                  <td className="py-4 text-[#454545]">{teacher.id}</td>
+                  <td className="text-[#2F2F2F]">{teacher.name}</td>
+                  <td className="text-[#454545]">{teacher.subject}</td>
+                  <td>
+                    <span className="rounded-full border border-orange-300 px-3 py-1 text-xs text-orange-500 bg-orange-50/50">
+                      {teacher.reason}
+                    </span>
+                  </td>
+                  <td className="text-[#454545]">{formatDateForDisplay(teacher.date)}</td>
+                  <td>
+                    <button
+                      type="button"
+                      onClick={() => onAssign(teacher)}
+                      className="rounded-[6px] border border-blue-500 px-3 py-1 text-xs text-blue-500 transition hover:bg-blue-50"
+                    >
+                      Assign
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -225,19 +412,38 @@ const StepOne = ({ onAssign }: { onAssign: (teacher: AbsentTeacher) => void }) =
 
 const StepTwo = ({
   selectedTeacher,
+  timetableRows,
+  isLoading,
+  error,
+  emptyMessage,
   onBack,
   onNeedSubstitute,
+  onRetry,
 }: {
   selectedTeacher: AbsentTeacher;
+  timetableRows: TimetableRow[];
+  isLoading: boolean;
+  error: string | null;
+  emptyMessage: string | null;
   onBack: () => void;
   onNeedSubstitute: (row: TimetableRow) => void;
+  onRetry: () => void;
 }) => {
   return (
     <div>
-      <h3 className="mb-5 text-[16px] font-normal text-[#161616]">
-        Step 2: Regular Teacher Timetable ({selectedTeacher.name} - May{" "}
-        {selectedTeacher.date})
-      </h3>
+      <div className="mb-5 flex items-center justify-between">
+        <h3 className="text-[16px] font-normal text-[#161616]">
+          Step 2: Regular Teacher Timetable ({selectedTeacher.name} - {formatDateForDisplay(selectedTeacher.date)})
+        </h3>
+        <button
+          onClick={onRetry}
+          disabled={isLoading}
+          className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-600 disabled:opacity-50"
+        >
+          <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
+          Refresh
+        </button>
+      </div>
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[860px] text-[15px]">
@@ -253,24 +459,57 @@ const StepTwo = ({
           </thead>
 
           <tbody>
-            {timetableRows.map((row) => (
-              <tr key={`${row.teacherId}-${row.period}`} className="border-b border-[#E4E4E4]">
-                <td className="px-9 py-4 text-[#454545]">{row.teacherId}</td>
-                <td className="px-8 text-[#454545]">{row.period}</td>
-                <td className="px-8 font-medium text-[#454545]">{row.batch}</td>
-                <td className="px-8 font-medium text-[#454545]">{row.className}</td>
-                <td className="px-8 text-[#454545]">{row.subject}</td>
-                <td className="px-8">
-                  <button
-                    type="button"
-                    onClick={() => onNeedSubstitute(row)}
-                    className="rounded-[6px] border border-red-500 px-3 py-1 text-[15px] font-medium leading-none text-red-500 transition hover:bg-red-50"
-                  >
-                    Need Substitute
-                  </button>
+            {isLoading ? (
+              <tr>
+                <td colSpan={6} className="py-10 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2 text-gray-500">
+                    <Loader2 className="animate-spin text-blue-500" size={24} />
+                    <span>Fetching teacher's timetable...</span>
+                  </div>
                 </td>
               </tr>
-            ))}
+            ) : error ? (
+              <tr>
+                <td colSpan={6} className="py-10 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2 text-red-500">
+                    <AlertCircle size={24} />
+                    <span className="font-medium">Error loading timetable</span>
+                    <span className="text-xs text-gray-500">{error}</span>
+                    <button
+                      onClick={onRetry}
+                      className="mt-2 rounded bg-red-100 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-200"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ) : timetableRows.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-10 text-center text-gray-500">
+                  {emptyMessage || "No classes scheduled for this teacher today."}
+                </td>
+              </tr>
+            ) : (
+              timetableRows.map((row) => (
+                <tr key={`${row.teacherId}-${row.period}-${row.id || row.className}`} className="border-b border-[#E4E4E4]">
+                  <td className="px-9 py-4 text-[#454545]">{row.teacherId}</td>
+                  <td className="px-8 text-[#454545]">{row.period}</td>
+                  <td className="px-8 font-medium text-[#454545]">{row.batch}</td>
+                  <td className="px-8 font-medium text-[#454545]">{row.className}</td>
+                  <td className="px-8 text-[#454545]">{row.subject}</td>
+                  <td className="px-8">
+                    <button
+                      type="button"
+                      onClick={() => onNeedSubstitute(row)}
+                      className="rounded-[6px] border border-red-500 px-3 py-1 text-[15px] font-medium leading-none text-red-500 transition hover:bg-red-50"
+                    >
+                      Need Substitute
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -389,8 +628,41 @@ const createSubstituteAssignment = (
 };
 
 const formatAssignmentDate = (date: string) => {
-  const [day, month, year] = date.split("-");
-  return `${year}-${month}-${day}`;
+  if (!date) return "";
+  const parts = date.split("-");
+  if (parts.length === 3) {
+    if (parts[0].length === 4) {
+      // YYYY-MM-DD -> YYYY-MM-DD
+      return date;
+    }
+    // DD-MM-YYYY -> YYYY-MM-DD
+    const [day, month, year] = parts;
+    return `${year}-${month}-${day}`;
+  }
+  return date;
+};
+
+const formatDateForDisplay = (dateStr: string) => {
+  if (!dateStr) return "";
+  try {
+    const parts = dateStr.split("-");
+    if (parts.length === 3) {
+      if (parts[0].length === 4) {
+        // YYYY-MM-DD
+        const [year, month, day] = parts;
+        const d = new Date(Number(year), Number(month) - 1, Number(day));
+        return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      } else {
+        // DD-MM-YYYY
+        const [day, month, year] = parts;
+        const d = new Date(Number(year), Number(month) - 1, Number(day));
+        return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      }
+    }
+  } catch (e) {
+    // fallback
+  }
+  return dateStr;
 };
 
 export default AssignSubstitute;

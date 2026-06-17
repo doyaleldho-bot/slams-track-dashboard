@@ -2,70 +2,46 @@ import React from "react";
 import { FiSearch, FiEdit2, FiTrash2 } from "react-icons/fi";
 import { FaUser } from "react-icons/fa";
 
-const NonTeachingTable: React.FC<{ data?: any[] }> = ({ data }) => {
+interface NonTeachingTableProps {
+  data?: any[];
+  isLoading?: boolean;
+  error?: string | null;
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
+  onEditStaff?: (staff: any) => void;
+  onDeleteStaff?: (id: string) => void;
+}
+
+const NonTeachingTable: React.FC<NonTeachingTableProps> = ({
+  data = [],
+  isLoading = false,
+  error = null,
+  currentPage = 1,
+  totalPages = 1,
+  onPageChange,
+  onEditStaff,
+  onDeleteStaff,
+}) => {
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [departmentFilter, setDepartmentFilter] = React.useState(
-    "All Department"
-  );
+  const [departmentFilter, setDepartmentFilter] = React.useState("All Department");
   const [statusFilter, setStatusFilter] = React.useState("All Status");
 
-  const items =
-    data && data.length
-      ? data
-      : [
-          {
-            id: "NTS001",
-            name: "Ayesha Khan",
-            phone: "+1 234-567-8901",
-            email: "ayesha.k@school.com",
-            department: "Administration",
-            attendance: "95%",
-            status: "Active",
-          },
-          {
-            id: "NTS002",
-            name: "Ravi Patel",
-            phone: "+1 234-567-8902",
-            email: "ravi.p@school.com",
-            department: "Library",
-            attendance: "92%",
-            status: "Active",
-          },
-          {
-            id: "NTS003",
-            name: "Meera Singh",
-            phone: "+1 234-567-8903",
-            email: "meera.s@school.com",
-            department: "Transport",
-            attendance: "88%",
-            status: "Inactive",
-          },
-          {
-            id: "NTS004",
-            name: "John Doe",
-            phone: "+1 234-567-8904",
-            email: "john.d@school.com",
-            department: "Front Office",
-            attendance: "90%",
-            status: "Active",
-          },
-          {
-            id: "NTS005",
-            name: "Sara Nair",
-            phone: "+1 234-567-8905",
-            email: "sara.n@school.com",
-            department: "Cafeteria",
-            attendance: "93%",
-            status: "Active",
-          },
-        ];
+  // Normalise API fields → display fields
+  const items = data.map((t) => ({
+    ...t,
+    id: t.user_id ?? t.id,
+    name: t.staff_name ?? t.name,
+    phone: t.phone_number ?? t.phone,
+    dbId: t.id,
+  }));
 
   const filteredItems = items.filter((item) => {
     const query = searchQuery.trim().toLowerCase();
     const matchesSearch =
       query === "" ||
-      item.name.toLowerCase().includes(query) ||
-      item.id.toLowerCase().includes(query);
+      item.name?.toLowerCase().includes(query) ||
+      String(item.id).toLowerCase().includes(query);
     const matchesDepartment =
       departmentFilter === "All Department" ||
       item.department === departmentFilter;
@@ -73,6 +49,29 @@ const NonTeachingTable: React.FC<{ data?: any[] }> = ({ data }) => {
       statusFilter === "All Status" || item.status === statusFilter;
     return matchesSearch && matchesDepartment && matchesStatus;
   });
+
+  // Loading skeleton
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-[#F4F6F8] rounded-[18px] p-4 h-16 animate-pulse" />
+        <div className="bg-white rounded-[12px] border p-4 space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-10 bg-gray-100 rounded animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-16 text-red-500 text-sm">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -168,12 +167,17 @@ const NonTeachingTable: React.FC<{ data?: any[] }> = ({ data }) => {
                   </td>
                   <td className="text-center">
                     <div className="inline-flex items-center justify-center gap-4">
-                      <button className="text-indigo-600" aria-label="Edit staff">
+                      <button
+                        className="text-indigo-600"
+                        aria-label="Edit staff"
+                        onClick={() => onEditStaff?.(item)}
+                      >
                         <FiEdit2 />
                       </button>
                       <button
                         className="text-red-600"
                         aria-label="Delete staff"
+                        onClick={() => onDeleteStaff?.(item.id)}
                       >
                         <FiTrash2 />
                       </button>
@@ -187,15 +191,40 @@ const NonTeachingTable: React.FC<{ data?: any[] }> = ({ data }) => {
 
         <div className="flex justify-between items-center mt-4 text-sm text-[#767676]">
           <p>
-            Showing {filteredItems.length} of {items.length} Staff
+            Showing {filteredItems.length} of {items.length} staff
+            {totalPages > 1 && ` — Page ${currentPage} of ${totalPages}`}
           </p>
-          <div className="flex gap-2">
-            <button className="px-2 py-1 border rounded">Previous</button>
-            <button className="px-2 py-1 bg-indigo-600 text-white rounded">1</button>
-            <button className="px-2 py-1 border rounded">2</button>
-            <button className="px-2 py-1 border rounded">3</button>
-            <button className="px-2 py-1 border rounded">Next</button>
-          </div>
+          {totalPages > 1 && (
+            <div className="flex gap-2">
+              <button
+                className="px-2 py-1 border rounded disabled:opacity-40"
+                disabled={currentPage <= 1}
+                onClick={() => onPageChange?.(currentPage - 1)}
+              >
+                Previous
+              </button>
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => onPageChange?.(i + 1)}
+                  className={`px-2 py-1 rounded ${
+                    currentPage === i + 1
+                      ? "bg-indigo-600 text-white"
+                      : "border"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                className="px-2 py-1 border rounded disabled:opacity-40"
+                disabled={currentPage >= totalPages}
+                onClick={() => onPageChange?.(currentPage + 1)}
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
