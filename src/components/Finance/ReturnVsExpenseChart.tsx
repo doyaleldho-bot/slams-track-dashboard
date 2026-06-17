@@ -39,11 +39,26 @@ const ReturnVsExpenseChart: React.FC = () => {
             {
               month: year === "All Year" ? "All Year" : String(year),
               admissionRevenue:
-                Number(totals.total_admission_revenue ?? totals.total_admission ?? totals.admission_revenue ?? 0) || 0,
+                Number(
+                  totals.total_admission_revenue ??
+                    totals.total_admission ??
+                    totals.admission_revenue ??
+                    0,
+                ) || 0,
               feeCollection:
-                Number(totals.total_fee_collection ?? totals.total_amount_collected ?? totals.fee_collection ?? 0) || 0,
+                Number(
+                  totals.total_fee_collection ??
+                    totals.total_amount_collected ??
+                    totals.fee_collection ??
+                    0,
+                ) || 0,
               salaryExpenses:
-                Number(totals.total_salary_expense ?? totals.salary_expenses ?? totals.salary ?? 0) || 0,
+                Number(
+                  totals.total_salary_expense ??
+                    totals.salary_expenses ??
+                    totals.salary ??
+                    0,
+                ) || 0,
             },
           ]);
         } else {
@@ -55,11 +70,7 @@ const ReturnVsExpenseChart: React.FC = () => {
 
           const mappedData = results.map((item: any) => ({
             month:
-              item.month ??
-              item.report_month ??
-              item.name ??
-              item.label ??
-              "",
+              item.month ?? item.report_month ?? item.name ?? item.label ?? "",
             admissionRevenue:
               Number(
                 item.admission_revenue ??

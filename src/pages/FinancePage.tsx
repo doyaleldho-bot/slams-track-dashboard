@@ -75,7 +75,8 @@ const FinancePage: React.FC = () => {
           },
           {
             title: "Total Fee Collection",
-            value: data?.total_fee_collection ?? data?.total_amount_collected ?? 0,
+            value:
+              data?.total_fee_collection ?? data?.total_amount_collected ?? 0,
             icon: <Landmark size={18} className="text-[#083b9a]" />,
           },
           {
