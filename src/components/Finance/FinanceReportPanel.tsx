@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Search, Download } from "lucide-react";
 import StatusBadge from "./StatusBadge";
+import { getFinanceCourseReports } from "../../api/finance";
 
 interface ReportRow {
   course: string;
@@ -14,72 +15,7 @@ interface ReportRow {
   status: "Active" | "Inactive";
 }
 
-const reportRows: ReportRow[] = [
-  {
-    course: "B.com",
-    duration: "4 Year",
-    activeStudents: 105,
-    completedStudents: 1002,
-    revenue: "$25000",
-    pendingFees: "$25000",
-    totalTeachers: 10,
-    batch: "10",
-    status: "Active",
-  },
-  {
-    course: "10th",
-    duration: "1 Year",
-    activeStudents: 100,
-    completedStudents: 1000,
-    revenue: "$25000",
-    pendingFees: "$15000",
-    totalTeachers: 7,
-    batch: "7",
-    status: "Inactive",
-  },
-  {
-    course: "M.com",
-    duration: "1 Year",
-    activeStudents: 100,
-    completedStudents: 1000,
-    revenue: "$25000",
-    pendingFees: "$15000",
-    totalTeachers: 6,
-    batch: "6",
-    status: "Inactive",
-  },
-  {
-    course: "10th",
-    duration: "1 Year",
-    activeStudents: 100,
-    completedStudents: 1000,
-    revenue: "$25000",
-    pendingFees: "$15000",
-    totalTeachers: 8,
-    batch: "6",
-    status: "Inactive",
-  },
-  {
-    course: "BCA",
-    duration: "1 Year",
-    activeStudents: 100,
-    completedStudents: 1000,
-    revenue: "$25000",
-    pendingFees: "$15000",
-    totalTeachers: 9,
-    batch: "6",
-    status: "Inactive",
-  },
-];
-
-const courseOptions = [
-  "All Course & Standard",
-  "All Course",
-  "10th Standard",
-  "B.com 1st Year",
-  "M.com",
-  "BCA",
-];
+const courseOptions = ["All Course & Standard", "All Course"];
 
 const batchOptions = ["All Batch", "Batch 1", "Batch 2", "Batch 3", "Batch 4"];
 
@@ -87,6 +23,56 @@ const FinanceReportPanel: React.FC = () => {
   const [search, setSearch] = useState("");
   const [selectedCourse, setSelectedCourse] = useState(courseOptions[0]);
   const [selectedBatch, setSelectedBatch] = useState(batchOptions[0]);
+  const [reportRows, setReportRows] = useState<ReportRow[]>([]);
+  const [reportMeta, setReportMeta] = useState<{
+    count: number;
+    next: string | null;
+    previous: string | null;
+  }>({ count: 0, next: null, previous: null });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      try {
+        setIsLoading(true);
+        const data = await getFinanceCourseReports(currentPage);
+
+        if (!mounted) return;
+
+        const results = data?.results ?? [];
+
+        const mapped = results.map((item: any) => ({
+          course: item.course_standard ?? item.course_name ?? item.course ?? "",
+          duration: item.duration ?? "",
+          activeStudents: item.active_students ?? 0,
+          completedStudents: item.completed_students ?? 0,
+          revenue: item.revenue_generated ?? item.revenue ?? "",
+          pendingFees: item.pending_fees ?? "",
+          totalTeachers: item.total_teachers ?? 0,
+          batch: item.batch ?? "",
+          status: item.status ?? "Inactive",
+        }));
+
+        setReportRows(mapped);
+        setReportMeta({
+          count: data.count ?? 0,
+          next: data.next,
+          previous: data.previous,
+        });
+      } catch (error) {
+        console.error("Failed to load course reports", error);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [currentPage]);
 
   const filteredRows = useMemo(() => {
     return reportRows.filter((row) => {
@@ -225,22 +211,32 @@ const FinanceReportPanel: React.FC = () => {
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-sm text-[#6B7280]">
         <span>
-          Showing {filteredRows.length} of {reportRows.length} Courses
+          Showing {filteredRows.length} of {reportMeta.count} Courses
         </span>
         <div className="flex items-center gap-2 rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2">
-          <button className="rounded-[10px] px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
+          <button
+            disabled={!reportMeta.previous || isLoading}
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            className={`rounded-[10px] px-3 py-1 text-sm ${
+              !reportMeta.previous
+                ? "text-[#9CA3AF]"
+                : "text-[#6B7280] hover:bg-[#F8F8F8]"
+            }`}
+          >
             Previous
           </button>
-          <button className="rounded-[10px] px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
-            1
-          </button>
           <button className="rounded-[10px] bg-[#083b9a] px-3 py-1 text-sm font-semibold text-white">
-            2
+            {currentPage}
           </button>
-          <button className="rounded-[10px] px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
-            3
-          </button>
-          <button className="rounded-[10px] px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
+          <button
+            disabled={!reportMeta.next || isLoading}
+            onClick={() => setCurrentPage(currentPage + 1)}
+            className={`rounded-[10px] px-3 py-1 text-sm ${
+              !reportMeta.next
+                ? "text-[#9CA3AF]"
+                : "text-[#6B7280] hover:bg-[#F8F8F8]"
+            }`}
+          >
             Next
           </button>
         </div>

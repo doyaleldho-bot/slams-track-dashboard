@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Search, CalendarDays, Eye, Edit3 } from "lucide-react";
 import FinanceAdmissionDetail from "./FinanceAdmissionDetail";
 import StatusBadge from "./StatusBadge";
 import EditAdmissionModal from "./EditAdmissionModal";
+import { getClasses } from "../../services/classApi";
 
 interface AdmissionRow {
   id: string;
@@ -165,7 +166,6 @@ const admissionData: AdmissionRow[] = [
   },
 ];
 
-const courses = ["All Course", "10th Standard", "B.com 1st Year"];
 const admissionIds = [
   "All Admission ID",
   "in123",
@@ -175,7 +175,25 @@ const admissionIds = [
   "in127",
 ];
 
-const FinanceAdmissionPanel: React.FC = () => {
+interface FinanceAdmissionPanelProps {
+  admissions?: AdmissionRow[];
+  admissionCount?: number;
+  currentPage?: number;
+  hasNextPage?: boolean;
+  hasPreviousPage?: boolean;
+  onPageChange?: (page: number) => void;
+  loading?: boolean;
+}
+
+const FinanceAdmissionPanel: React.FC<FinanceAdmissionPanelProps> = ({
+  admissions = [],
+  admissionCount = 0,
+  currentPage = 1,
+  hasNextPage = false,
+  hasPreviousPage = false,
+  onPageChange,
+  loading = false,
+}) => {
   const [search, setSearch] = useState("");
   const [selectedDate, setSelectedDate] = useState(() =>
     new Date().toISOString().slice(0, 10),
@@ -188,9 +206,30 @@ const FinanceAdmissionPanel: React.FC = () => {
   const [editingAdmission, setEditingAdmission] = useState<AdmissionRow | null>(
     null,
   );
+  const [classOptions, setClassOptions] = useState<
+    { id: number; class_name: string }[]
+  >([]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      try {
+        const classes = await getClasses();
+        if (!mounted) return;
+        setClassOptions([{ id: 0, class_name: "All Course" }, ...classes]);
+      } catch (error) {
+        console.error("Failed to load class options", error);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const filteredData = useMemo(() => {
-    return admissionData.filter((row) => {
+    return admissions.filter((row) => {
       const matchesSearch =
         row.id.toLowerCase().includes(search.toLowerCase()) ||
         row.studentName.toLowerCase().includes(search.toLowerCase());
@@ -201,7 +240,15 @@ const FinanceAdmissionPanel: React.FC = () => {
         row.id === selectedAdmissionId;
       return matchesSearch && matchesCourse && matchesAdmissionId;
     });
-  }, [search, selectedCourse, selectedAdmissionId]);
+  }, [admissions, search, selectedCourse, selectedAdmissionId]);
+
+  if (loading) {
+    return (
+      <div className="rounded-[10px] bg-white p-6 shadow-sm">
+        <p className="text-gray-600">Loading admissions...</p>
+      </div>
+    );
+  }
 
   if (selectedAdmission) {
     return (
@@ -274,9 +321,9 @@ const FinanceAdmissionPanel: React.FC = () => {
             onChange={(e) => setSelectedCourse(e.target.value)}
             className="h-11 w-full rounded-[10px] border border-[#E5E7EB] bg-white px-4 text-sm text-[#111827] outline-none"
           >
-            {courses.map((course) => (
-              <option key={course} value={course}>
-                {course}
+            {classOptions.map((course) => (
+              <option key={course.id} value={course.class_name}>
+                {course.class_name}
               </option>
             ))}
           </select>
@@ -377,22 +424,32 @@ const FinanceAdmissionPanel: React.FC = () => {
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-sm text-[#6B7280]">
         <span>
-          Showing {filteredData.length} of {admissionData.length} Students
+          Showing {filteredData.length} of {admissionCount} Students
         </span>
         <div className="flex items-center gap-2 rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2">
-          <button className="rounded-[10px] px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
+          <button
+            disabled={!hasPreviousPage || !onPageChange}
+            onClick={() => onPageChange?.(Math.max(currentPage - 1, 1))}
+            className={`rounded-[10px] px-3 py-1 text-sm ${
+              !hasPreviousPage
+                ? "text-[#9CA3AF]"
+                : "text-[#6B7280] hover:bg-[#F8F8F8]"
+            }`}
+          >
             Previous
           </button>
           <button className="rounded-[10px] bg-[#083b9a] px-3 py-1 text-sm font-semibold text-white">
-            1
+            {currentPage}
           </button>
-          <button className="rounded-[10px] px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
-            2
-          </button>
-          <button className="rounded-[10px] px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
-            3
-          </button>
-          <button className="rounded-[10px] px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
+          <button
+            disabled={!hasNextPage || !onPageChange}
+            onClick={() => onPageChange?.(currentPage + 1)}
+            className={`rounded-[10px] px-3 py-1 text-sm ${
+              !hasNextPage
+                ? "text-[#9CA3AF]"
+                : "text-[#6B7280] hover:bg-[#F8F8F8]"
+            }`}
+          >
             Next
           </button>
         </div>

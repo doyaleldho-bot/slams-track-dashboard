@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Landmark } from "lucide-react";
 import {
   FinanceHeader,
@@ -12,31 +12,151 @@ import {
   ReturnVsExpenseChart,
 } from "../components/Finance";
 import type { FinanceStatItem } from "../components/Finance";
+import { getFinanceDashboard, getFinanceAdmissions } from "../api/finance";
 
 const FinancePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("Payroll");
   const [selectedDate, setSelectedDate] = useState(() =>
     new Date().toISOString().slice(0, 10),
   );
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const statsData: FinanceStatItem[] = [
+  const [statsData, setStatsData] = useState<FinanceStatItem[]>([
     {
       title: "Total Admission",
-      value: "842 / 900",
+      value: "-",
       icon: <Landmark size={18} className="text-[#083b9a]" />,
-      subtitle: "Admission rate 92%",
+      subtitle: undefined,
     },
     {
       title: "Total Amount Collected",
-      value: "$1,50,000",
+      value: "-",
       icon: <Landmark size={18} className="text-[#083b9a]" />,
     },
     {
       title: "Admission Pending amount",
-      value: "$1,50,000",
+      value: "-",
       icon: <Landmark size={18} className="text-[#083b9a]" />,
     },
-  ];
+  ]);
+
+  const [admissionsData, setAdmissionsData] = useState<{
+    count: number;
+    next: string | null;
+    previous: string | null;
+    results: any[];
+  } | null>(null);
+  const [admissionsLoading, setAdmissionsLoading] = useState(false);
+
+  const hasNextPage = Boolean(admissionsData?.next);
+  const hasPreviousPage = Boolean(admissionsData?.previous);
+
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      try {
+        const data = await getFinanceDashboard();
+
+        if (!mounted) return;
+
+        const stats: FinanceStatItem[] = [
+          {
+            title: "Total Admission",
+            value:
+              data?.total_students ??
+              data?.total_admission_revenue ??
+              data?.total_admission ??
+              0,
+            icon: <Landmark size={18} className="text-[#083b9a]" />,
+            subtitle: data?.active_students
+              ? `Active students ${data.active_students}`
+              : undefined,
+          },
+          {
+            title: "Total Fee Collection",
+            value: data?.total_fee_collection ?? data?.total_amount_collected ?? 0,
+            icon: <Landmark size={18} className="text-[#083b9a]" />,
+          },
+          {
+            title: "Total Pending Amount",
+            value: data?.total_pending_amount ?? data?.pending_amount ?? 0,
+            icon: <Landmark size={18} className="text-[#083b9a]" />,
+          },
+        ];
+
+        setStatsData(stats);
+      } catch (err: unknown) {
+        console.error("Failed to fetch finance dashboard", err);
+        const e = err as any;
+        if (e?.response?.status === 401) {
+          localStorage.clear();
+          window.location.href = "/login";
+        }
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [selectedDate]);
+
+  // Fetch admissions when tab is "Admission"
+  useEffect(() => {
+    if (activeTab !== "Admission") return;
+
+    let mounted = true;
+
+    (async () => {
+      setAdmissionsLoading(true);
+      try {
+        const data = await getFinanceAdmissions(currentPage, 10);
+
+        if (!mounted) return;
+
+        const mapped = {
+          ...data,
+          results: data.results.map((item: any) => ({
+            id: item.admission_id ? String(item.admission_id) : String(item.id),
+            studentName: item.student_name ?? "",
+            gender: item.gender ?? "",
+            birthDate: item.admission_date ?? "",
+            course: item.class_name ?? item.course ?? "",
+            admissionDate: item.admission_date ?? "",
+            admissionAmount: item.admission_amount ?? "",
+            receiptId: item.admission_id ?? String(item.id),
+            paidAmount: item.paid_amount ?? "",
+            balanceAmount: item.balance_amount ?? "",
+            paymentMode: item.payment_mode ?? "",
+            paymentStatus: item.payment_status ?? "Pending",
+            fatherName: item.father_name ?? "",
+            motherName: item.mother_name ?? "",
+            address: item.address ?? "",
+            mobileNumber: item.mobile_number ?? "",
+            email: item.email ?? "",
+            documents: item.documents ?? [],
+          })),
+        };
+
+        setAdmissionsData(mapped);
+        setAdmissionsLoading(false);
+      } catch (err: unknown) {
+        console.error("Failed to fetch admissions", err);
+        const e = err as any;
+        if (e?.response?.status === 401) {
+          localStorage.clear();
+          window.location.href = "/login";
+          return;
+        }
+        if (!mounted) return;
+        setAdmissionsLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [activeTab, currentPage]);
 
   const tabs = ["Payroll", "Admission", "Reports"];
 
@@ -74,7 +194,15 @@ const FinancePage: React.FC = () => {
           </div>
 
           {activeTab === "Admission" ? (
-            <FinanceAdmissionPanel />
+            <FinanceAdmissionPanel
+              admissions={admissionsData?.results}
+              admissionCount={admissionsData?.count ?? 0}
+              currentPage={currentPage}
+              hasNextPage={hasNextPage}
+              hasPreviousPage={hasPreviousPage}
+              onPageChange={setCurrentPage}
+              loading={admissionsLoading}
+            />
           ) : activeTab === "Reports" ? (
             <div>
               <div className="mb-4">

@@ -51,7 +51,12 @@ const initialData = {
   },
 };
 
-const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) => {
+const AddStudentModal: React.FC<Props> = ({
+  open,
+  onClose,
+  onSaved,
+  student,
+}) => {
   const [step, setStep] = useState<number>(1);
   const [data, setData] = useState<any>(initialData);
   const [files, setFiles] = useState<Record<string, File | null>>({
@@ -63,7 +68,9 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
     casteCertificate: null,
   });
   const [loading, setLoading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>(
+    {},
+  );
 
   useEffect(() => {
     if (student) {
@@ -101,7 +108,7 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
 
   function updatePersonal<K extends string & keyof typeof initialData.personal>(
     key: K,
-    value: typeof initialData.personal[K]
+    value: (typeof initialData.personal)[K],
   ) {
     setData((prev: any) => ({
       ...prev,
@@ -208,7 +215,6 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
         console.log(key, value);
       }
 
-
       // success
       setLoading(false);
       onSaved && onSaved(payload);
@@ -223,21 +229,19 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
   function StepIndicator() {
     const steps = ["Personal", "Academic", "Payment", "Document"];
 
-
-
     return (
       <div className="flex items-center justify-between px-6 py-6">
         {steps.map((stepName, idx) => (
           <div key={idx} className="flex items-center flex-1">
-
             {/* Step Name */}
             <div
-              className={`px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap ${step > idx + 1
+              className={`px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap ${
+                step > idx + 1
                   ? "bg-green-100 text-green-600"
                   : step === idx + 1
                     ? "bg-black text-white"
                     : "bg-gray-100 text-gray-500"
-                }`}
+              }`}
             >
               {stepName}
             </div>
@@ -245,10 +249,9 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
             {/* Line */}
             {idx < steps.length - 1 && (
               <div
-                className={`h-1 flex-1 mx-2 ${step > idx + 1
-                    ? "bg-green-500"
-                    : "bg-gray-300"
-                  }`}
+                className={`h-1 flex-1 mx-2 ${
+                  step > idx + 1 ? "bg-green-500" : "bg-gray-300"
+                }`}
               />
             )}
           </div>
@@ -265,7 +268,9 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
             <h2 className="text-xl font-semibold">Add New Student</h2>
             <p className="text-sm text-gray-500">Step {step} of 4 — Personal</p>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:opacity-80">✕</button>
+          <button onClick={onClose} className="text-gray-500 hover:opacity-80">
+            ✕
+          </button>
         </div>
 
         <StepIndicator />
@@ -352,7 +357,9 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
                 <label className="text-sm text-gray-600">Father Phone</label>
                 <input
                   value={data.personal.fatherPhone}
-                  onChange={(e) => updatePersonal("fatherPhone", e.target.value)}
+                  onChange={(e) =>
+                    updatePersonal("fatherPhone", e.target.value)
+                  }
                   className="w-full mt-2 p-2.5 bg-gray-100 rounded"
                 />
               </div>
@@ -370,7 +377,9 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
                 <label className="text-sm text-gray-600">Mother Phone</label>
                 <input
                   value={data.personal.motherPhone}
-                  onChange={(e) => updatePersonal("motherPhone", e.target.value)}
+                  onChange={(e) =>
+                    updatePersonal("motherPhone", e.target.value)
+                  }
                   className="w-full mt-2 p-2.5 bg-gray-100 rounded"
                 />
               </div>
@@ -381,42 +390,85 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm text-gray-600">Class</label>
-                <input value={data.academic.className} onChange={(e) => updateAcademic("className", e.target.value)} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <input
+                  value={data.academic.className}
+                  onChange={(e) => updateAcademic("className", e.target.value)}
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
 
               <div>
                 <label className="text-sm text-gray-600">Batch</label>
-                <input value={data.academic.batch} onChange={(e) => updateAcademic("batch", e.target.value)} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <input
+                  value={data.academic.batch}
+                  onChange={(e) => updateAcademic("batch", e.target.value)}
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
 
               <div>
                 <label className="text-sm text-gray-600">Section</label>
-                <input value={data.academic.section} onChange={(e) => updateAcademic("section", e.target.value)} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <input
+                  value={data.academic.section}
+                  onChange={(e) => updateAcademic("section", e.target.value)}
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
 
               <div>
                 <label className="text-sm text-gray-600">Admission Date</label>
-                <input type="date" value={data.academic.admissionDate} onChange={(e) => updateAcademic("admissionDate", e.target.value)} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <input
+                  type="date"
+                  value={data.academic.admissionDate}
+                  onChange={(e) =>
+                    updateAcademic("admissionDate", e.target.value)
+                  }
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
 
               <div>
                 <label className="text-sm text-gray-600">Student Type</label>
-                <input value={data.academic.studentType} onChange={(e) => updateAcademic("studentType", e.target.value)} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <input
+                  value={data.academic.studentType}
+                  onChange={(e) =>
+                    updateAcademic("studentType", e.target.value)
+                  }
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
 
               <div>
-                <label className="text-sm text-gray-600">Previous Qualification</label>
-                <input value={data.academic.previousQualification} onChange={(e) => updateAcademic("previousQualification", e.target.value)} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <label className="text-sm text-gray-600">
+                  Previous Qualification
+                </label>
+                <input
+                  value={data.academic.previousQualification}
+                  onChange={(e) =>
+                    updateAcademic("previousQualification", e.target.value)
+                  }
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
 
               <div>
                 <label className="text-sm text-gray-600">Status</label>
-                <input value={data.academic.status} onChange={(e) => updateAcademic("status", e.target.value)} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <input
+                  value={data.academic.status}
+                  onChange={(e) => updateAcademic("status", e.target.value)}
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
 
               <div>
                 <label className="text-sm text-gray-600">Admission Id</label>
-                <input value={data.academic.admissionId} onChange={(e) => updateAcademic("admissionId", e.target.value)} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <input
+                  value={data.academic.admissionId}
+                  onChange={(e) =>
+                    updateAcademic("admissionId", e.target.value)
+                  }
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
             </div>
           )}
@@ -424,33 +476,75 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
           {step === 3 && (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm text-gray-600">Admission Amount (₹)</label>
-                <input type="number" value={data.payment.admissionAmount} onChange={(e) => updatePayment("admissionAmount", Number(e.target.value))} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <label className="text-sm text-gray-600">
+                  Admission Amount (₹)
+                </label>
+                <input
+                  type="number"
+                  value={data.payment.admissionAmount}
+                  onChange={(e) =>
+                    updatePayment("admissionAmount", Number(e.target.value))
+                  }
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
 
               <div>
                 <label className="text-sm text-gray-600">Course Fee (₹)</label>
-                <input type="number" value={data.payment.courseFee} onChange={(e) => updatePayment("courseFee", Number(e.target.value))} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <input
+                  type="number"
+                  value={data.payment.courseFee}
+                  onChange={(e) =>
+                    updatePayment("courseFee", Number(e.target.value))
+                  }
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
 
               <div>
                 <label className="text-sm text-gray-600">Discount (₹)</label>
-                <input type="number" value={data.payment.discount} onChange={(e) => updatePayment("discount", Number(e.target.value))} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <input
+                  type="number"
+                  value={data.payment.discount}
+                  onChange={(e) =>
+                    updatePayment("discount", Number(e.target.value))
+                  }
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
 
               <div>
                 <label className="text-sm text-gray-600">Paid Amount (₹)</label>
-                <input type="number" value={data.payment.paidAmount} onChange={(e) => updatePayment("paidAmount", Number(e.target.value))} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <input
+                  type="number"
+                  value={data.payment.paidAmount}
+                  onChange={(e) =>
+                    updatePayment("paidAmount", Number(e.target.value))
+                  }
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
 
               <div>
                 <label className="text-sm text-gray-600">Payment Mode</label>
-                <input value={data.payment.paymentMode} onChange={(e) => updatePayment("paymentMode", e.target.value)} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <input
+                  value={data.payment.paymentMode}
+                  onChange={(e) => updatePayment("paymentMode", e.target.value)}
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
 
               <div>
-                <label className="text-sm text-gray-600">Installment Plan</label>
-                <input value={data.payment.installmentPlan} onChange={(e) => updatePayment("installmentPlan", e.target.value)} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <label className="text-sm text-gray-600">
+                  Installment Plan
+                </label>
+                <input
+                  value={data.payment.installmentPlan}
+                  onChange={(e) =>
+                    updatePayment("installmentPlan", e.target.value)
+                  }
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
             </div>
           )}
@@ -458,12 +552,36 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
           {step === 4 && (
             <div className="grid gap-3">
               {[
-                { key: "studentPhoto", label: "Student Photo", desc: "Upload a clear photo" },
-                { key: "birthCertificate", label: "Birth Certificate", desc: "PDF or Image" },
-                { key: "previousTc", label: "Previous School TC", desc: "PDF or Image" },
-                { key: "aadhar", label: "Aadhar Card (Student)", desc: "PDF or Image" },
-                { key: "parentProof", label: "Parent ID Proof", desc: "PDF or Image" },
-                { key: "casteCertificate", label: "Caste / Category Certificate", desc: "PDF or Image" },
+                {
+                  key: "studentPhoto",
+                  label: "Student Photo",
+                  desc: "Upload a clear photo",
+                },
+                {
+                  key: "birthCertificate",
+                  label: "Birth Certificate",
+                  desc: "PDF or Image",
+                },
+                {
+                  key: "previousTc",
+                  label: "Previous School TC",
+                  desc: "PDF or Image",
+                },
+                {
+                  key: "aadhar",
+                  label: "Aadhar Card (Student)",
+                  desc: "PDF or Image",
+                },
+                {
+                  key: "parentProof",
+                  label: "Parent ID Proof",
+                  desc: "PDF or Image",
+                },
+                {
+                  key: "casteCertificate",
+                  label: "Caste / Category Certificate",
+                  desc: "PDF or Image",
+                },
               ].map((doc) => {
                 const prog = uploadProgress[doc.key] || 0;
                 const isUploading = prog > 0 && prog < 100;
@@ -474,7 +592,9 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
                   <div key={doc.key} className="bg-gray-100 p-3 rounded">
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div>
-                        <div className="text-sm font-medium text-gray-700">{doc.label}</div>
+                        <div className="text-sm font-medium text-gray-700">
+                          {doc.label}
+                        </div>
                         <div className="text-xs text-gray-500">{doc.desc}</div>
 
                         {uploadedFile && (
@@ -485,12 +605,17 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
                       </div>
                       <div className="flex gap-2">
                         <label
-                          className={`px-3 py-2 rounded font-medium cursor-pointer text-sm transition-all ${isComplete
+                          className={`px-3 py-2 rounded font-medium cursor-pointer text-sm transition-all ${
+                            isComplete
                               ? "bg-green-500 text-white"
                               : "bg-blue-500 text-white hover:bg-blue-600"
-                            }`}
+                          }`}
                         >
-                          {isComplete ? "✓ Uploaded" : isUploading ? "Uploading..." : "Upload"}
+                          {isComplete
+                            ? "✓ Uploaded"
+                            : isUploading
+                              ? "Uploading..."
+                              : "Upload"}
 
                           <input
                             type="file"
@@ -520,7 +645,9 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
                             style={{ width: `${prog}%` }}
                           />
                         </div>
-                        <div className="text-xs text-gray-600 w-10 text-right">{Math.round(prog)}%</div>
+                        <div className="text-xs text-gray-600 w-10 text-right">
+                          {Math.round(prog)}%
+                        </div>
                       </div>
                     )}
                   </div>
@@ -533,12 +660,19 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
         <div className="flex items-center justify-between px-6 py-4 border-t">
           <div>
             {step > 1 && (
-              <button onClick={() => setStep(step - 1)} className="px-4 py-2 bg-gray-200 rounded">◀ Back</button>
+              <button
+                onClick={() => setStep(step - 1)}
+                className="px-4 py-2 bg-gray-200 rounded"
+              >
+                ◀ Back
+              </button>
             )}
           </div>
 
           <div className="flex items-center gap-3">
-            <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+            <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">
+              Cancel
+            </button>
 
             {step < 4 && (
               <button
@@ -550,7 +684,11 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
             )}
 
             {step === 4 && (
-              <button onClick={handleSave} disabled={loading} className="px-6 py-2 bg-blue-700 text-white rounded">
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                className="px-6 py-2 bg-blue-700 text-white rounded"
+              >
                 {loading ? "Saving..." : "Save"}
               </button>
             )}

@@ -60,6 +60,8 @@ const api = axios.create({
   },
 });
 
+const isValidToken = (token: string | null | undefined) =>
+  Boolean(token && token !== "undefined" && token !== "null" && token.trim() !== "");
 
 // ===============================
 // 1. REQUEST INTERCEPTOR
@@ -69,7 +71,7 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("access_token");
 
-    if (token) {
+    if (isValidToken(token)) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
@@ -97,8 +99,8 @@ api.interceptors.response.use(
       originalRequest.url?.includes("/token-refresh/") ||
       originalRequest.url?.includes("/logout")
     ) {
-      localStorage.clear();
-      window.location.href = "/login";
+      // localStorage.clear();
+      // window.location.href = "/login";
       return Promise.reject(error);
     }
 
@@ -109,24 +111,33 @@ api.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem("refresh_token");
 
+        if (!isValidToken(refreshToken)) {
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
+          return Promise.reject(error);
+        }
+
         const res = await api.post("/token-refresh/", {
           refresh: refreshToken,
         });
 
         const newAccessToken = res.data.access;
 
-        // store new access token
-        localStorage.setItem("access_token", newAccessToken);
+        if (isValidToken(newAccessToken)) {
+          // store new access token
+          localStorage.setItem("access_token", newAccessToken);
+          // update header for retry
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          return api(originalRequest);
+        }
 
-        // update header for retry
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-
-        // retry original request
-        return api(originalRequest);
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        return Promise.reject(error);
 
       } catch (err) {
-        localStorage.clear();
-        window.location.href = "/login";
+        // localStorage.clear();
+        // window.location.href = "/login";
         return Promise.reject(err);
       }
     }

@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Search, Trash2, Download } from "lucide-react";
+import { getFinanceStudentReports } from "../../api/finance";
 import StatusBadge from "./StatusBadge";
 
 interface StudentRow {
@@ -14,81 +15,82 @@ interface StudentRow {
   status: "Active" | "Inactive" | "Drop out";
 }
 
-const studentRows: StudentRow[] = [
-  {
-    course: "B.com 1st Year",
-    studentName: "Devanand",
-    admissionNumber: "AD105",
-    gender: "Male",
-    collectedFees: "$25000",
-    attendance: "75%",
-    batch: "2019",
-    parentNumber: "3625012589",
-    status: "Active",
-  },
-  {
-    course: "10th A Section",
-    studentName: "Deva",
-    admissionNumber: "AD105",
-    gender: "Male",
-    collectedFees: "$25000",
-    attendance: "35%",
-    batch: "2019",
-    parentNumber: "6525895641",
-    status: "Inactive",
-  },
-  {
-    course: "M.com 3rd Year",
-    studentName: "Deva",
-    admissionNumber: "AD105",
-    gender: "Male",
-    collectedFees: "$25000",
-    attendance: "35%",
-    batch: "2019",
-    parentNumber: "6352145258",
-    status: "Drop out",
-  },
-  {
-    course: "M.com 3rd Year",
-    studentName: "Deva",
-    admissionNumber: "AD105",
-    gender: "Male",
-    collectedFees: "$25000",
-    attendance: "35%",
-    batch: "2019",
-    parentNumber: "958745623",
-    status: "Drop out",
-  },
-  {
-    course: "M.com 3rd Year",
-    studentName: "Deva",
-    admissionNumber: "AD105",
-    gender: "Male",
-    collectedFees: "$25000",
-    attendance: "35%",
-    batch: "2019",
-    parentNumber: "9874563214",
-    status: "Drop out",
-  },
-];
-
-const courseOptions = [
-  "All Course & Standard",
-  "All Course",
-  "10th Standard",
-  "B.com 1st Year",
-  "M.com",
-  "BCA",
-];
-const batchOptions = ["All Batch", "2019", "2020", "2021"];
-const genderOptions = ["All Gender", "Male", "Female", "Other"];
-
 const FinanceStudentReportPanel: React.FC = () => {
+  const [studentRows, setStudentRows] = useState<StudentRow[]>([]);
+  const [reportMeta, setReportMeta] = useState<{
+    count: number;
+    next: string | null;
+    previous: string | null;
+  }>({ count: 0, next: null, previous: null });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const courseOptions = [
+    "All Course & Standard",
+    "All Course",
+    "10th Standard",
+    "B.com 1st Year",
+    "M.com",
+    "BCA",
+  ];
+  const batchOptions = ["All Batch", "2019", "2020", "2021"];
+  const genderOptions = ["All Gender", "Male", "Female", "Other"];
+
   const [search, setSearch] = useState("");
   const [selectedCourse, setSelectedCourse] = useState(courseOptions[0]);
   const [selectedBatch, setSelectedBatch] = useState(batchOptions[0]);
   const [selectedGender, setSelectedGender] = useState(genderOptions[0]);
   const [selectAll, setSelectAll] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setIsLoading(true);
+        const data = await getFinanceStudentReports(currentPage);
+        if (!mounted) return;
+
+        // Handle multiple possible response shapes:
+        // 1) data.results is array
+        // 2) data.results.data is array
+        // 3) data.data is array
+        let results: any[] = [];
+        if (Array.isArray(data?.results)) results = data.results;
+        else if (Array.isArray(data?.results?.data))
+          results = data.results.data;
+        else if (Array.isArray(data?.data)) results = data.data;
+        console.log("Student report raw data:", data);
+        console.log("Student report results length:", results.length);
+        const mapped = results.map((item: any) => ({
+          course: `${item.class_name ?? ""}${item.section ? " - " + item.section : ""}`,
+          studentName: item.fullname ?? item.student_name ?? item.name ?? "",
+          admissionNumber: item.admission_id ?? item.admissionNumber ?? "",
+          gender: item.gender ?? "",
+          collectedFees:
+            item.collected_fees != null ? String(item.collected_fees) : "",
+          attendance: item.attendance_percentage ?? item.attendance ?? "",
+          batch: item.batch ?? "",
+          parentNumber: item.parent_number ?? item.parentNumber ?? "",
+          status: item.student_status ?? item.status ?? "Inactive",
+        }));
+
+        setStudentRows(mapped);
+        setReportMeta({
+          count: data.count ?? 0,
+          next: data.next,
+          previous: data.previous,
+        });
+      } catch (error) {
+        console.error("Failed to load student reports", error);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [currentPage]);
 
   const filtered = useMemo(() => {
     return studentRows.filter((r) => {
@@ -261,22 +263,32 @@ const FinanceStudentReportPanel: React.FC = () => {
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-sm text-[#6B7280]">
         <span>
-          Showing {filtered.length} of {studentRows.length} Students
+          Showing {filtered.length} of {reportMeta.count} Students
         </span>
         <div className="flex items-center gap-2 rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2">
-          <button className="rounded-[10px] px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
+          <button
+            disabled={!reportMeta.previous || isLoading}
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            className={`rounded-[10px] px-3 py-1 text-sm ${
+              !reportMeta.previous
+                ? "text-[#9CA3AF]"
+                : "text-[#6B7280] hover:bg-[#F8F8F8]"
+            }`}
+          >
             Previous
           </button>
-          <button className="rounded-[10px] px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
-            1
-          </button>
           <button className="rounded-[10px] bg-[#083b9a] px-3 py-1 text-sm font-semibold text-white">
-            2
+            {currentPage}
           </button>
-          <button className="rounded-[10px] px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
-            3
-          </button>
-          <button className="rounded-[10px] px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
+          <button
+            disabled={!reportMeta.next || isLoading}
+            onClick={() => setCurrentPage(currentPage + 1)}
+            className={`rounded-[10px] px-3 py-1 text-sm ${
+              !reportMeta.next
+                ? "text-[#9CA3AF]"
+                : "text-[#6B7280] hover:bg-[#F8F8F8]"
+            }`}
+          >
             Next
           </button>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Download } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -10,84 +10,102 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-
-const data = [
-  {
-    month: "January",
-    "Admission Revenue": 900,
-    "fee Collection": 700,
-    "salary expences": 880,
-  },
-  {
-    month: "February",
-    "Admission Revenue": 920,
-    "fee Collection": 720,
-    "salary expences": 890,
-  },
-  {
-    month: "March",
-    "Admission Revenue": 910,
-    "fee Collection": 710,
-    "salary expences": 885,
-  },
-  {
-    month: "April",
-    "Admission Revenue": 905,
-    "fee Collection": 705,
-    "salary expences": 880,
-  },
-  {
-    month: "May",
-    "Admission Revenue": 915,
-    "fee Collection": 715,
-    "salary expences": 890,
-  },
-  {
-    month: "June",
-    "Admission Revenue": 920,
-    "fee Collection": 720,
-    "salary expences": 895,
-  },
-  {
-    month: "July",
-    "Admission Revenue": 930,
-    "fee Collection": 730,
-    "salary expences": 900,
-  },
-  {
-    month: "August",
-    "Admission Revenue": 925,
-    "fee Collection": 725,
-    "salary expences": 895,
-  },
-  {
-    month: "September",
-    "Admission Revenue": 918,
-    "fee Collection": 718,
-    "salary expences": 888,
-  },
-  {
-    month: "October",
-    "Admission Revenue": 928,
-    "fee Collection": 728,
-    "salary expences": 898,
-  },
-  {
-    month: "November",
-    "Admission Revenue": 935,
-    "fee Collection": 735,
-    "salary expences": 905,
-  },
-  {
-    month: "December",
-    "Admission Revenue": 940,
-    "fee Collection": 740,
-    "salary expences": 910,
-  },
-];
+import { getFinanceRevenueReports } from "../../api/finance";
 
 const ReturnVsExpenseChart: React.FC = () => {
   const [year, setYear] = useState("All Year");
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadRevenueData = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await getFinanceRevenueReports(1, 12, year);
+        if (!mounted) return;
+
+        const totals =
+          response?.data ??
+          (Array.isArray(response?.results) ? null : response?.results) ??
+          null;
+
+        if (totals && typeof totals === "object" && !Array.isArray(totals)) {
+          setChartData([
+            {
+              month: year === "All Year" ? "All Year" : String(year),
+              admissionRevenue:
+                Number(totals.total_admission_revenue ?? totals.total_admission ?? totals.admission_revenue ?? 0) || 0,
+              feeCollection:
+                Number(totals.total_fee_collection ?? totals.total_amount_collected ?? totals.fee_collection ?? 0) || 0,
+              salaryExpenses:
+                Number(totals.total_salary_expense ?? totals.salary_expenses ?? totals.salary ?? 0) || 0,
+            },
+          ]);
+        } else {
+          let results: any[] = [];
+          if (Array.isArray(response?.results)) results = response.results;
+          else if (Array.isArray(response?.results?.data))
+            results = response.results.data;
+          else if (Array.isArray(response?.data)) results = response.data;
+
+          const mappedData = results.map((item: any) => ({
+            month:
+              item.month ??
+              item.report_month ??
+              item.name ??
+              item.label ??
+              "",
+            admissionRevenue:
+              Number(
+                item.admission_revenue ??
+                  item.revenue ??
+                  item.admissionRevenue ??
+                  item.admission ??
+                  0,
+              ) || 0,
+            feeCollection:
+              Number(
+                item.fee_collection ??
+                  item.fees_collected ??
+                  item.feeCollection ??
+                  item.fees ??
+                  0,
+              ) || 0,
+            salaryExpenses:
+              Number(
+                item.salary_expenses ??
+                  item.salary_expence ??
+                  item.salary_expenses ??
+                  item.salary ??
+                  item.expense ??
+                  0,
+              ) || 0,
+          }));
+
+          if (mappedData.length > 0) {
+            setChartData(mappedData);
+          }
+        }
+      } catch (fetchError: unknown) {
+        console.error("Failed to fetch revenue report", fetchError);
+        if (!mounted) return;
+        setError("Unable to load revenue data.");
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    loadRevenueData();
+
+    return () => {
+      mounted = false;
+    };
+  }, [year]);
 
   return (
     <div className="rounded-[10px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
@@ -113,10 +131,16 @@ const ReturnVsExpenseChart: React.FC = () => {
         </button>
       </div>
 
+      {error ? (
+        <div className="mb-4 rounded-[10px] bg-[#FEF3C7] px-4 py-3 text-sm text-[#92400E]">
+          {error}
+        </div>
+      ) : null}
+
       <div style={{ width: "100%", height: 320 }}>
         <ResponsiveContainer>
           <BarChart
-            data={data}
+            data={chartData}
             margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
             barCategoryGap="10%"
           >
@@ -146,23 +170,30 @@ const ReturnVsExpenseChart: React.FC = () => {
             />
 
             <Bar
-              dataKey="Admission Revenue"
+              dataKey="admissionRevenue"
+              name="Admission Revenue"
               fill="#0073F9"
               radius={[6, 6, 0, 0]}
             />
             <Bar
-              dataKey="fee Collection"
+              dataKey="feeCollection"
+              name="Fee Collection"
               fill="#8CB92B"
               radius={[6, 6, 0, 0]}
             />
             <Bar
-              dataKey="salary expences"
+              dataKey="salaryExpenses"
+              name="Salary Expenses"
               fill="#6F849C"
               radius={[6, 6, 0, 0]}
             />
           </BarChart>
         </ResponsiveContainer>
       </div>
+
+      {isLoading ? (
+        <div className="mt-4 text-sm text-[#6B7280]">Updating chart data…</div>
+      ) : null}
     </div>
   );
 };
