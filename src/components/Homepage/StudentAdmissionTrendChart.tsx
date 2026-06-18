@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import api from "../../api/axios";
 import {
   PieChart,
   Pie,
@@ -13,22 +14,13 @@ interface AdmissionData {
   color: string;
 }
 
-const data: AdmissionData[] = [
-  {
-    name: "LKG",
-    value: 61,
-    color: "#1B84FF",
-  },
-  {
-    name: "5th Standard",
-    value: 23,
-    color: "#F39205",
-  },
-  {
-    name: "8th Standard",
-    value: 16,
-    color: "#66BB6A",
-  },
+const COLORS = [
+  "#1B84FF",
+  "#F39205",
+  "#66BB6A",
+  "#EF4444",
+  "#8B5CF6",
+  "#14B8A6",
 ];
 
 const CustomTooltip = ({ active, payload }: any) => {
@@ -46,13 +38,50 @@ const CustomTooltip = ({ active, payload }: any) => {
       "
     >
       <span className="text-[16px] font-medium text-[#111827]">
-        {payload[0].value}%
+        {payload[0].value}
       </span>
     </div>
   );
 };
 
 const StudentAdmissionTrendChart = () => {
+  const [data, setData] = useState<AdmissionData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchChartData = async () => {
+      try {
+        const res = await api.get("/dashboard-charts/");
+
+        const trendData = res.data.student_admission_trend || [];
+
+        const formattedData: AdmissionData[] = trendData.map(
+          (item: any, index: number) => ({
+            name: item.label,
+            value: item.value,
+            color: COLORS[index % COLORS.length],
+          })
+        );
+
+        setData(formattedData);
+      } catch (error) {
+        console.error("Error fetching chart data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChartData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-3xl border border-[#E5E7EB] p-6 h-full min-h-[480px] flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-3xl border border-[#E5E7EB] p-6 h-full min-h-[480px]">
       <h3 className="text-[20px] font-semibold text-[#2B2B2B] mb-6">
@@ -98,6 +127,7 @@ const StudentAdmissionTrendChart = () => {
                 backgroundColor: item.color,
               }}
             />
+
             <span className="text-[16px] text-[#666]">
               {item.name}
             </span>
