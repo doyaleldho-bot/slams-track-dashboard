@@ -120,14 +120,14 @@ const [selectedDepartment, setSelectedDepartment] =
               | "Half day",
 
             checkIn:
-              staff.checked_in_time || "---",
+              staff.checked_in_time || "",
 
             checkOut:
               staff.checked_out_time ||
-              "---",
+              "",
 
             remark:
-              staff.remarks || "---",
+              staff.remarks || "",
           })
         );
 

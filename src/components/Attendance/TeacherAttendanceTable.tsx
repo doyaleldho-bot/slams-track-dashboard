@@ -139,7 +139,7 @@ section:
 
     checkOut: teacher.checked_out_time || "",
 
-    remark: teacher.remarks || "---",
+    remark: teacher.remarks || "",
   }));
       setAttendanceData(formattedData);
     } catch (error) {

@@ -436,9 +436,9 @@ value={selectedStaff?.user_id || ""}              onChange={(e) => {
   className="text-[#E7000B] text-[14px] border p-2 rounded-lg hover:bg-red-200"
 >
   Force Logout
-</button>  */}
-{/* <button
-onClick={() => handleLogoutAllDevices}
+</button> 
+<button
+onClick={() => handleLogoutAllDevices()}
  className="text-[#E7000B] text-[14px] border p-2 rounded-lg hover:bg-red-200">
   Logout From All Devices
   </button>   */}

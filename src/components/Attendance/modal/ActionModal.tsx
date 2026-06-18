@@ -19,7 +19,7 @@ const ActionModal: React.FC<ActionModalProps> = ({
 }) => {
   const [formData, setFormData] =
     useState<TeacherAttendance | null>(null);
-
+console.log(teacher)
   useEffect(() => {
     setFormData(teacher);
   }, [teacher]);
@@ -34,7 +34,7 @@ const handleSave = async () => {
       remarks: formData.remark,
       checked_in_time: formData.checkIn,
       checked_out_time:
-        formData.checkOut === "---"
+        formData.checkOut === ""
           ? null
           : formData.checkOut,
     };

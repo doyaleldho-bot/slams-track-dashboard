@@ -176,7 +176,7 @@ const handleSaveTeacher = () => {
   setIsModalOpen(false);
 };
 const [teachers, setTeachers] =
-  useState<TeacherAttendance[]>(initialTeachers);
+  useState<TeacherAttendance[]>([]);
 
 interface AttendanceKPI {
   title: string;
