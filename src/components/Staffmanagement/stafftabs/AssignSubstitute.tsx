@@ -2,6 +2,7 @@ import React from "react";
 import { Check, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import type { SubstituteDetails } from "../SubstituteDetailsModal";
 import api from "../../../api/axios";
+import { toast } from "react-toastify";
 
 type AbsentTeacher = {
   id: string;
@@ -13,42 +14,22 @@ type AbsentTeacher = {
 };
 
 type TimetableRow = {
+  id?: number;       // timetable entry id from the API
+  classId?: number;  // class_assigned.id — needed for available-teachers payload
+  rawPeriod?: string;// raw period number string ("8") — needed for available-teachers payload
   teacherId: string;
-  period: string;
+  period: string;    // display string e.g. "Period 8"
   batch: string;
   className: string;
   subject: string;
 };
 
-type FreeTeacher = {
-  teacherId: string;
-  teacherName: string;
-  department: string;
-  subject: string;
-  currentStatus: string;
-  workload: string;
+// Shape returned by /available-teachers-list/
+type AvailableTeacher = {
+  teacher_id: number;
+  teacher_name: string;
+  user_id: string;
 };
-
-
-
-const freeTeachers: FreeTeacher[] = [
-  {
-    teacherId: "TCH003",
-    teacherName: "Michael Chen",
-    department: "Science",
-    subject: "Physics, Mathematics",
-    currentStatus: "Free",
-    workload: "3 classes",
-  },
-  {
-    teacherId: "TCH005",
-    teacherName: "Lisa Martinez",
-    department: "Science",
-    subject: "Physics, Mathematics",
-    currentStatus: "Free",
-    workload: "2 classes",
-  },
-];
 
 const steps = [
   { number: 1, label: "Select Class" },
@@ -96,6 +77,12 @@ const AssignSubstitute = ({ onSubstituteAssigned }: AssignSubstituteProps) => {
   const [timetableError, setTimetableError] = React.useState<string | null>(null);
   const [timetableEmptyMessage, setTimetableEmptyMessage] = React.useState<string | null>(null);
 
+  // Step 3 — available substitute teachers
+  const [availableTeachers, setAvailableTeachers] = React.useState<AvailableTeacher[]>([]);
+  const [isAvailableLoading, setIsAvailableLoading] = React.useState(false);
+  const [availableError, setAvailableError] = React.useState<string | null>(null);
+  const [isAssigning, setIsAssigning] = React.useState(false);
+
   const fetchAbsentTeachers = React.useCallback(async () => {
     try {
       setIsLoading(true);
@@ -131,74 +118,76 @@ const AssignSubstitute = ({ onSubstituteAssigned }: AssignSubstituteProps) => {
       setIsTimetableLoading(true);
       setTimetableError(null);
       setTimetableEmptyMessage(null);
-      
+
+      console.log(`📅 Fetching timetable for teacher_id: ${teacherId}`);
+
       let response;
-      const urlWithSlash = `/teacher-todays-timetable/${teacherId}/`;
-      
       try {
-        response = await api.get(urlWithSlash);
+        response = await api.get(`/teacher-todays-timetable/${teacherId}/`);
       } catch (err: any) {
-        const msg = getNoTimetableMessage(err?.response);
-        if (msg) {
-          response = { data: { status: false, message: msg } };
-        } else if (err?.response?.status === 404) {
-          // Retry without trailing slash if it was a generic 404
-          const urlWithoutSlash = `/teacher-todays-timetable/${teacherId}`;
-          try {
-            response = await api.get(urlWithoutSlash);
-          } catch (retryErr: any) {
-            const retryMsg = getNoTimetableMessage(retryErr?.response);
-            if (retryMsg) {
-              response = { data: { status: false, message: retryMsg } };
-            } else {
-              throw retryErr;
-            }
-          }
-        } else {
-          throw err;
+        const status = err?.response?.status;
+        const data   = err?.response?.data;
+
+        // ── Any 404 → no timetable today (expected backend behaviour) ──
+        if (status === 404) {
+         const msg =
+  (typeof data === "object" && data !== null
+    ? data.message || data.detail
+    : null) || "No timetable found for today.";
+
+// 👇 Improve here
+setTimetableEmptyMessage(
+  "No classes scheduled for today 📅"
+);
+          setTimetableEmptyMessage(msg);
+          return;
         }
+
+        // ── Backend returned status:false with a "no timetable" message ──
+        const friendlyMsg = getNoTimetableMessage(err?.response);
+        if (friendlyMsg) {
+          setTimetableList([]);
+          setTimetableEmptyMessage(friendlyMsg);
+          return;
+        }
+
+        throw err; // real network / auth error — let outer catch handle it
       }
 
-      if (response.data) {
-        if (response.data.status) {
-          const mapped: TimetableRow[] = (response.data.data || []).map((item: any) => {
-            const className = item.class_assigned
-              ? `${item.class_assigned.class_name}-${item.class_assigned.section}`
-              : "Unknown";
-            return {
-              id: item.id,
-              teacherId: String(teacherId),
-              period: item.period ? `Period ${item.period}` : "Unknown",
-              batch: "2024 Batch",
-              className: className,
-              subject: item.subject || "Unknown",
-            };
-          });
-          setTimetableList(mapped);
-        } else {
-          setTimetableList([]);
-          setTimetableEmptyMessage(response.data.message || "No timetable found.");
-        }
+      if (response?.data?.status) {
+        const mapped: TimetableRow[] = (response.data.data || []).map((item: any) => {
+          const className = item.class_assigned
+            ? `${item.class_assigned.class_name}-${item.class_assigned.section}`
+            : "Unknown";
+          return {
+            id:        item.id,
+            classId:   item.class_assigned?.id,           // needed for Step 3 payload
+            rawPeriod: item.period ? String(item.period) : undefined, // raw "8" for payload
+            teacherId: String(teacherId),
+            period:    item.period ? `Period ${item.period}` : "Unknown",
+            batch:     "2024 Batch",
+            className,
+            subject:   item.subject || "Unknown",
+          };
+        });
+        setTimetableList(mapped);
       } else {
-        setTimetableError("Failed to fetch today's timetable.");
+        setTimetableList([]);
+        setTimetableEmptyMessage(response?.data?.message || "No timetable found for today.");
       }
     } catch (err: any) {
-      const msg = getNoTimetableMessage(err?.response);
-      if (msg) {
-        setTimetableList([]);
-        setTimetableEmptyMessage(msg);
-      } else {
-        console.error("Error fetching teacher timetable:", err);
-        setTimetableError(
-          err?.response?.data?.message ||
-          err?.message ||
-          "An error occurred while fetching teacher timetable."
-        );
-      }
+      console.error("Error fetching teacher timetable:", err);
+      setTimetableError(
+        err?.response?.data?.message ||
+        err?.response?.data?.detail  ||
+        err?.message ||
+        "An error occurred while fetching the timetable."
+      );
     } finally {
       setIsTimetableLoading(false);
     }
   }, []);
+
 
   React.useEffect(() => {
     fetchAbsentTeachers();
@@ -215,17 +204,94 @@ const AssignSubstitute = ({ onSubstituteAssigned }: AssignSubstituteProps) => {
     setStep(2);
   };
 
+  const fetchAvailableTeachers = React.useCallback(
+    async (row: TimetableRow, absentTeacherId: number | string) => {
+      try {
+        setIsAvailableLoading(true);
+        setAvailableError(null);
+        setAvailableTeachers([]);
+
+        const payload = {
+          teacher_id: String(absentTeacherId),
+          period:     row.rawPeriod ?? row.period.replace("Period ", ""),
+          class_id:   String(row.classId ?? ""),
+        };
+
+        console.log("📤 available-teachers payload:", payload);
+
+        const res = await api.post("/available-teachers-list/", payload);
+
+        if (res.data?.status) {
+          setAvailableTeachers(res.data.available_teachers || []);
+        } else {
+          setAvailableError(res.data?.message || "No available teachers found.");
+        }
+      } catch (err: any) {
+        console.error("Error fetching available teachers:", err);
+        setAvailableError(
+          err?.response?.data?.message ||
+          err?.response?.data?.detail ||
+          err?.message ||
+          "Failed to load available teachers."
+        );
+      } finally {
+        setIsAvailableLoading(false);
+      }
+    },
+    []
+  );
+
   const handleNeedSubstitute = (row: TimetableRow) => {
     setSelectedTimetable(row);
     setStep(3);
+    // Fetch available teachers immediately when entering Step 3
+    if (selectedTeacher?.teacher_id) {
+      fetchAvailableTeachers(row, selectedTeacher.teacher_id);
+    }
   };
 
-  const handleSelectTeacher = (teacher: FreeTeacher) => {
+  const handleSelectTeacher = async (teacher: AvailableTeacher) => {
     if (!selectedTeacher || !selectedTimetable) return;
-    onSubstituteAssigned?.(
-      createSubstituteAssignment(selectedTeacher, selectedTimetable, teacher)
-    );
-    setStep(1);
+
+    try {
+      setIsAssigning(true);
+
+      const payload = {
+        class_id:              String(selectedTimetable.classId ?? ""),
+        substitute_teacher_id: teacher.teacher_id,
+        period:                selectedTimetable.rawPeriod ?? selectedTimetable.period.replace("Period ", ""),
+        original_teacher_id:   selectedTeacher.teacher_id as number,
+        date:                  formatAssignmentDate(selectedTeacher.date),
+      };
+
+      console.log("📤 assign-substitute payload:", payload);
+
+      const res = await api.post("/assign-substitute-teacher/", payload);
+
+      if (res.data?.status) {
+        toast.success(res.data.message || "Substitute teacher assigned successfully!");
+        onSubstituteAssigned?.(
+          createSubstituteAssignment(selectedTeacher, selectedTimetable, teacher)
+        );
+        // Reset wizard back to step 1
+        setStep(1);
+        setSelectedTeacher(null);
+        setSelectedTimetable(null);
+        setTimetableList([]);
+        setAvailableTeachers([]);
+      } else {
+        toast.error(res.data?.message || "Failed to assign substitute teacher.");
+      }
+    } catch (err: any) {
+      console.error("Error assigning substitute teacher:", err);
+      toast.error(
+        err?.response?.data?.message ||
+        err?.message ||
+        "An error occurred while assigning the substitute teacher."
+      );
+    } finally {
+      setIsAssigning(false);
+    }
   };
 
   return (
@@ -295,9 +361,18 @@ const AssignSubstitute = ({ onSubstituteAssigned }: AssignSubstituteProps) => {
         )}
         {step === 3 && selectedTimetable && (
           <StepThree
+            selectedTimetable={selectedTimetable}
+            availableTeachers={availableTeachers}
+            isLoading={isAvailableLoading}
+            isAssigning={isAssigning}
+            error={availableError}
             onBack={() => setStep(2)}
             onSelectTeacher={handleSelectTeacher}
-            selectedTimetable={selectedTimetable}
+            onRetry={() => {
+              if (selectedTeacher?.teacher_id) {
+                fetchAvailableTeachers(selectedTimetable, selectedTeacher.teacher_id);
+              }
+            }}
           />
         )}
       </div>
@@ -529,67 +604,117 @@ const StepTwo = ({
 
 const StepThree = ({
   selectedTimetable,
+  availableTeachers,
+  isLoading,
+  isAssigning,
+  error,
   onBack,
   onSelectTeacher,
+  onRetry,
 }: {
   selectedTimetable: TimetableRow;
+  availableTeachers: AvailableTeacher[];
+  isLoading: boolean;
+  isAssigning: boolean;
+  error: string | null;
   onBack: () => void;
-  onSelectTeacher: (teacher: FreeTeacher) => void;
+  onSelectTeacher: (teacher: AvailableTeacher) => void;
+  onRetry: () => void;
 }) => {
   return (
     <div>
-      <h3 className="mb-5 text-[16px] font-normal text-[#161616]">
-        Step 3: Available Teachers ({selectedTimetable.period} : 09:00 - 10:00)
-      </h3>
+      <div className="mb-5 flex items-center justify-between">
+        <h3 className="text-[16px] font-normal text-[#161616]">
+          Step 3: Available Substitute Teachers — {selectedTimetable.period} &bull; {selectedTimetable.className}
+        </h3>
+        <button
+          onClick={onRetry}
+          disabled={isLoading}
+          className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-600 disabled:opacity-50"
+        >
+          <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
+          Refresh
+        </button>
+      </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[960px] text-[15px]">
+        <table className="w-full min-w-[600px] text-[15px]">
           <thead className="border-b border-[#D6D6D6] text-[#4B5563]">
             <tr>
               <th className="px-5 py-3 text-left font-semibold">Teacher ID</th>
+              <th className="px-5 text-left font-semibold">Staff ID</th>
               <th className="px-5 text-left font-semibold">Teacher Name</th>
-              <th className="px-5 text-left font-semibold">Department</th>
-              <th className="px-5 text-left font-semibold">Subject</th>
-              <th className="px-5 text-left font-semibold">Current Status</th>
-              <th className="px-5 text-left font-semibold">Today&apos;s Workload</th>
+              <th className="px-5 text-left font-semibold">Status</th>
               <th className="px-5 text-left font-semibold">Action</th>
             </tr>
           </thead>
 
           <tbody>
-            {freeTeachers.map((teacher) => (
-              <tr key={teacher.teacherId} className="border-b border-[#E4E4E4]">
-                <td className="px-5 py-4 font-medium text-[#454545]">
-                  {teacher.teacherId}
-                </td>
-                <td className="px-5 font-medium text-[#454545]">
-                  {teacher.teacherName}
-                </td>
-                <td className="px-5 font-medium text-[#454545]">
-                  {teacher.department}
-                </td>
-                <td className="px-5 font-medium text-[#454545]">
-                  {teacher.subject}
-                </td>
-                <td className="px-5">
-                  <span className="rounded-[6px] border border-[#22C55E] px-3 py-1 text-[15px] font-normal leading-none text-[#16A34A]">
-                    {teacher.currentStatus}
-                  </span>
-                </td>
-                <td className="px-5 font-medium text-[#454545]">
-                  {teacher.workload}
-                </td>
-                <td className="px-5">
-                  <button
-                    type="button"
-                    onClick={() => onSelectTeacher(teacher)}
-                    className="h-8 min-w-[108px] rounded-[5px] bg-black px-2 text-[12px] font-medium text-white transition hover:bg-[#222222]"
-                  >
-                    Select Teacher
-                  </button>
+            {isLoading ? (
+              <tr>
+                <td colSpan={5} className="py-10 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2 text-gray-500">
+                    <Loader2 className="animate-spin text-blue-500" size={24} />
+                    <span>Finding available teachers...</span>
+                  </div>
                 </td>
               </tr>
-            ))}
+            ) : error ? (
+              <tr>
+                <td colSpan={5} className="py-10 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2 text-red-500">
+                    <AlertCircle size={24} />
+                    <span className="font-medium">Failed to load teachers</span>
+                    <span className="text-xs text-gray-500">{error}</span>
+                    <button
+                      onClick={onRetry}
+                      className="mt-2 rounded bg-red-100 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-200"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ) : availableTeachers.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="py-10 text-center text-gray-500">
+                  No available teachers found for this period.
+                </td>
+              </tr>
+            ) : (
+              availableTeachers.map((teacher) => (
+                <tr key={teacher.teacher_id} className="border-b border-[#E4E4E4]">
+                  <td className="px-5 py-4 font-medium text-[#454545]">
+                    {teacher.teacher_id}
+                  </td>
+                  <td className="px-5 text-[#454545]">
+                    {teacher.user_id}
+                  </td>
+                  <td className="px-5 font-medium text-[#454545]">
+                    {teacher.teacher_name}
+                  </td>
+                  <td className="px-5">
+                    <span className="rounded-[6px] border border-[#22C55E] px-3 py-1 text-[14px] font-normal leading-none text-[#16A34A]">
+                      Available
+                    </span>
+                  </td>
+                  <td className="px-5">
+                    <button
+                      type="button"
+                      onClick={() => onSelectTeacher(teacher)}
+                      disabled={isAssigning}
+                      className="h-8 min-w-[108px] rounded-[5px] bg-black px-2 text-[12px] font-medium text-white transition hover:bg-[#222222] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                    >
+                      {isAssigning ? (
+                        <><Loader2 size={13} className="animate-spin" /> Assigning...</>
+                      ) : (
+                        "Select Teacher"
+                      )}
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -610,20 +735,20 @@ const StepThree = ({
 const createSubstituteAssignment = (
   absentTeacher: AbsentTeacher,
   timetable: TimetableRow,
-  freeTeacher: FreeTeacher
+  substitute: AvailableTeacher
 ): SubstituteDetails => {
   const section = timetable.className.split("-").pop() ?? "A";
   const batchYear = timetable.batch.split(" ")[0] ?? timetable.batch;
 
   return {
-    id: freeTeacher.teacherId,
+    id: substitute.user_id,
     regularTeacher: absentTeacher.name,
-    substituteTeacher: freeTeacher.teacherName,
+    substituteTeacher: substitute.teacher_name,
     batch: `${batchYear}-${section}`,
     section,
     date: formatAssignmentDate(absentTeacher.date),
     reason: absentTeacher.reason,
-    reasonDescription: `${absentTeacher.name} is unavailable due to ${absentTeacher.reason.toLowerCase()}. ${freeTeacher.teacherName} has been assigned for ${timetable.period} in ${timetable.className}.`,
+    reasonDescription: `${absentTeacher.name} is unavailable due to ${absentTeacher.reason.toLowerCase()}. ${substitute.teacher_name} has been assigned for ${timetable.period} in ${timetable.className}.`,
   };
 };
 

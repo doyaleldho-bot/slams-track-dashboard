@@ -193,8 +193,8 @@ const StaffTable = ({
                 <th className="text-left">Phone</th>
                 <th className="text-left">Email</th>
                 <th className="text-left">Department</th>
-                <th className="text-left">Attendance %</th>
-                <th className="text-left">Status</th>
+                {/* <th className="text-left">Attendance %</th> */}
+                {/* <th className="text-left">Status</th> */}
                 <th className="text-left">Actions</th>
               </tr>
             </thead>
@@ -212,7 +212,7 @@ const StaffTable = ({
                   <td>{item.phone}</td>
                   <td>{item.email}</td>
                   <td>{item.department}</td>
-                  <td
+                  {/* <td
                     className={`font-medium ${
                       item.attendance === "92%"
                         ? "text-green-600"
@@ -222,8 +222,8 @@ const StaffTable = ({
                     }`}
                   >
                     {item.attendance}
-                  </td>
-                  <td>
+                  </td> */}
+                  {/* <td>
                     <span
                       className={`px-3 py-1 rounded-full text-xs ${
                         item.status === "Active"
@@ -233,7 +233,7 @@ const StaffTable = ({
                     >
                       {item.status}
                     </span>
-                  </td>
+                  </td> */}
                   <td className="text-center">
                     <div className="inline-flex items-center justify-center gap-4">
 <button

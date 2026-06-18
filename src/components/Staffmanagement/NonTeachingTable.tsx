@@ -124,8 +124,8 @@ const NonTeachingTable: React.FC<NonTeachingTableProps> = ({
                 <th className="text-left">Phone</th>
                 <th className="text-left">Email</th>
                 <th className="text-left">Department</th>
-                <th className="text-left">Attendance %</th>
-                <th className="text-left">Status</th>
+                {/* <th className="text-left">Attendance %</th> */}
+                {/* <th className="text-left">Status</th> */}
                 <th className="text-left">Actions</th>
               </tr>
             </thead>
@@ -143,7 +143,7 @@ const NonTeachingTable: React.FC<NonTeachingTableProps> = ({
                   <td>{item.phone}</td>
                   <td>{item.email}</td>
                   <td>{item.department}</td>
-                  <td
+                  {/* <td
                     className={`font-medium ${
                       item.attendance === "95%"
                         ? "text-green-600"
@@ -153,8 +153,8 @@ const NonTeachingTable: React.FC<NonTeachingTableProps> = ({
                     }`}
                   >
                     {item.attendance}
-                  </td>
-                  <td>
+                  </td> */}
+                  {/* <td>
                     <span
                       className={`px-3 py-1 rounded-full text-xs ${
                         item.status === "Active"
@@ -164,7 +164,7 @@ const NonTeachingTable: React.FC<NonTeachingTableProps> = ({
                     >
                       {item.status}
                     </span>
-                  </td>
+                  </td> */}
                   <td className="text-center">
                     <div className="inline-flex items-center justify-center gap-4">
                       <button
