@@ -1,15 +1,25 @@
 import React, { useEffect, useState } from "react"
 import { ChevronDown, X } from "lucide-react"
 import CustomDropdown from "../CustomDropdown"
+import api from "../../api/axios"
+import type { ClassData, Teacher } from "../../pages/AcademicPage"
+import { toast } from "react-toastify"
 
 interface AddClassModalProps {
   isOpen: boolean
   onClose: () => void
+  editData: ClassData | null
+  teacherList: Teacher[]
 }
 
 const subjectsList = ["English", "Malayalam", "Maths", "Hindi", "Science", "IT"]
 
-const AddClassModal: React.FC<AddClassModalProps> = ({ isOpen, onClose }) => {
+const AddClassModal: React.FC<AddClassModalProps> = ({
+  isOpen,
+  onClose,
+  editData,
+  teacherList,
+}) => {
   const [formData, setFormData] = useState({
     classId: "",
     className: "",
@@ -18,7 +28,13 @@ const AddClassModal: React.FC<AddClassModalProps> = ({ isOpen, onClose }) => {
     teacher: "",
     status: "Active",
     batch: "",
+    department: "",
+    branch: "",
   })
+
+  const [initialFormData, setInitialFormData] = useState<
+    typeof formData | null
+  >(null)
 
   const [errors, setErrors] = useState({
     classId: "",
@@ -29,10 +45,36 @@ const AddClassModal: React.FC<AddClassModalProps> = ({ isOpen, onClose }) => {
     status: "",
     subjects: "",
     batch: "",
+    department: "",
+    branch: "",
   })
 
   const [subjectInput, setSubjectInput] = useState("")
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
+
+  const [initialSubjects, setInitialSubjects] = useState<string[]>([])
+
+  useEffect(() => {
+    if (editData) {
+      const data = {
+        classId: editData.class_id,
+        className: editData.class_name,
+        level: editData.level,
+        section: editData.section,
+        teacher: editData.class_teacher?.toString() || "",
+        status: editData.status,
+        batch: editData.branch || "",
+        department: editData.department || "",
+        branch: editData.branch || "",
+      }
+
+      setFormData(data)
+      setInitialFormData(data)
+
+      setSelectedSubjects(editData.subject_names || [])
+      setInitialSubjects(editData.subject_names || [])
+    }
+  }, [editData, isOpen])
 
   useEffect(() => {
     if (isOpen) {
@@ -57,6 +99,8 @@ const AddClassModal: React.FC<AddClassModalProps> = ({ isOpen, onClose }) => {
       status: "",
       subjects: "",
       batch: "",
+      department: "",
+      branch: "",
     }
 
     let isValid = true
@@ -68,6 +112,15 @@ const AddClassModal: React.FC<AddClassModalProps> = ({ isOpen, onClose }) => {
 
     if (!formData.className.trim()) {
       newErrors.className = "Class Name is required"
+      isValid = false
+    }
+
+    if (!formData.department.trim() && selectedType === "college") {
+      newErrors.department = "Department is required"
+      isValid = false
+    }
+    if (!formData.branch.trim() && selectedType === "college") {
+      newErrors.branch = "Branch is required"
       isValid = false
     }
 
@@ -134,15 +187,150 @@ const AddClassModal: React.FC<AddClassModalProps> = ({ isOpen, onClose }) => {
     setSelectedSubjects((prev) => prev.filter((item) => item !== subject))
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateForm()) return
 
-    console.log({
-      ...formData,
-      subjects: selectedSubjects,
+    try {
+      if (editData) {
+        const updatePayload: any = {}
+
+        if (formData.level !== initialFormData?.level) {
+          updatePayload.level = formData.level
+        }
+
+        if (formData.teacher !== initialFormData?.teacher) {
+          updatePayload.class_teacher = formData.teacher
+        }
+
+        if (formData.section !== initialFormData?.section) {
+          updatePayload.section = formData.section
+        }
+
+        if (formData.status !== initialFormData?.status) {
+          updatePayload.status = formData.status
+        }
+
+        if (formData.batch !== initialFormData?.batch) {
+          updatePayload.batch = formData.batch
+        }
+
+        if (
+          JSON.stringify(selectedSubjects) !== JSON.stringify(initialSubjects)
+        ) {
+          updatePayload.subjects = selectedSubjects
+        }
+
+        if (
+          selectedType === "college" &&
+          formData.department !== initialFormData?.department
+        ) {
+          updatePayload.department = formData.department
+        }
+
+        if (
+          selectedType === "college" &&
+          formData.branch !== initialFormData?.branch
+        ) {
+          updatePayload.branch = formData.branch
+        }
+
+        // if no changes
+        if (Object.keys(updatePayload).length === 0) {
+          toast.info("No changes detected")
+          return
+        }
+
+        const res = await api.patch(
+          `/edit-class/${editData.id}/`,
+          updatePayload,
+        )
+
+        if (res.data.status) {
+          toast.success("Class updated successfully")
+        }
+      } else {
+        const createPayload = {
+          class_id: formData.classId,
+          class_name: formData.className,
+          level: formData.level,
+          section: formData.section,
+          class_teacher: formData.teacher,
+          status: formData.status,
+          batch: formData.batch,
+          subjects: selectedSubjects,
+          department: selectedType === "college" ? formData.department : "",
+          branch: selectedType === "college" ? formData.branch : "",
+        }
+
+        const res = await api.post("/add-class/", createPayload)
+
+        if (res.data.status) {
+          toast.success("Class added successfully")
+        }
+      }
+
+      handleClose()
+    } catch (error: any) {
+      console.error(error?.response?.data)
+
+      toast.error(error?.response?.data?.message || "Something went wrong")
+    }
+  }
+
+  const institutionName =
+    localStorage.getItem("institution_name")?.toLowerCase() || ""
+
+  const selectedType: "school" | "college" = institutionName.includes("school")
+    ? "school"
+    : "college"
+
+  const levelOptions =
+    selectedType === "school"
+      ? ["Primary", "Secondary", "Higher Secondary"]
+      : ["UG", "PG", "Diploma", "PhD"]
+
+  const generateClassId = () => {
+    const randomNumber = Math.floor(1000 + Math.random() * 9000)
+
+    return `CL-${randomNumber}`
+  }
+  const handleAutoClassId = () => {
+    if (!editData) {
+      setFormData((prev) => ({
+        ...prev,
+        classId: generateClassId(),
+      }))
+    }
+  }
+  const handleClose = () => {
+    onClose()
+
+    setFormData({
+      classId: "",
+      className: "",
+      level: "",
+      section: "",
+      teacher: "",
+      status: "Active",
+      batch: "",
+      department: "",
+      branch: "",
     })
 
-    onClose()
+    setErrors({
+      classId: "",
+      className: "",
+      level: "",
+      section: "",
+      teacher: "",
+      status: "",
+      subjects: "",
+      batch: "",
+      department: "",
+      branch: "",
+    })
+
+    setSelectedSubjects([])
   }
 
   if (!isOpen) return null
@@ -154,9 +342,7 @@ const AddClassModal: React.FC<AddClassModalProps> = ({ isOpen, onClose }) => {
           {/* Header */}
           <div className="flex items-start justify-between border-b border-[#E5E5E5] px-6 py-5 lg:px-8">
             <div>
-              <h2 className="text-2xl font-semibold text-[#2D2D2D] md:text-3xl lg:text-[36px]">
-                Add New Class
-              </h2>
+              <h2>{editData ? "Edit Class" : "Add New Class"}</h2>
 
               <p className="mt-1 text-sm text-[#8A8A8A]">
                 Edit the details of the new class, click save when you're done.
@@ -164,7 +350,7 @@ const AddClassModal: React.FC<AddClassModalProps> = ({ isOpen, onClose }) => {
             </div>
 
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="text-gray-500 transition hover:text-black"
             >
               <X size={24} />
@@ -176,15 +362,34 @@ const AddClassModal: React.FC<AddClassModalProps> = ({ isOpen, onClose }) => {
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
               {/* Class ID */}
               <div>
-                <label className="mb-2 block font-medium">Class ID *</label>
+                <div className="flex justify-between">
+                  <label className="mb-2 block font-medium"> Class ID * </label>
+                  <button
+                    type="button"
+                    onClick={handleAutoClassId}
+                    disabled={!!editData}
+                    className={`text-sm ${
+                      editData
+                        ? "cursor-not-allowed text-gray-400"
+                        : "cursor-pointer text-blue-500"
+                    }`}
+                  >
+                    Generate ID
+                  </button>
+                </div>
 
                 <input
                   name="classId"
                   value={formData.classId}
+                  disabled={!!editData}
                   onChange={handleChange}
                   placeholder="e.g. Class-10"
-                  className="h-12 w-full rounded-xl border border-[#E5E5E5] px-4 outline-none md:h-14"
-                /> 
+                  className={`h-12 w-full rounded-xl border px-4 outline-none md:h-14${
+                    editData
+                      ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-500"
+                      : "border-[#E5E5E5] bg-white text-black focus:border-blue-500"
+                  }`}
+                />
                 {errors.classId && (
                   <p className="mt-1 text-sm text-red-500">{errors.classId}</p>
                 )}
@@ -197,7 +402,7 @@ const AddClassModal: React.FC<AddClassModalProps> = ({ isOpen, onClose }) => {
                 <CustomDropdown
                   value={formData.level}
                   placeholder="Select Level"
-                  options={["Primary", "Secondary", "Higher Secondary"]}
+                  options={levelOptions}
                   onChange={(value) => {
                     setFormData((prev) => ({
                       ...prev,
@@ -218,23 +423,74 @@ const AddClassModal: React.FC<AddClassModalProps> = ({ isOpen, onClose }) => {
               <div>
                 <label className="mb-2 block font-medium">Class Name *</label>
 
-                <input
-                  name="className"
-                  value={formData.className}
-                  onChange={handleChange}
-                  placeholder="e.g. Class-10"
-                  className="h-12 w-full rounded-xl border border-[#E5E5E5] px-4 outline-none md:h-14"
-                />
-                {errors.className && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.className}
-                  </p>
-                )}
+                <div>
+                  <input
+                    name="className"
+                    value={formData.className}
+                    onChange={handleChange}
+                    disabled={!!editData}
+                    placeholder="e.g. Class-10"
+                    className={`h-12 w-full rounded-xl border px-4 outline-none md:h-14 ${
+                      editData
+                        ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-500"
+                        : "border-[#E5E5E5] bg-white text-black focus:border-blue-500"
+                    }  `}
+                  />
+                  {errors.className && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.className}
+                    </p>
+                  )}
+                </div>
               </div>
+
+              {selectedType === "college" && (
+                <>
+                  <div>
+                    {/* department */}
+                    <label className="mb-2 block font-medium">
+                      Department *
+                    </label>
+                    <input
+                      name="department"
+                      value={formData.department}
+                      onChange={handleChange}
+                      placeholder="e.g. Class-10"
+                      className={`h-12 w-full rounded-xl border px-4 outline-none md:h-14
+                       border-[#E5E5E5] bg-white text-black focus:border-blue-500 `}
+                    />
+                    {errors.classId && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.department}
+                      </p>
+                    )}
+                  </div>
+                  {/* branch */}
+                  <div>
+                    <label className="mb-2 block font-medium">Branch *</label>
+
+                    <input
+                      name="branch"
+                      value={formData.branch}
+                      onChange={handleChange}
+                      placeholder="e.g. Class-10"
+                      className={`h-12 w-full rounded-xl border px-4 outline-none md:h-14 
+                      
+                           border-[#E5E5E5] bg-white text-black focus:border-blue-500
+                      `}
+                    />
+                    {errors.branch && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.branch}
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
 
               {/* Section */}
               <div>
-                <label className="mb-2 block font-medium">Section *</label>
+                <label className="mb-2 block font-medium">Section </label>
 
                 <CustomDropdown
                   value={formData.section}
@@ -264,12 +520,13 @@ const AddClassModal: React.FC<AddClassModalProps> = ({ isOpen, onClose }) => {
 
                 <CustomDropdown
                   value={formData.teacher}
+                  searchable
                   placeholder="Select Teacher"
-                  options={["Devika", "Anu", "Arun", "Rahul", "Athira"]}
-                  onChange={(value) => {
+                  options={teacherList}
+                  onChange={(value: any) => {
                     setFormData((prev) => ({
                       ...prev,
-                      teacher: value,
+                      teacher: value?.id.toString(),
                     }))
                     setErrors((prev) => ({
                       ...prev,
@@ -370,7 +627,8 @@ const AddClassModal: React.FC<AddClassModalProps> = ({ isOpen, onClose }) => {
                 value={formData.batch}
                 onChange={handleChange}
                 placeholder="e.g. 2025 - 26"
-                className="h-12 w-full rounded-xl border border-[#E5E5E5] px-4 outline-none md:h-14"
+                className={`h-12 w-full rounded-xl border px-4 outline-none md:h-14
+                    border-[#E5E5E5] bg-white text-black focus:border-blue-500`}
               />
               {errors.batch && (
                 <p className="mt-1 text-sm text-red-500">{errors.batch}</p>
@@ -382,7 +640,7 @@ const AddClassModal: React.FC<AddClassModalProps> = ({ isOpen, onClose }) => {
           <div className="border-t border-[#E5E5E5] px-6 py-4 lg:px-8">
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 className="h-12 w-full rounded-xl border border-[#BDBDBD] sm:w-[140px]"
               >
                 Cancel

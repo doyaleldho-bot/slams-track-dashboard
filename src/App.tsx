@@ -12,18 +12,45 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage"
 import { ToastContainer } from "react-toastify"
 import ProtectedRoute from "./layouts/ProtectedRoute"
 
+//
+import { useAppDispatch, useAppSelector } from "./redux/hooks"
+import { useEffect } from "react"
+import { getProfile } from "./redux/action/UserThunk"
+import PublicRoute from "./layouts/PublicRoute"
+
 function App() {
+  const dispatch = useAppDispatch()
+
+  const { initialized } = useAppSelector((state) => state.profile)
+
+  useEffect(() => {
+    if (!initialized) {
+      dispatch(getProfile())
+    }
+  }, [initialized, dispatch])
   return (
     <BrowserRouter>
-      <ToastContainer />
-
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
       <Routes>
-        {/* public */}
-        <Route path="/" element={<LoginPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route element={<PublicRoute />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        </Route>
 
-        {/* protected */}
         <Route element={<ProtectedRoute />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/" element={<DashboardLayout />}>
             <Route index element={<HomePage />} />
             <Route path="Staffmanagement" element={<StaffManagement />} />
@@ -35,8 +62,7 @@ function App() {
           </Route>
         </Route>
 
-        {/* fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   )

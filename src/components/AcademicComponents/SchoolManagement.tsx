@@ -10,6 +10,7 @@ interface TableItem {
   section: string
   students: number
   batch: string
+  branch?: string
 }
 
 interface SchoolManagementProps {
@@ -19,6 +20,7 @@ interface SchoolManagementProps {
   next: () => void
   prev: () => void
   setCurrentPage: React.Dispatch<React.SetStateAction<number>>
+  onEdit: (id: string | number) => void
 }
 
 const tableData: TableItem[] = [
@@ -85,15 +87,16 @@ const SchoolManagement: React.FC<SchoolManagementProps> = ({
   totalPages,
   next,
   prev,
+  onEdit,
 }) => {
   const [search, setSearch] = useState("")
 
   const institutionName =
     localStorage.getItem("institution_name")?.toLowerCase() || ""
 
-  const [selectedType, setSelectedType] = useState<"college" | "school">(
-    institutionName.includes("school") ? "school" : "college",
-  )
+  const selectedType: "school" | "college" = institutionName.includes("school")
+    ? "school"
+    : "college"
 
   const [selectedBatch, setSelectedBatch] = useState("Select Batch")
   const [isBatchOpen, setIsBatchOpen] = useState(false)
@@ -135,7 +138,7 @@ const SchoolManagement: React.FC<SchoolManagementProps> = ({
       return matchesSearch && matchesBatch
     })
   }, [search, selectedBatch, selectedType, managementData])
-
+  console.log(filteredData)
   //visble pages
   const visiblePages = 4
 
@@ -226,9 +229,13 @@ const SchoolManagement: React.FC<SchoolManagementProps> = ({
             <tr className="border-b border-[#E5E7EB] text-left">
               <th className="pb-4 text-sm lg:text-base">ID</th>
 
-              <th className="pb-4 text-sm lg:text-base">
-                {selectedType === "college" ? "Department" : "Class"}
-              </th>
+              <th className="pb-4 text-sm lg:text-base">Class</th>
+              {selectedType === "college" && (
+                <th className="pb-4 text-sm lg:text-base">Department</th>
+              )}
+              {selectedType === "college" && (
+                <th className="pb-4 text-sm lg:text-base">Branch</th>
+              )}
 
               <th className="pb-4 text-sm lg:text-base">Level</th>
               <th className="pb-4 text-sm lg:text-base">Section</th>
@@ -246,7 +253,21 @@ const SchoolManagement: React.FC<SchoolManagementProps> = ({
               >
                 <td className="py-5 text-sm lg:text-base">{item.class_id}</td>
 
-                <td className="py-5 text-sm lg:text-base">{item.class_name}</td>
+                <td className="py-5 text-sm lg:text-base">
+                  {" "}
+                  {item.class_name}{" "}
+                </td>
+
+                {selectedType === "college" && (
+                  <td className="py-5 text-sm lg:text-base">
+                    {item.department || "-"}
+                  </td>
+                )}
+                {selectedType === "college" && (
+                  <td className="py-5 text-sm lg:text-base">
+                    {item.branch || "-"}
+                  </td>
+                )}
 
                 <td className="py-5 text-sm lg:text-base">{item.level}</td>
 
@@ -269,7 +290,7 @@ const SchoolManagement: React.FC<SchoolManagementProps> = ({
                 </td>
 
                 <td className="py-5 text-center">
-                  <button>
+                  <button onClick={() => onEdit(item?.id)}>
                     <SquarePen size={18} className="mx-auto text-[#1677FF]" />
                   </button>
                 </td>

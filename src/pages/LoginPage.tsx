@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { Eye, EyeOff, GraduationCap } from "lucide-react"
 import api from "../api/axios"
 import { toast } from "react-toastify"
+import { getProfile } from "../redux/action/UserThunk"
+import { useAppDispatch } from "../redux/hooks"
 
 const LoginPage = () => {
+  const dispatch = useAppDispatch()
+  // const location = useLocation()
+
+  // const redirectPath = location.state?.from || "/"
+
   const [form, setForm] = useState({
     userId: "",
     password: "",
@@ -63,160 +70,157 @@ const LoginPage = () => {
         password: form.password,
         category_id: form.institution,
       })
-
       // Find selected institution
       const selectedInstitution = categories.find(
         (category) => category.id.toString() === form.institution.toString(),
       )
 
+      localStorage.setItem("institution_name", selectedInstitution?.name || "")
       localStorage.setItem("access_token", response.data.tokens.access)
       localStorage.setItem("refresh_token", response.data.tokens.refresh)
-      localStorage.setItem("institution_name", selectedInstitution?.name || "")
       if (!response.data.status) {
         toast.error(response.data.message)
         return
       }
-
+      await dispatch(getProfile())
       toast.success("Login successful!")
-      navigate("/app")
+
+      // const redirectPath = location.state?.from || "/"
+
+      // navigate(redirectPath, {
+      //   replace: true,
+      // })
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Login failed")
     }
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#e9effb] text-slate-900">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.88),transparent_25%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.18),transparent_18%),linear-gradient(180deg,#f7fbff_0%,#e9effb_100%)]" />
-      <div className="pointer-events-none absolute left-1/2 top-14 h-60 w-96 -translate-x-1/2 rounded-full bg-white/70 blur-3xl" />
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1200px] flex-col px-4 py-10 sm:px-6 lg:px-8">
-        <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] items-center">
-          <div className="mx-auto w-full max-w-md rounded-[28px] bg-white/95 p-8 shadow-[0_24px_80px_rgba(15,23,42,0.12)] ring-1 ring-slate-200">
-            <div className="mb-8 text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
-                <GraduationCap className="h-7 w-7" />
-              </div>
-              <h1 className="mt-6 text-2xl font-semibold text-slate-900">
-                Login
-              </h1>
-            </div>
+    <div className="min-h-screen flex bg-[#f4f7fc] overflow-hidden">
+      {/* LEFT SIDE LOGIN */}
+      <div className="relative flex w-full lg:w-1/2 items-center justify-center">
+        {/* background waves */}
+        <div className="absolute inset-0 bg-[url('/login-bg.png')] bg-cover bg-center opacity-40" />
+        <div className="flex flex-col justify-center items-center">
+          {/* Logo */}
+          <div className="flex justify-center">
+            <img src="/logo1.png" className="h-52 object-contain" alt="Logo" />
+          </div>
+          <div className="relative z-10 w-[340px] rounded-md bg-white p-6 shadow-lg border border-gray-200">
+            <h2 className="text-center text-sm font-semibold text-blue-700 mb-5">
+              Login
+            </h2>
 
-            <form className="space-y-6" onSubmit={handleSubmit} noValidate>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* User ID */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label className="text-xs font-medium">
                   User ID <span className="text-red-500">*</span>
                 </label>
+
                 <input
                   name="userId"
                   value={form.userId}
                   onChange={handleChange}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                  placeholder="Enter your user ID"
+                  className=" mt-1 h-9 w-full rounded-sm border border-gray-300 px-3 text-xs outline-none focus:border-b "
                 />
+
                 {errors.userId && (
-                  <p className="mt-2 text-xs text-red-500">{errors.userId}</p>
+                  <p className="text-red-500 text-xs mt-1">{errors.userId}</p>
                 )}
               </div>
 
+              {/* Password */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label className="text-xs font-medium">
                   Password <span className="text-red-500">*</span>
                 </label>
+
                 <div className="relative">
                   <input
                     name="password"
                     type={showPassword ? "text" : "password"}
                     value={form.password}
                     onChange={handleChange}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    placeholder="Enter your password"
+                    className="mt-1 h-9 w-full rounded-sm border border-gray-300 px-3 pr-8 text-xs outli"
                   />
+
                   <button
                     type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className=" absolute right-2 top-1/2 -translate-y-1/2 text-gra"
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                 </div>
-                {errors.password && (
-                  <p className="mt-2 text-xs text-red-500">{errors.password}</p>
-                )}
               </div>
 
+              {/* Forgot */}
+              <div className="text-right">
+                <Link
+                  to="/forgot-password"
+                  className="text-[10px] text-blue-600"
+                >
+                  forgot password?
+                </Link>
+              </div>
+
+              {/* Institution */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label className="text-xs font-medium">
                   Institution <span className="text-red-500">*</span>
                 </label>
+
                 <select
                   name="institution"
                   value={form.institution}
                   onChange={handleChange}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className=" mt-1 h-9 w-full rounded-sm border border-gray-300 px-2 text"
                 >
-                  <option value="">Choose an institution</option>
+                  <option value="">Select Institution</option>
 
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
+                  {categories.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
                     </option>
                   ))}
                 </select>
-                {errors.institution && (
-                  <p className="mt-2 text-xs text-red-500">
-                    {errors.institution}
-                  </p>
-                )}
               </div>
 
-              <div className="flex items-center justify-between text-sm">
-                <div className="text-slate-500">Need help?</div>
-                <Link
-                  to="/forgot-password"
-                  className="font-medium text-blue-600 hover:text-blue-700"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-
-              <button className="mt-4 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-950">
+              <button className=" w-full h-9 rounded-sm bg-[#777] text-white text-xshover:bg-[#555] ">
                 Login
               </button>
             </form>
           </div>
+        </div>
+      </div>
 
-          <div className="relative overflow-hidden rounded-[32px] bg-white/95 p-10 shadow-[0_24px_80px_rgba(15,23,42,0.08)] ring-1 ring-slate-200">
-            <div className="absolute right-[-30px] top-8 h-40 w-40 rounded-full bg-blue-600/10 blur-3xl" />
-            <div className="absolute left-[-24px] bottom-8 h-32 w-32 rounded-full bg-slate-900/5 blur-3xl" />
-            <div className="relative z-10 space-y-6">
-              <p className="text-sm uppercase tracking-[0.3em] text-slate-500">
-                SLAMS Track
-              </p>
-              <h2 className="text-3xl font-semibold text-slate-900 sm:text-4xl">
-                Integrated academic and administrative management.
-              </h2>
-              <p className="max-w-xl text-sm leading-7 text-slate-600">
-                SLAMS Track is an integrated academic and administrative
-                management platform designed to simplify and streamline daily
-                educational operations.
-              </p>
-              <p className="max-w-xl text-sm leading-7 text-slate-600">
-                It helps institutions efficiently manage student admissions,
-                attendance, timetable scheduling, teacher management, payroll,
-                fee collections, reports, and overall academic activities from a
-                centralized system.
-              </p>
+      {/* RIGHT SIDE INFORMATION */}
+      <div className=" hidden lg:flex w-1/2 relative items-center justify-center overflow-hidden bg-white">
+        <div className=" absolute inset-0 bg-[url('/login-bg.png')] bg-cover bg-center " />
 
-              <div className="flex justify-center py-8">
-                <div className="flex h-48 w-48 items-center justify-center rounded-full bg-blue-700 shadow-[0_20px_60px_rgba(59,130,246,0.25)]">
-                  <GraduationCap className="h-24 w-24 text-white" />
-                </div>
-              </div>
+        <div className=" relative z-10 text-center max-w-md px-10 ">
+          <p className=" text-[11px] leading-5 text-gra">
+            SLAMS Track is an integrated academic and administrative management
+            platform designed to simplify and streamline daily educational
+            operations.
+          </p>
 
-              <p className="text-center text-xs uppercase tracking-[0.3em] text-slate-400">
-                Version 1.0 • Published on 21-05-2026
-              </p>
+          <p className=" mt-3 text-[11px] leading-5 text-gray-600 ">
+            It helps institutions efficiently manage student admissions,
+            attendance, timetable scheduling, teacher management, payroll, fee
+            collections, reports and overall academic activities.
+          </p>
+
+          <div className=" mt-10 flex justify-center ">
+            <div className=" h-44 w-44 rounded-full bg-[#073b9f] flex items-center justify-center ">
+              <GraduationCap size={90} className="text-white" />
             </div>
           </div>
+
+          <p className=" mt-8 text-[10px] text-gray-400 ">
+            Version 1.0 Published on 21-05-2026
+          </p>
         </div>
       </div>
     </div>

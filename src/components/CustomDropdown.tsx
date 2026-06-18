@@ -1,11 +1,21 @@
 import { useEffect, useRef, useState } from "react"
 import { ChevronDown } from "lucide-react"
 
+export type DropdownOption =
+  | string
+  | {
+      id: string | number
+      name: string
+      classSection?: string
+    }
+
 interface CustomDropdownProps {
   value: string
   placeholder: string
-  options: string[]
-  onChange: (value: string) => void
+  options: DropdownOption[]
+  onChange: (value: DropdownOption) => void
+  searchable?: boolean
+  disabled?: boolean
 }
 
 const CustomDropdown = ({
@@ -13,8 +23,11 @@ const CustomDropdown = ({
   placeholder,
   options,
   onChange,
+  searchable = false,
+  disabled = false,
 }: CustomDropdownProps) => {
   const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -29,43 +42,108 @@ const CustomDropdown = ({
 
     document.addEventListener("mousedown", handleClickOutside)
 
-    return () => document.removeEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
   }, [])
+
+  const getLabel = (option: DropdownOption) => {
+    if (typeof option === "string") return option
+
+    return option.classSection
+      ? `${option.name}-${option.classSection}`
+      : option.name
+  }
+
+  const getValue = (option: DropdownOption) =>
+    typeof option === "string" ? option : option.id
+
+  const filteredOptions =
+    search.trim().length > 0
+      ? options.filter((option) =>
+          getLabel(option).toLowerCase().includes(search.toLowerCase()),
+        )
+      : options
+
+  const displayValue = (() => {
+    const selectedOption = options.find((option) => {
+      if (typeof option === "string") {
+        return option === value
+      }
+
+      return option.id.toString() === value
+    })
+
+    if (!selectedOption) return ""
+
+    return typeof selectedOption === "string"
+      ? selectedOption
+      : selectedOption.classSection
+        ? `${selectedOption.name}-${selectedOption.classSection}`
+        : selectedOption.name
+  })()
 
   return (
     <div ref={dropdownRef} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex h-12 md:h-14 w-full items-center justify-between rounded-xl border border-[#E5E5E5] bg-white px-4 text-left"
-      >
-        <span className={value ? "text-black" : "text-[#9CA3AF]"}>
-          {value || placeholder}
-        </span>
+      {/* Input */}
+      <input
+        type="text"
+        value={open ? search : displayValue}
+        placeholder={placeholder}
+        disabled={disabled}
+        onFocus={() => {
+          setOpen(true)
+          setSearch("")
+        }}
+        onChange={(e) => {
+          if (searchable) {
+            setSearch(e.target.value)
+            setOpen(true)
+          }
+        }}
+        readOnly={!searchable}
+        className={`h-12 md:h-14 w-full rounded-xl border border-[#E5E5E5] bg-white px-4 pr-10 outline-none ${
+          disabled ? "cursor-not-allowed bg-gray-100 text-gray-400" : ""
+        }`}
+      />
 
-        <ChevronDown
-          size={18}
-          className={`transition-transform duration-300 ${
-            open ? "rotate-180" : ""
-          }`}
-        />
-      </button>
+      {/* Arrow */}
+      <ChevronDown
+        size={18}
+        onClick={() => {
+          if (!disabled) {
+            setOpen((prev) => !prev)
+            setSearch("")
+          }
+        }}
+        className={`absolute right-4 top-1/2 -translate-y-1/2 transition-transform ${
+          disabled ? "cursor-not-allowed text-gray-400" : "cursor-pointer"
+        } ${open ? "rotate-180" : ""}`}
+      />
 
+      {/* Dropdown */}
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-2 w-full overflow-hidden rounded-xl border border-[#E5E5E5] bg-white shadow-lg">
-          {options.map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => {
-                onChange(option)
-                setOpen(false)
-              }}
-              className="w-full px-4 py-3 text-left text-sm transition hover:bg-[#F5F5F5]"
-            >
-              {option}
-            </button>
-          ))}
+        <div className="absolute left-0 top-full z-50 mt-2 max-h-60 w-full overflow-y-auto rounded-xl border border-[#E5E5E5] bg-white shadow-lg">
+          {filteredOptions.length > 0 ? (
+            filteredOptions.map((option) => (
+              <button
+                key={String(getValue(option))}
+                type="button"
+                onClick={() => {
+                  onChange(option)
+                  setSearch(getLabel(option))
+                  setOpen(false)
+                }}
+                className="w-full px-4 py-3 text-left text-sm transition hover:bg-[#F5F5F5]"
+              >
+                {getLabel(option)}
+              </button>
+            ))
+          ) : (
+            <div className="px-4 py-3 text-sm text-gray-500">
+              No results found
+            </div>
+          )}
         </div>
       )}
     </div>

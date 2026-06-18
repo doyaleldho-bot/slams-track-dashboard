@@ -11,6 +11,8 @@
   }
 }
 
+
+
 .no-scrollbar {
   -ms-overflow-style: none; /* IE + Edge */
   scrollbar-width: none; /* Firefox */
@@ -93,4 +95,46 @@ svg:focus-visible {
 
 .gradient-btn:hover {
   opacity: 0.9;
+}
+
+/* profile hover */
+
+.profile-hover-gradient {
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s ease;
+}
+
+.profile-hover-gradient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #2b7fff, #9810fa, #2b7fff);
+  background-size: 200% 200%;
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.4s ease;
+}
+
+.profile-hover-gradient:hover::before {
+  opacity: 1;
+  animation: profileGradientMove 3s ease infinite;
+}
+
+.profile-hover-gradient:hover {
+  border-color: transparent;
+}
+
+@keyframes profileGradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }

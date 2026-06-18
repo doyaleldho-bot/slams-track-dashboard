@@ -1,14 +1,76 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom"
+import { useEffect, useState } from "react"
+import api from "../api/axios"
+import { useAppSelector } from "../redux/hooks"
 
 const ProtectedRoute = () => {
-  const accessToken = localStorage.getItem("access_token");
-  const refreshToken = localStorage.getItem("refresh_token");
+  const { initialized, authenticated } = useAppSelector(
+    (state) => state.profile,
+  )
 
-  if (!accessToken || !refreshToken) {
-    return <Navigate to="/" replace />;
+  const location = useLocation()
+
+  // const [loading, setLoading] = useState(true)
+  // const [authorized, setAuthorized] = useState(false)
+
+  // useEffect(() => {
+  //   const verifyAuth = async () => {
+  //     const accessToken = localStorage.getItem("access_token")
+  //     const refreshToken = localStorage.getItem("refresh_token")
+
+  //     if (accessToken && refreshToken) {
+  //       setAuthorized(true)
+  //       setLoading(false)
+  //       return
+  //     }
+
+  //     if (!refreshToken) {
+  //       setAuthorized(false)
+  //       setLoading(false)
+  //       return
+  //     }
+
+  //     try {
+  //       const res = await api.post("/token-refresh/", {
+  //         refresh: refreshToken,
+  //       })
+  //       localStorage.setItem("access_token", res.data?.tokens?.access)
+
+  //       setAuthorized(true)
+  //     } catch (err) {
+  //       localStorage.removeItem("access_token")
+  //       localStorage.removeItem("refresh_token")
+  //       setAuthorized(false)
+  //     } finally {
+  //       setLoading(false)
+  //     }
+  //   }
+
+  //   verifyAuth()
+  // }, [])
+
+  console.log(initialized, authenticated)
+  if (!initialized) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        Loading...
+      </div>
+    )
   }
 
-  return <Outlet />;
-};
+  if (!authenticated) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{
+          from: location.pathname,
+        }}
+      />
+    )
+  }
 
-export default ProtectedRoute;
+  return <Outlet />
+}
+
+export default ProtectedRoute

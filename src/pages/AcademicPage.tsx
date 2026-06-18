@@ -26,6 +26,11 @@ export interface ClassData {
   section: string
   total_students: number
   status: "Active" | "Inactive"
+  branch?: string | null
+  department?: string | null
+  class_teacher?: string
+  subject?: string[]
+  subject_names?: string[]
 }
 
 interface AcademicStats {
@@ -35,11 +40,29 @@ interface AcademicStats {
   total_non_administration_staff: number
 }
 
+export interface Teacher {
+  id: number
+  name: string
+  subject: string
+}
+export interface Department {
+  department: string
+}
+
 const AcademicPage: React.FC = () => {
   const [academitabs, setAcademicTabs] = useState("SchoolMangement")
   const [openModal, setOpenModal] = useState(false)
+  const [editData, setEditData] = useState<ClassData | null>(null)
   const [academicStatsData, setAcademicStatsData] =
     useState<AcademicStats | null>(null)
+
+  //teacher states
+  const [teacherList, setTeacherList] = useState<Teacher[]>([])
+  //departemt states
+  const [departmentsList, setDepartmentsList] = useState<Department[]>([])
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(
+    null,
+  )
 
   //mangement section states
   const [managementData, setManagementData] = useState<ClassData[]>([])
@@ -106,10 +129,71 @@ const AcademicPage: React.FC = () => {
     }
   }
 
+  const loadClassDetails = async (id: string | number) => {
+    try {
+      const res = await api.get(`/get-class-details-by-id/${id}/`)
+
+      if (res.data.status) {
+        setEditData(res.data.data)
+        setOpenModal(true)
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const handleEditClass = (id: string) => {
+    loadClassDetails(id)
+    setOpenModal(true)
+  }
+
   useEffect(() => {
     loadManagement()
   }, [currentPage])
 
+  //teacherList
+  const loadTeacherList = async () => {
+    try {
+      const res = await api.get("/list-teaching-staff/")
+
+      const teachers = res.data.data.map((teacher: any) => ({
+        id: teacher.id,
+        name: teacher.staff_name,
+        subject: teacher.subject_expertise,
+      }))
+
+      setTeacherList(teachers)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+  const loadDepartmentList = async () => {
+    try {
+      const res = await api.get("/departments/")
+
+      // const teachers = res.data.data.map((teacher: any) => ({
+      //   id: teacher.id,
+      //   name: teacher.staff_name,
+      //   subject: teacher.subject_expertise,
+      // }))
+      console.log(res.data)
+
+      setDepartmentsList(res.data.data)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  const handleClose = () => {
+    setEditData(null)
+    setOpenModal(false)
+  }
+
+  useEffect(() => {
+    loadTeacherList()
+    loadDepartmentList()
+  }, [])
+  console.log(managementData)
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-8">
@@ -184,13 +268,24 @@ const AcademicPage: React.FC = () => {
             totalPages={totalPages}
             next={next}
             prev={prev}
+            onEdit={handleEditClass}
           />
         ) : (
-          <TeacherTimeTable />
+          <TeacherTimeTable
+            teacherList={teacherList}
+            departmentsList={departmentsList}
+            setSelectedDepartment={setSelectedDepartment}
+            selectedDepartment={selectedDepartment}
+          />
         )}
       </div>
 
-      <AddClassModal isOpen={openModal} onClose={() => setOpenModal(false)} />
+      <AddClassModal
+        isOpen={openModal}
+        onClose={handleClose}
+        editData={editData}
+        teacherList={teacherList}
+      />
     </div>
   )
 }
