@@ -10,12 +10,14 @@ interface TimetableSlot {
   id?: string
   classId?: string | number
   classSection?: string
+  classBatch?: string
 }
 
 interface Class {
   id: number
   name: string
   class_section: string
+  class_batch?: string
 }
 
 type TimetableData = {
@@ -73,6 +75,7 @@ const TeacherTimetable: React.FC<TeacherTimetableProps> = ({
     id: number | string
     name: string
     classSection: string
+    classBatch: string
   } | null>(null)
 
   const [classList, setClassList] = useState<Class[]>([])
@@ -92,6 +95,7 @@ const TeacherTimetable: React.FC<TeacherTimetableProps> = ({
             id: item.id,
             name: item.class_name,
             classSection: item.class_section,
+            classBatch: item.class_batch,
           }))
 
           setClassList(formattedClasses)
@@ -119,6 +123,7 @@ const TeacherTimetable: React.FC<TeacherTimetableProps> = ({
             id: slot.classId!,
             name: slot.className,
             classSection: slot.classSection || "",
+            classBatch: slot.classBatch || "",
           }
         : null,
     )
@@ -167,6 +172,7 @@ const TeacherTimetable: React.FC<TeacherTimetableProps> = ({
           className: selectedClass?.name || "",
           classId: selectedClass?.id || "",
           classSection: selectedClass.classSection,
+          classBatch: selectedClass.classBatch,
         }
 
         setTimetable(updated)
@@ -186,6 +192,7 @@ const TeacherTimetable: React.FC<TeacherTimetableProps> = ({
         className: selectedClass?.name,
         classId: selectedClass?.id,
         classSection: selectedClass.classSection,
+        classBatch: selectedClass.classBatch,
       }
 
       setTimetable(updated)
@@ -231,6 +238,14 @@ const TeacherTimetable: React.FC<TeacherTimetableProps> = ({
     }
   }, [])
 
+  const emptyTimetable = (): TimetableData => ({
+    Monday: Array(7).fill(null),
+    Tuesday: Array(7).fill(null),
+    Wednesday: Array(7).fill(null),
+    Thursday: Array(7).fill(null),
+    Friday: Array(7).fill(null),
+  })
+
   const loadTimeTable = async () => {
     if (!selectedTeacher) return
 
@@ -241,13 +256,7 @@ const TeacherTimetable: React.FC<TeacherTimetableProps> = ({
 
       const apiTimetable = res.data.timetable
 
-      const formattedTimetable: TimetableData = {
-        Monday: Array(7).fill(null),
-        Tuesday: Array(7).fill(null),
-        Wednesday: Array(7).fill(null),
-        Thursday: Array(7).fill(null),
-        Friday: Array(7).fill(null),
-      }
+      const formattedTimetable = emptyTimetable()
 
       Object.keys(apiTimetable).forEach((day) => {
         if (!formattedTimetable[day]) return
@@ -261,6 +270,7 @@ const TeacherTimetable: React.FC<TeacherTimetableProps> = ({
             classId: table.class_id, //get the calss id
             id: table.id,
             classSection: table.class_section,
+            classBatch: table.class_batch,
           }
         })
       })
@@ -268,6 +278,7 @@ const TeacherTimetable: React.FC<TeacherTimetableProps> = ({
       setTimetable(formattedTimetable)
     } catch (error) {
       console.log(error)
+      setTimetable(emptyTimetable())
     }
   }
 
@@ -372,12 +383,11 @@ const TeacherTimetable: React.FC<TeacherTimetableProps> = ({
                       <div
                         key={index}
                         onClick={() => handleSlotClick(day, index, slot)}
-                        className={`min-h-[90px] cursor-pointer rounded-lg p-3 transition-all
-                    ${
-                      slot
-                        ? "border border-[#3B82F6] bg-[#F8FBFF]"
-                        : "border border-dashed border-[#CFCFCF] bg-[#FAFAFA]"
-                    }`}
+                        className={`min-h-[90px] cursor-pointer rounded-lg p-3 transition-all${
+                          slot
+                            ? "border border-[#3B82F6] bg-[#F8FBFF]"
+                            : "border border-dashed border-[#CFCFCF] bg-[#FAFAFA]"
+                        }`}
                       >
                         {slot ? (
                           <>
@@ -386,8 +396,15 @@ const TeacherTimetable: React.FC<TeacherTimetableProps> = ({
                             </h4>
 
                             <p className="mt-1 text-sm text-gray-600">
-                              {slot.className + "-" + slot.classSection}
+                              {slot.className}
+                              {slot.classSection && `-${slot.classSection}`}
                             </p>
+
+                            {slot.classBatch && (
+                              <p className="mt-1 text-sm text-gray-400">
+                                {slot.classBatch}
+                              </p>
+                            )}
                           </>
                         ) : (
                           <div className="flex h-full items-center justify-center text-sm text-gray-400">
@@ -451,6 +468,7 @@ const TeacherTimetable: React.FC<TeacherTimetableProps> = ({
                         id: Number(option.id),
                         name: option.name,
                         classSection: option.classSection,
+                        classBatch: option.classBatch,
                       })
                     }
                   }}

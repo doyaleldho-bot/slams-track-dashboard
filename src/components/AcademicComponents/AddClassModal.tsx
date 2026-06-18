@@ -284,10 +284,28 @@ const AddClassModal: React.FC<AddClassModalProps> = ({
     ? "school"
     : "college"
 
-  const levelOptions =
+  const levelOptionsInLevel =
     selectedType === "school"
       ? ["Primary", "Secondary", "Higher Secondary"]
       : ["UG", "PG", "Diploma", "PhD"]
+  const levelOptionsInName =
+    selectedType === "school"
+      ? [
+          "LKG",
+          "UKG",
+          "Class1",
+          "Class2",
+          "Class3",
+          "Class4",
+          "Class5",
+          "Class7",
+          "Class8",
+          "Class9",
+          "Class10",
+          "PLus1",
+          "Plus2",
+        ]
+      : ["BCA", "B.com", "BBA", "MCA", "M.com", , "BA.english"]
 
   const generateClassId = () => {
     const randomNumber = Math.floor(1000 + Math.random() * 9000)
@@ -402,7 +420,7 @@ const AddClassModal: React.FC<AddClassModalProps> = ({
                 <CustomDropdown
                   value={formData.level}
                   placeholder="Select Level"
-                  options={levelOptions}
+                  options={levelOptionsInLevel}
                   onChange={(value) => {
                     setFormData((prev) => ({
                       ...prev,
@@ -424,17 +442,20 @@ const AddClassModal: React.FC<AddClassModalProps> = ({
                 <label className="mb-2 block font-medium">Class Name *</label>
 
                 <div>
-                  <input
-                    name="className"
+                  <CustomDropdown
                     value={formData.className}
-                    onChange={handleChange}
-                    disabled={!!editData}
-                    placeholder="e.g. Class-10"
-                    className={`h-12 w-full rounded-xl border px-4 outline-none md:h-14 ${
-                      editData
-                        ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-500"
-                        : "border-[#E5E5E5] bg-white text-black focus:border-blue-500"
-                    }  `}
+                    placeholder="Select Level"
+                    options={levelOptionsInName}
+                    onChange={(value) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        className: value,
+                      }))
+                      setErrors((prev) => ({
+                        ...prev,
+                        className: "",
+                      }))
+                    }}
                   />
                   {errors.className && (
                     <p className="mt-1 text-sm text-red-500">
