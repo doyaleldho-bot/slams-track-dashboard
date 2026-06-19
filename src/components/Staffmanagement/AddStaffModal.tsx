@@ -84,11 +84,11 @@ type PermissionsMap = Record<Permission, PermState>;
 
 const initialPermissions: PermissionsMap = {
   Dashboard:           { enable: true,  disable: false },
-  Attendance:          { enable: false, disable: false },
+  Attendance:          { enable: false, disable: true  },
   "Academic Management": { enable: true,  disable: false },
-  "Student Management":  { enable: false, disable: false },
+  "Student Management":  { enable: false, disable: true  },
   "Staff Management":    { enable: false, disable: true  },
-  Finance:             { enable: false, disable: false },
+  Finance:             { enable: false, disable: true  },
 };
 
 interface Props {
@@ -217,19 +217,21 @@ export default function AddStaffModal({
   });
   const [photoName, setPhotoName] = useState("Choose Files");
   const [permissions, setPermissions] = useState<PermissionsMap>(() => {
-    if (initialForm?.permissions) {
-      const map = { ...initialPermissions };
-      (Object.keys(map) as Permission[]).forEach((p) => {
-        map[p] = { enable: false, disable: false };
+    if (isEdit || initialForm?.permissions) {
+      const map = {} as PermissionsMap;
+      PERMISSIONS.forEach((p) => {
+        map[p] = { enable: false, disable: true };
       });
-      initialForm.permissions.forEach((permStr: string) => {
-        const matched = PERMISSIONS.find(
-          (p) => p.toUpperCase().replace(/ /g, "_") === permStr.toUpperCase()
-        );
-        if (matched) {
-          map[matched] = { enable: true, disable: false };
-        }
-      });
+      if (initialForm?.permissions) {
+        initialForm.permissions.forEach((permStr: string) => {
+          const matched = PERMISSIONS.find(
+            (p) => p.toUpperCase().replace(/ /g, "_") === permStr.toUpperCase()
+          );
+          if (matched) {
+            map[matched] = { enable: true, disable: false };
+          }
+        });
+      }
       return map;
     }
     return initialPermissions;
@@ -243,19 +245,21 @@ export default function AddStaffModal({
         ...initialForm_default,
         ...initialForm,
       });
-      if (initialForm.permissions) {
-        const map = { ...initialPermissions };
-        (Object.keys(map) as Permission[]).forEach((p) => {
-          map[p] = { enable: false, disable: false };
+      if (isEdit || initialForm.permissions) {
+        const map = {} as PermissionsMap;
+        PERMISSIONS.forEach((p) => {
+          map[p] = { enable: false, disable: true };
         });
-        initialForm.permissions.forEach((permStr: string) => {
-          const matched = PERMISSIONS.find(
-            (p) => p.toUpperCase().replace(/ /g, "_") === permStr.toUpperCase()
-          );
-          if (matched) {
-            map[matched] = { enable: true, disable: false };
-          }
-        });
+        if (initialForm.permissions) {
+          initialForm.permissions.forEach((permStr: string) => {
+            const matched = PERMISSIONS.find(
+              (p) => p.toUpperCase().replace(/ /g, "_") === permStr.toUpperCase()
+            );
+            if (matched) {
+              map[matched] = { enable: true, disable: false };
+            }
+          });
+        }
         setPermissions(map);
       }
     } else {
@@ -315,13 +319,17 @@ export default function AddStaffModal({
     perm: Permission,
     col: "enable" | "disable"
   ) => {
-    setPermissions((prev) => ({
-      ...prev,
-      [perm]: {
-        enable:  col === "enable"  ? !prev[perm].enable  : prev[perm].enable,
-        disable: col === "disable" ? !prev[perm].disable : prev[perm].disable,
-      },
-    }));
+    setPermissions((prev) => {
+      const newEnable = col === "enable" ? !prev[perm].enable : prev[perm].enable;
+      const newDisable = col === "disable" ? !prev[perm].disable : prev[perm].disable;
+      return {
+        ...prev,
+        [perm]: {
+          enable: col === "enable" ? newEnable : !newDisable,
+          disable: col === "disable" ? newDisable : !newEnable,
+        },
+      };
+    });
   };
 
   const resetForm = () => {
@@ -349,12 +357,29 @@ export default function AddStaffModal({
   };
 
   const handleSave = async (closeAfterSave: boolean) => {
-  const emailOk = validateField("email", form.email);
-  const phoneOk = validateField("phoneNumber", form.phoneNumber);
+  if (isEdit) {
+    if (form.email !== (initialForm?.email ?? "")) {
+      const emailOk = validateField("email", form.email);
+      if (!emailOk) {
+        toast.error("Please enter a valid email.");
+        return;
+      }
+    }
+    if (form.phoneNumber !== (initialForm?.phoneNumber ?? "")) {
+      const phoneOk = validateField("phoneNumber", form.phoneNumber);
+      if (!phoneOk) {
+        toast.error("Please enter a valid phone number.");
+        return;
+      }
+    }
+  } else {
+    const emailOk = validateField("email", form.email);
+    const phoneOk = validateField("phoneNumber", form.phoneNumber);
 
-  if (!emailOk || !phoneOk || !isFormComplete()) {
-    toast.error("Please fill all the fields.");
-    return;
+    if (!emailOk || !phoneOk || !isFormComplete()) {
+      toast.error("Please fill all the fields.");
+      return;
+    }
   }
 
   try {
@@ -410,33 +435,93 @@ export default function AddStaffModal({
     let response;
     if (isEdit) {
       // PATCH request
-      const patchPayload: any = {
-        permissions: enabledPermissions,
-        staff_name:   form.teacherName,
-        email:        form.email,
-        phone_number: form.phoneNumber,
-        gender:       form.gender,
-        dob:          form.dob,
-        address:      form.address,
-        qualification:     form.qualification,
-        experience_year:   Number(form.experienceYear),
-        specialization:    form.specialization,
-        subject_expertise: form.courseExpertise,
-        joining_date:      form.joiningDate,
-        designation:       form.designation,
-        employment_type:   form.employmentType,
-        department:        form.department,
-        reporting_admin:   form.reportingAdmin,
-        salary_type:       form.salaryType,
-        monthly_salary:    Number(form.monthlySalary),
-        bank_account:      form.bankAccountNumber,
-        bank_name:         form.bankName,
-        ifsc_code:         form.ifscCode,
-        is_teacher:        isTeacher,
-      };
+      const patchPayload: any = {};
 
+      if (form.teacherName !== (initialForm?.teacherName ?? "")) {
+        patchPayload.staff_name = form.teacherName;
+      }
+      if (form.email !== (initialForm?.email ?? "")) {
+        patchPayload.email = form.email;
+      }
+      if (form.phoneNumber !== (initialForm?.phoneNumber ?? "")) {
+        patchPayload.phone_number = form.phoneNumber;
+      }
+      if (form.gender !== (initialForm?.gender ?? "")) {
+        patchPayload.gender = form.gender;
+      }
+      if (form.dob !== (initialForm?.dob ?? "")) {
+        patchPayload.dob = form.dob;
+      }
+      if (form.address !== (initialForm?.address ?? "")) {
+        patchPayload.address = form.address;
+      }
+      if (form.qualification !== (initialForm?.qualification ?? "")) {
+        patchPayload.qualification = form.qualification;
+      }
+      if (form.experienceYear !== (initialForm?.experienceYear ?? "")) {
+        patchPayload.experience_year = Number(form.experienceYear);
+      }
+      if (form.specialization !== (initialForm?.specialization ?? "")) {
+        patchPayload.specialization = form.specialization;
+      }
+      if (form.courseExpertise !== (initialForm?.courseExpertise ?? "")) {
+        patchPayload.subject_expertise = form.courseExpertise;
+      }
+      if (form.joiningDate !== (initialForm?.joiningDate ?? "")) {
+        patchPayload.joining_date = form.joiningDate;
+      }
+      if (form.designation !== (initialForm?.designation ?? "")) {
+        patchPayload.designation = form.designation;
+      }
+      if (form.employmentType !== (initialForm?.employmentType ?? "")) {
+        patchPayload.employment_type = form.employmentType;
+      }
+      if (form.department !== (initialForm?.department ?? "")) {
+        patchPayload.department = form.department;
+      }
+      if (form.reportingAdmin !== (initialForm?.reportingAdmin ?? "")) {
+        patchPayload.reporting_admin = form.reportingAdmin;
+      }
+      if (form.salaryType !== (initialForm?.salaryType ?? "")) {
+        patchPayload.salary_type = form.salaryType;
+      }
+      if (form.monthlySalary !== (initialForm?.monthlySalary ?? "")) {
+        patchPayload.monthly_salary = Number(form.monthlySalary);
+      }
+      if (form.bankAccountNumber !== (initialForm?.bankAccountNumber ?? "")) {
+        patchPayload.bank_account = form.bankAccountNumber;
+      }
+      if (form.bankName !== (initialForm?.bankName ?? "")) {
+        patchPayload.bank_name = form.bankName;
+      }
+      if (form.ifscCode !== (initialForm?.ifscCode ?? "")) {
+        patchPayload.ifsc_code = form.ifscCode;
+      }
+      if (form.role !== (initialForm?.role ?? "")) {
+        patchPayload.role = form.role;
+      }
+      if (form.staffId !== (initialForm?.staffId ?? "")) {
+        patchPayload.user_id = form.staffId;
+      }
       if (form.temporaryPassword && form.temporaryPassword.trim() !== "") {
         patchPayload.temporary_password = form.temporaryPassword;
+      }
+
+      // Check if permissions have changed
+      const initialPerms = initialForm?.permissions ?? [];
+      const permissionsChanged =
+        enabledPermissions.length !== initialPerms.length ||
+        !enabledPermissions.every((p) => initialPerms.includes(p));
+
+      if (permissionsChanged) {
+        patchPayload.permissions = enabledPermissions;
+      }
+
+      // If nothing was modified and no new photo was uploaded, no need to send request
+      if (Object.keys(patchPayload).length === 0 && !form.photo) {
+        toast.info("No changes were made.");
+        onClose?.();
+        return;
       }
 
       console.log(`📤 edit-staff PATCH payload to /edit-staff/${dbId}/:`, JSON.stringify(patchPayload, null, 2));
