@@ -248,8 +248,9 @@ const ForgotPasswordPage = () => {
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.88),transparent_25%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.18),transparent_18%),linear-gradient(180deg,#f7fbff_0%,#e9effb_100%)]" />
 
             <div className="pointer-events-none absolute left-1/2 top-14 h-60 w-96 -translate-x-1/2 rounded-full bg-white/70 blur-3xl" />
+            <div className=" absolute inset-0 bg-[url('/loginBG.png')] bg-cover bg-center opac " />
 
-            <div className="relative z-10 mx-auto flex min-h-screen max-w-[720px] flex-col px-4 py-10 sm:px-6 lg:px-8">
+            <div className="relative z-10 mx-auto flex justify-center items-center min-h-screen max-w-[720px] flex-col px-4 py-10 sm:px-6 lg:px-8">
                 <div className="mx-auto w-full rounded-[28px] bg-white/95 p-8 shadow-[0_24px_80px_rgba(15,23,42,0.12)] ring-1 ring-slate-200 sm:p-10">
                     <div className="mb-8 flex items-center justify-between">
                         <div>
@@ -432,7 +433,7 @@ const ForgotPasswordPage = () => {
                             type="button"
                             onClick={handleSubmit}
                                disabled={submitLoading}
-                            className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-950"
+                            className="w-full rounded-xl bg-[#002F96] px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-950"
                         >
                            {submitLoading ? "Updating..." : "Create Password"}
                         </button>
