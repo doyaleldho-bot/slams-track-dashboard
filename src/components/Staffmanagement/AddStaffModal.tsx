@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import api from "../../api/axios";
 
 export type AddStaffFormData = {
   // Personal
@@ -23,22 +24,24 @@ export type AddStaffFormData = {
   specialization: string;
   courseExpertise: string;
   joiningDate: string;
+  designation: string;        // e.g. "Teacher", "Office Staff"
   employmentType: string;
   department: string;
+  reportingAdmin: string;
   // Salary
   salaryType: string;
   monthlySalary: string;
   bankAccountNumber: string;
   bankName: string;
   ifscCode: string;
-  payrollApplicable: boolean;
   // Login
-  role: string;
-  staffId: string;
-  temporaryPassword: string;
+  role: string;               // "Administration staff" | "Non-administration staff"
+  staffId: string;            // user_id sent to backend
+  temporaryPassword: string;  // actual password string
+  permissions?: string[];
 };
 
-const initialForm: AddStaffFormData = {
+const initialForm_default: AddStaffFormData = {
   teacherName: "",
   phoneNumber: "",
   email: "",
@@ -51,14 +54,15 @@ const initialForm: AddStaffFormData = {
   specialization: "",
   courseExpertise: "",
   joiningDate: "",
+  designation: "",
   employmentType: "",
   department: "",
+  reportingAdmin: "",
   salaryType: "",
   monthlySalary: "",
   bankAccountNumber: "",
   bankName: "",
   ifscCode: "",
-  payrollApplicable: false,
   role: "",
   staffId: "",
   temporaryPassword: "",
@@ -91,6 +95,10 @@ interface Props {
   onClose?: () => void;
   onSave?: (form: AddStaffFormData) => void;
   initialForm?: Partial<AddStaffFormData>;
+  isEdit?: boolean;
+  dbId?: number | null;
+  /** true when the Teaching Staff tab is active; false for Non-Teaching */
+  isTeacher?: boolean;
 }
 
 
@@ -195,15 +203,66 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
 /* ─── Divider ─── */
 const Divider = () => <hr className="border-gray-100 my-4" />;
 
-export default function AddStaffModal({ onClose, onSave, initialForm }: Props) {
+export default function AddStaffModal({
+  onClose,
+  onSave,
+  initialForm,
+  isEdit = false,
+  dbId = null,
+  isTeacher = true,
+}: Props) {
   const [form, setForm] = useState<AddStaffFormData>({
-    ...initialForm,
-    ...initialForm,
-    ...(initialForm ? initialForm : undefined),
-  } as AddStaffFormData);
+    ...initialForm_default,
+    ...(initialForm ?? {}),
+  });
   const [photoName, setPhotoName] = useState("Choose Files");
-  const [permissions, setPermissions] = useState<PermissionsMap>(initialPermissions);
+  const [permissions, setPermissions] = useState<PermissionsMap>(() => {
+    if (initialForm?.permissions) {
+      const map = { ...initialPermissions };
+      (Object.keys(map) as Permission[]).forEach((p) => {
+        map[p] = { enable: false, disable: false };
+      });
+      initialForm.permissions.forEach((permStr: string) => {
+        const matched = PERMISSIONS.find(
+          (p) => p.toUpperCase().replace(/ /g, "_") === permStr.toUpperCase()
+        );
+        if (matched) {
+          map[matched] = { enable: true, disable: false };
+        }
+      });
+      return map;
+    }
+    return initialPermissions;
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (initialForm) {
+      setForm({
+        ...initialForm_default,
+        ...initialForm,
+      });
+      if (initialForm.permissions) {
+        const map = { ...initialPermissions };
+        (Object.keys(map) as Permission[]).forEach((p) => {
+          map[p] = { enable: false, disable: false };
+        });
+        initialForm.permissions.forEach((permStr: string) => {
+          const matched = PERMISSIONS.find(
+            (p) => p.toUpperCase().replace(/ /g, "_") === permStr.toUpperCase()
+          );
+          if (matched) {
+            map[matched] = { enable: true, disable: false };
+          }
+        });
+        setPermissions(map);
+      }
+    } else {
+      setForm(initialForm_default);
+      setPermissions(initialPermissions);
+    }
+  }, [initialForm]);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -251,8 +310,6 @@ export default function AddStaffModal({ onClose, onSave, initialForm }: Props) {
     else setErrors((p) => ({ ...p, photo: "" }));
   };
 
-  const handleToggle = () =>
-    setForm((prev) => ({ ...prev, payrollApplicable: !prev.payrollApplicable }));
 
   const handlePermission = (
     perm: Permission,
@@ -268,93 +325,245 @@ export default function AddStaffModal({ onClose, onSave, initialForm }: Props) {
   };
 
   const resetForm = () => {
-    setForm(
-      ({
-        ...initialForm,
-        ...initialPermissions,
-      } as unknown) as AddStaffFormData
-    );
+    setForm({
+      ...initialForm_default,
+    });
     setPhotoName("Choose Files");
     setPermissions(initialPermissions);
     setErrors({});
   };
 
   const isFormComplete = () => {
-    // require all string fields to be non-empty and photo to be present
+    // Require all string fields to be non-empty; photo is optional
     for (const key of Object.keys(form) as (keyof AddStaffFormData)[]) {
       const val = form[key];
-      if (key === "photo") {
-        if (!val) return false;
-        continue;
-      }
-
-      if (typeof val === "string") {
-        if (val.trim() === "") return false;
-      }
+      if (key === "photo") continue; // photo is optional
+      if (isEdit && key === "temporaryPassword") continue; // password is optional on edit
+      if (typeof val === "string" && val.trim() === "") return false;
     }
-
-    // ensure no validation errors
+    // Ensure no active validation errors
     for (const k of Object.keys(errors)) {
       if (errors[k]) return false;
     }
-
     return true;
   };
 
-  const handleSave = (closeAfterSave: boolean) => {
-    // run quick validation for fields that need format checks
-    const emailOk = validateField("email", form.email);
-    const phoneOk = validateField("phoneNumber", form.phoneNumber);
+  const handleSave = async (closeAfterSave: boolean) => {
+  const emailOk = validateField("email", form.email);
+  const phoneOk = validateField("phoneNumber", form.phoneNumber);
 
-    // mark required fields missing (for toast/UX)
-    const requiredKeys: (keyof AddStaffFormData)[] = [
-      "teacherName",
-      "phoneNumber",
-      "email",
-      "gender",
-      "dob",
-      "address",
-      "qualification",
-      "experienceYear",
-      "specialization",
-      "courseExpertise",
-      "joiningDate",
-      "employmentType",
-      "department",
-      "salaryType",
-      "monthlySalary",
-      "bankAccountNumber",
-      "bankName",
-      "ifscCode",
-      "role",
-      "staffId",
-      "temporaryPassword",
-    ];
+  if (!emailOk || !phoneOk || !isFormComplete()) {
+    toast.error("Please fill all the fields.");
+    return;
+  }
 
-    let missingRequired = false;
-    for (const k of requiredKeys) {
-      const v = form[k];
-      if (typeof v === "string" && v.trim() === "") {
-        missingRequired = true;
-        setErrors((p) => ({ ...p, [k as string]: "This field is required" }));
+  try {
+    setIsSubmitting(true);
+
+    // ✅ Build permissions array from the enable toggles
+    const enabledPermissions = (Object.keys(permissions) as Permission[])
+      .filter((p) => permissions[p].enable)
+      .map((p) => p.toUpperCase().replace(/ /g, "_"));
+
+    // ✅ Build JSON payload matching the backend spec exactly
+    const payload = {
+      // Login / identity
+      role:               form.role,
+      user_id:            form.staffId,
+      temporary_password: form.temporaryPassword,
+      permissions:        enabledPermissions,
+
+      // Personal
+      staff_name:   form.teacherName,
+      email:        form.email,
+      phone_number: form.phoneNumber,
+      gender:       form.gender,
+      dob:          form.dob,
+      address:      form.address,
+
+      // Professional
+      qualification:     form.qualification,
+      experience_year:   Number(form.experienceYear),
+      specialization:    form.specialization,
+      subject_expertise: form.courseExpertise,
+      joining_date:      form.joiningDate,
+      designation:       form.designation,
+      employment_type:   form.employmentType,
+      department:        form.department,
+      reporting_admin:   form.reportingAdmin,
+
+      // Salary
+      salary_type:    form.salaryType,
+      monthly_salary: Number(form.monthlySalary),
+      bank_account:   form.bankAccountNumber,
+      bank_name:      form.bankName,
+      ifsc_code:      form.ifscCode,
+
+      // is_teacher is driven by the active tab in the parent page
+      is_teacher: isTeacher,
+    };
+
+    // 🔍 Log the exact payload so you can verify field values in console
+    console.log("📤 staff-create payload:", JSON.stringify(payload, null, 2));
+
+    // ✅ If photo is attached use multipart FormData, else send JSON
+    let response;
+    if (isEdit) {
+      // PATCH request
+      const patchPayload: any = {
+        permissions: enabledPermissions,
+        staff_name:   form.teacherName,
+        email:        form.email,
+        phone_number: form.phoneNumber,
+        gender:       form.gender,
+        dob:          form.dob,
+        address:      form.address,
+        qualification:     form.qualification,
+        experience_year:   Number(form.experienceYear),
+        specialization:    form.specialization,
+        subject_expertise: form.courseExpertise,
+        joining_date:      form.joiningDate,
+        designation:       form.designation,
+        employment_type:   form.employmentType,
+        department:        form.department,
+        reporting_admin:   form.reportingAdmin,
+        salary_type:       form.salaryType,
+        monthly_salary:    Number(form.monthlySalary),
+        bank_account:      form.bankAccountNumber,
+        bank_name:         form.bankName,
+        ifsc_code:         form.ifscCode,
+        is_teacher:        isTeacher,
+      };
+
+      if (form.temporaryPassword && form.temporaryPassword.trim() !== "") {
+        patchPayload.temporary_password = form.temporaryPassword;
+      }
+
+      console.log(`📤 edit-staff PATCH payload to /edit-staff/${dbId}/:`, JSON.stringify(patchPayload, null, 2));
+
+      if (form.photo) {
+        const formData = new FormData();
+        Object.entries(patchPayload).forEach(([k, v]) => {
+          if (Array.isArray(v)) {
+            v.forEach((item) => formData.append(k, item));
+          } else {
+            formData.append(k, String(v));
+          }
+        });
+        formData.append("photo", form.photo);
+        response = await api.patch(`/edit-staff/${dbId}/`, formData);
+      } else {
+        response = await api.patch(`/edit-staff/${dbId}/`, patchPayload, {
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    } else {
+      // POST request to /staff-create/
+      if (form.photo) {
+        const formData = new FormData();
+        Object.entries(payload).forEach(([k, v]) => {
+          if (Array.isArray(v)) {
+            v.forEach((item) => formData.append(k, item));
+          } else {
+            formData.append(k, String(v));
+          }
+        });
+        formData.append("photo", form.photo);
+        response = await api.post("/staff-create/", formData);
+      } else {
+        response = await api.post("/staff-create/", payload, {
+          headers: { "Content-Type": "application/json" },
+        });
       }
     }
 
-    if (!emailOk || !phoneOk || !isFormComplete()) {
-      toast.error("Please fill all the fields.");
+
+    if (response.data.status) {
+      toast.success(isEdit ? "Staff updated successfully!" : "Staff created successfully!");
+
+      onSave?.(form);
+
+      if (closeAfterSave) {
+        onClose?.();
+      } else {
+        resetForm();
+      }
+    } else {
+      toast.error(response.data.message || "Failed to create staff.");
+    }
+
+  } catch (err: any) {
+    const rawData = err?.response?.data;
+
+    // ── If Django returned an HTML error page, extract and decode the error ──
+    if (typeof rawData === "string" && rawData.includes("<!DOCTYPE")) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(rawData, "text/html");
+
+      const exceptionEl =
+        doc.querySelector(".exception_value") ||
+        doc.querySelector("pre") ||
+        doc.querySelector("h1");
+
+      const djangoError = exceptionEl?.textContent?.trim() ?? "";
+      console.error("❌ Django 500 exception:", djangoError);
+
+      // ── Map known DB constraint errors to friendly field-level messages ──
+      if (djangoError.toLowerCase().includes("duplicate key") ||
+          djangoError.toLowerCase().includes("unique constraint")) {
+
+        if (djangoError.toLowerCase().includes("email")) {
+          setErrors((prev) => ({ ...prev, email: "This email is already registered." }));
+          toast.error("Email already exists. Please use a different email address.");
+        } else if (djangoError.toLowerCase().includes("user_id") ||
+                   djangoError.toLowerCase().includes("staff_id")) {
+          setErrors((prev) => ({ ...prev, staffId: "This Staff ID is already taken." }));
+          toast.error("Staff ID already exists. Please use a different ID.");
+        } else if (djangoError.toLowerCase().includes("phone")) {
+          setErrors((prev) => ({ ...prev, phoneNumber: "This phone number is already registered." }));
+          toast.error("Phone number already registered.");
+        } else {
+          // Generic duplicate — still friendlier than raw DB error
+          toast.error("A staff member with these details already exists. Check email, Staff ID, or phone number.");
+        }
+        return;
+      }
+
+      // Unknown Django 500 — show trimmed error text
+      toast.error(`Server error: ${djangoError.slice(0, 120)}`);
       return;
     }
 
+    // ── Standard axios / JSON error ──────────────────────────────────────
+    console.error("❌ Staff create failed:", {
+      message:     err?.message,
+      code:        err?.code,
+      status:      err?.response?.status,
+      data:        rawData,
+    });
 
-    onSave?.(form);
-
-    if (closeAfterSave) {
-      onClose?.();
-      return;
+    let msg: string;
+    if (!err?.response) {
+      msg = "Cannot reach the server. Check your network connection.";
+    } else {
+      msg =
+        rawData?.message ||
+        rawData?.detail ||
+        (typeof rawData === "object" && rawData !== null
+          ? Object.entries(rawData)
+              .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+              .join(" | ")
+          : null) ||
+        `Server error (${err.response.status}). Check console for details.`;
     }
 
-    resetForm();
-  };
+    toast.error(msg);
+  } finally {
+    setIsSubmitting(false);
+  }
+
+
+};
 
   return (
     /* ── Backdrop ── */
@@ -374,11 +583,12 @@ export default function AddStaffModal({ onClose, onSave, initialForm }: Props) {
           <div className="flex items-start justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
-                Add New Staff Member
+                {isEdit ? "Edit Staff Member" : "Add New Staff Member"}
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                Enter the details of the new staff member. All fields marked
-                with * are required.
+                {isEdit
+                  ? "Update the details of the staff member."
+                  : "Enter the details of the new staff member. All fields marked with * are required."}
               </p>
             </div>
             <button
@@ -582,6 +792,16 @@ export default function AddStaffModal({ onClose, onSave, initialForm }: Props) {
               </div>
             </div>
 
+            {/* Designation */}
+            <InputField
+              label="Designation"
+              name="designation"
+              value={form.designation}
+              placeholder="e.g. Teacher, Office Staff"
+              onChange={handleChange}
+              error={errors.designation}
+            />
+
             {/* Employment Type */}
             <SelectField
               label="Employment type"
@@ -622,6 +842,18 @@ export default function AddStaffModal({ onClose, onSave, initialForm }: Props) {
                 />
               </div>
               {errors.department && <p className="text-red-500 text-xs mt-1">{errors.department}</p>}
+            </div>
+
+            {/* Reporting Admin — full width */}
+            <div className="sm:col-span-2">
+              <InputField
+                label="Reporting Admin"
+                name="reportingAdmin"
+                value={form.reportingAdmin}
+                placeholder="e.g. Principal"
+                onChange={handleChange}
+                error={errors.reportingAdmin}
+              />
             </div>
           </div>
 
@@ -676,53 +908,15 @@ export default function AddStaffModal({ onClose, onSave, initialForm }: Props) {
             />
 
             {/* IFSC Code */}
-            <div>
-              <label className={labelCls}>
-                IFSC code<span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <select
-                  name="ifscCode"
-                  value={form.ifscCode}
-                  onChange={handleChange}
-                  className={selectCls + (form.ifscCode ? " text-gray-800" : "")}
-                >
-                  <option value="" disabled hidden>
-                    Enter Code
-                  </option>
-                  {["SBIN0001234", "HDFC0002345", "ICIC0003456", "AXIS0004567"].map(
-                    (c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    )
-                  )}
-                </select>
-                <ChevronDown
-                  size={14}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
-              {errors.ifscCode && <p className="text-red-500 text-xs mt-1">{errors.ifscCode}</p>}
-            </div>
+            <InputField
+              label="IFSC code"
+              name="ifscCode"
+              value={form.ifscCode}
+              placeholder="e.g. SBIN0001234"
+              onChange={handleChange}
+              error={errors.ifscCode}
+            />
 
-            {/* Payroll Applicable toggle */}
-            <div className="flex items-center gap-3 pt-5">
-              <button
-                type="button"
-                onClick={handleToggle}
-                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
-                  form.payrollApplicable ? "bg-blue-500" : "bg-gray-300"
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
-                    form.payrollApplicable ? "translate-x-4" : "translate-x-0"
-                  }`}
-                />
-              </button>
-              <span className="text-sm text-gray-700">Payroll Applicable</span>
-            </div>
           </div>
 
           <Divider />
@@ -763,29 +957,15 @@ export default function AddStaffModal({ onClose, onSave, initialForm }: Props) {
               </div>
 
               {/* Temporary Password */}
-              <div>
-                <label className={labelCls}>
-                  Temporary password<span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    name="temporaryPassword"
-                    value={form.temporaryPassword}
-                    onChange={handleChange}
-                    className={selectCls + (form.temporaryPassword ? " text-gray-800" : "")}
-                  >
-                    <option value="" disabled hidden>Enter Code</option>
-                    {["Auto Generate", "Custom"].map((p) => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    size={14}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                  />
-                </div>
-                {errors.temporaryPassword && <p className="text-red-500 text-xs mt-1">{errors.temporaryPassword}</p>}
-              </div>
+              <InputField
+                label="Temporary password"
+                name="temporaryPassword"
+                value={form.temporaryPassword}
+                placeholder="e.g. Staff@12345"
+                type="password"
+                onChange={handleChange}
+                error={errors.temporaryPassword}
+              />
             </div>
 
             {/* ── RIGHT COLUMN: Staff id + All Permissions table ── */}
@@ -901,19 +1081,23 @@ export default function AddStaffModal({ onClose, onSave, initialForm }: Props) {
           >
             Cancel
           </button>
-          <button
-            type="button"
-            onClick={() => handleSave(false)}
-            className="w-full sm:w-auto px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-          >
-            Save &amp; Add Another
-          </button>
+          {!isEdit && (
+            <button
+              type="button"
+              onClick={() => handleSave(false)}
+              disabled={isSubmitting}
+              className="w-full sm:w-auto px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? "Saving..." : "Save & Add Another"}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => handleSave(true)}
-            className="w-full sm:w-auto px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
+            disabled={isSubmitting}
+            className="w-full sm:w-auto px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Save Teacher
+            {isSubmitting ? "Saving..." : isEdit ? "Save Changes" : "Save Staff"}
           </button>
         </div>
       </div>

@@ -3,9 +3,9 @@ import axios from "axios";
 const api = axios.create({
   baseURL: "/api",
   withCredentials: true,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  // Note: Do NOT set Content-Type here — axios sets it automatically
+  // per request (e.g. multipart/form-data with boundary for FormData,
+  // or application/json for plain objects).
 });
 
 // Request Interceptor
@@ -28,7 +28,9 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // No response at all = network error (server down, CORS, etc.)
     if (!error.response) {
+      console.error("[API] Network error (no response):", error.message, error.code);
       return Promise.reject(error);
     }
 
@@ -51,35 +53,28 @@ api.interceptors.response.use(
           localStorage.getItem("refresh_token");
 
         if (!refreshToken) {
+          // No refresh token — reject with the original 401 error (not a new one)
           return Promise.reject(error);
         }
 
         console.log("Refreshing token...");
 
-        const refreshRes = await axios.post(
-          "/api/token-refresh/",
-          {
-            refresh: refreshToken,
-          }
-        );
+        const refreshRes = await api.post("/token-refresh/", {
+          refresh: refreshToken,
+        });
 
-        const newAccessToken =
-          refreshRes.data.tokens.access;
-
-        localStorage.setItem(
-          "access_token",
-          newAccessToken
-        );
-        originalRequest.headers.Authorization =
-          `Bearer ${newAccessToken}`;
+        const newAccessToken = refreshRes.data.tokens.access;
+        localStorage.setItem("access_token", newAccessToken);
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
         return api(originalRequest);
-      } catch (refreshError) {
+      } catch (refreshError: any) {
+        // Refresh failed — clear tokens and reject with the ORIGINAL error
+        // so callers see the 401, not an unrelated refresh network error
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
-          window.location.href = "/login";
-
-        return Promise.reject(refreshError);
+        console.error("[API] Token refresh failed:", refreshError?.message);
+        return Promise.reject(error); // ← original error, not refreshError
       }
     }
 

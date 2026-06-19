@@ -1,72 +1,157 @@
-import React from "react";
-import { FiSearch, FiEye } from "react-icons/fi";
+import React, { useEffect, useState } from "react";
+import { FiSearch, FiEye, FiRefreshCw } from "react-icons/fi";
+import { Loader2, AlertCircle } from "lucide-react";
+import api from "../../../api/axios";
 import SubstituteDetailsModal, {
   type SubstituteDetails,
 } from "../../Staffmanagement/SubstituteDetailsModal";
 
-const data: SubstituteDetails[] = [
-  {
-    id: "TCH003",
-    regularTeacher: "Michael Chen",
-    substituteTeacher: "Sarah John",
-    batch: "2024-A",
-    section: "A",
-    date: "2026-05-28",
-    reason: "Teacher On Leave",
-    reasonDescription:
-      "Regular teacher has requested medical leave for personal health reasons. Expected to return on May 28, 2026.",
-  },
-  {
-    id: "TCH003",
-    regularTeacher: "Lisa Martinez",
-    substituteTeacher: "Emily Rodriguez",
-    batch: "2024-A",
-    section: "A",
-    date: "2026-05-26",
-    reason: "Emergency",
-    reasonDescription:
-      "Regular teacher is unavailable due to an emergency assignment change. Substitute coverage has been arranged for the listed class.",
-  },
-];
+
 
 type SubstituteListProps = {
   assignments?: SubstituteDetails[];
 };
 
-const SubstituteList = ({ assignments = [] }: SubstituteListProps) => {
-  const [selectedSubstitute, setSelectedSubstitute] =
-    React.useState<SubstituteDetails | null>(null);
-  const tableData = [...assignments, ...data];
+const SubstituteList = ({ assignments: localAssignments = [] }: SubstituteListProps) => {
+  const [selectedSubstitute, setSelectedSubstitute] = useState<SubstituteDetails | null>(null);
+  const [assignments, setAssignments] = useState<SubstituteDetails[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Format selectedDate as YYYY-MM-DD
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  });
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [batchFilter, setBatchFilter] = useState("All Batch");
+  const [sectionFilter, setSectionFilter] = useState("All Section");
+
+  const fetchAssignments = React.useCallback(async (dateStr: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await api.get(`/list-substitute-teacher-assignments/?date=${dateStr}`);
+      if (res.data && res.data.status) {
+        const mapped: SubstituteDetails[] = (res.data.assignments || []).map((item: any) => ({
+          id: item.substitute_teacher_id ? String(item.substitute_teacher_id) : String(item.assignment_id),
+          regularTeacher: item.original_teacher_name || "Unknown",
+          substituteTeacher: item.substitute_teacher_name || "Unknown",
+          batch: item.class_name || "Class 9th",
+          section: item.period ? `Period ${item.period}` : "A",
+          date: dateStr,
+          reason: item.reason || "Substitution requested",
+          reasonDescription: `${item.original_teacher_name} is substituted by ${item.substitute_teacher_name} for ${item.subject || "subject"} in ${item.class_name || "class"} during period ${item.period || "N/A"}.`,
+        }));
+        setAssignments(mapped);
+      } else {
+        setError(res.data?.message || "Failed to fetch substitute assignments.");
+      }
+    } catch (err: any) {
+      console.error("Error fetching substitute assignments:", err);
+      setError(
+        err?.response?.data?.message ||
+        err?.message ||
+        "An error occurred while fetching substitute assignments."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAssignments(selectedDate);
+  }, [selectedDate, fetchAssignments]);
+
+  // Merge API data and locally-added assignments
+  const tableData = [...localAssignments, ...assignments];
+
+  const filteredItems = tableData.filter((item) => {
+    const query = searchQuery.trim().toLowerCase();
+    const matchesSearch =
+      query === "" ||
+      item.substituteTeacher.toLowerCase().includes(query) ||
+      item.regularTeacher.toLowerCase().includes(query) ||
+      item.id.toLowerCase().includes(query);
+    const matchesBatch =
+      batchFilter === "All Batch" || item.batch === batchFilter;
+    const matchesSection =
+      sectionFilter === "All Section" || item.section === sectionFilter;
+    return matchesSearch && matchesBatch && matchesSection;
+  });
 
   return (
     <>
       <div className="bg-white rounded-[12px] border p-4">
         <div className="mb-6 space-y-4">
-          <h3 className="text-[16px] font-medium text-[#2F2F2F]">
-            Substitute Assignment List
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-[16px] font-medium text-[#2F2F2F]">
+              Substitute Assignment List
+            </h3>
+            <button
+              onClick={() => fetchAssignments(selectedDate)}
+              disabled={isLoading}
+              className="flex items-center gap-1.5 text-xs text-blue-500 hover:text-blue-600 disabled:opacity-50 font-medium"
+            >
+              <FiRefreshCw className={isLoading ? "animate-spin" : ""} />
+              Refresh
+            </button>
+          </div>
 
           <div className="flex flex-col xl:flex-row items-center gap-4 bg-[#F4F6F8] rounded-[18px] p-4">
+            {/* Search */}
             <div className="flex items-center gap-3 rounded-[14px] bg-white px-4 h-12 w-full shadow-sm">
               <FiSearch className="text-gray-400" />
               <input
                 type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by name or Id"
                 className="outline-none text-sm bg-transparent w-full text-[#2F2F2F] placeholder:text-[#9CA3AF]"
               />
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
-              <select className="border border-[#E5E7EB] bg-white rounded-[14px] px-4 h-12 text-sm text-[#2F2F2F] w-full xl:w-auto">
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto shrink-0">
+              {/* Date Selector */}
+              <div className="relative flex items-center bg-white border border-[#E5E7EB] rounded-[14px] px-4 h-12 text-sm text-[#2F2F2F] w-full sm:w-auto shadow-sm">
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="outline-none bg-transparent w-full h-full cursor-pointer text-gray-700 font-medium"
+                />
+              </div>
+
+              {/* Batch Filter */}
+              <select
+                value={batchFilter}
+                onChange={(e) => setBatchFilter(e.target.value)}
+                className="border border-[#E5E7EB] bg-white rounded-[14px] px-4 h-12 text-sm text-[#2F2F2F] w-full sm:w-auto shadow-sm"
+              >
                 <option>All Batch</option>
-                <option>2024-A</option>
-                <option>2024-B</option>
+                {Array.from(new Set(tableData.map((d) => d.batch))).map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
               </select>
 
-              <select className="border border-[#E5E7EB] bg-white rounded-[14px] px-4 h-12 text-sm text-[#2F2F2F] w-full xl:w-auto">
+              {/* Section Filter */}
+              <select
+                value={sectionFilter}
+                onChange={(e) => setSectionFilter(e.target.value)}
+                className="border border-[#E5E7EB] bg-white rounded-[14px] px-4 h-12 text-sm text-[#2F2F2F] w-full sm:w-auto shadow-sm"
+              >
                 <option>All Section</option>
-                <option>A</option>
-                <option>B</option>
+                {Array.from(new Set(tableData.map((d) => d.section))).map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -88,30 +173,68 @@ const SubstituteList = ({ assignments = [] }: SubstituteListProps) => {
             </thead>
 
             <tbody>
-              {tableData.map((item, index) => (
-                <tr
-                  key={`${item.id}-${item.regularTeacher}-${index}`}
-                  className="border-b hover:bg-gray-50"
-                >
-                  <td className="py-3 text-indigo-600 font-medium">{item.id}</td>
-                  <td>{item.regularTeacher}</td>
-                  <td>{item.substituteTeacher}</td>
-                  <td>{item.batch}</td>
-                  <td>{item.section}</td>
-                  <td>{item.date}</td>
-                  <td>{item.reason}</td>
-                  <td>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedSubstitute(item)}
-                      className="text-gray-600 hover:text-black"
-                      aria-label={`View substitute details for ${item.substituteTeacher}`}
-                    >
-                      <FiEye />
-                    </button>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={8} className="py-10 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2 text-gray-500">
+                      <Loader2 className="animate-spin text-blue-500" size={24} />
+                      <span>Fetching substitute assignments...</span>
+                    </div>
                   </td>
                 </tr>
-              ))}
+              ) : error ? (
+                <tr>
+                  <td colSpan={8} className="py-10 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2 text-red-500">
+                      <AlertCircle size={24} />
+                      <span className="font-medium">Error loading assignments</span>
+                      <span className="text-xs text-gray-500">{error}</span>
+                      <button
+                        type="button"
+                        onClick={() => fetchAssignments(selectedDate)}
+                        className="mt-2 rounded bg-red-100 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-200"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredItems.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-10 text-center text-gray-500">
+                    No substitute assignments found for this filter/date.
+                  </td>
+                </tr>
+              ) : (
+                filteredItems.map((item, index) => (
+                  <tr
+                    key={`${item.id}-${item.regularTeacher}-${index}`}
+                    className="border-b hover:bg-gray-50"
+                  >
+                    <td className="py-3 text-indigo-600 font-medium">{item.id}</td>
+                    <td>{item.regularTeacher}</td>
+                    <td>{item.substituteTeacher}</td>
+                    <td>{item.batch}</td>
+                    <td>{item.section}</td>
+                    <td>{item.date}</td>
+                    <td>
+                      <span className="rounded-full border border-orange-300 px-3 py-1 text-xs text-orange-500 bg-orange-50/50">
+                        {item.reason}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSubstitute(item)}
+                        className="text-gray-600 hover:text-black"
+                        aria-label={`View substitute details for ${item.substituteTeacher}`}
+                      >
+                        <FiEye size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

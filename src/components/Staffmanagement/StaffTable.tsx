@@ -1,9 +1,10 @@
 import React from "react";
 import { FiEdit2, FiSearch, FiTrash2 } from "react-icons/fi";
 import { FaUser } from "react-icons/fa";
-import AssignSubstitute from ".//stafftabs/AssignSubstitute";
+import AssignSubstitute from "./stafftabs/AssignSubstitute";
 import NonTeachingTable from "../Staffmanagement/NonTeachingTable";
 import SubstituteList from "../Staffmanagement/stafftabs/SubstituteList";
+import LeaveRequestTable from "./stafftabs/LeaveRequestTable";
 import type { SubstituteDetails } from "./SubstituteDetailsModal";
 
 interface Props {
@@ -13,20 +14,18 @@ interface Props {
   substituteAssignments?: SubstituteDetails[];
   onSubstituteAssigned?: (assignment: SubstituteDetails) => void;
   teacherList?: any[];
+  teacherLoading?: boolean;
+  teacherError?: string | null;
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
   nonTeachingList?: any[];
+  nonTeachingLoading?: boolean;
+  nonTeachingError?: string | null;
+  nonTeachingPage?: number;
+  nonTeachingTotalPages?: number;
+  onNonTeachingPageChange?: (page: number) => void;
 }
-
-const sampleData = [
-  {
-    id: "TCH001",
-    name: "Sarah Johnson",
-    phone: "+1 234-567-8901",
-    email: "sarah.j@school.com",
-    department: "Mathematics",
-    attendance: "92%",
-    status: "Active",
-  },
-];
 
 type StaffRecord = {
   id: string;
@@ -51,21 +50,32 @@ const StaffTable = ({
   substituteAssignments = [],
   onSubstituteAssigned,
   teacherList,
+  teacherLoading = false,
+  teacherError = null,
+  currentPage = 1,
+  totalPages = 1,
+  onPageChange,
   nonTeachingList,
+  nonTeachingLoading = false,
+  nonTeachingError = null,
+  nonTeachingPage = 1,
+  nonTeachingTotalPages = 1,
+  onNonTeachingPageChange,
   onEditStaff,
   onDeleteStaff,
-}: Props & {
-  onEditStaff?: (staff: any) => void;
-  onDeleteStaff?: (id: string) => void;
-}) => {
+}: StaffTableProps) => {
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [departmentFilter, setDepartmentFilter] = React.useState(
-    "All Department"
-  );
+  const [departmentFilter, setDepartmentFilter] = React.useState("All Department");
   const [statusFilter, setStatusFilter] = React.useState("All Status");
 
-  const items: StaffRecord[] =
-    teacherList && teacherList.length ? (teacherList as StaffRecord[]) : sampleData;
+  // Normalise API fields → display fields
+  const items: StaffRecord[] = (teacherList ?? []).map((t) => ({
+    ...t,
+    id: t.user_id ?? t.id,
+    name: t.staff_name ?? t.name,
+    phone: t.phone_number ?? t.phone,
+    dbId: t.id,
+  }));
 
   const filteredItems = items.filter((item: StaffRecord) => {
     const query = searchQuery.trim().toLowerCase();
@@ -82,26 +92,54 @@ const StaffTable = ({
   });
 
   if (mainTab === "Non-Teaching Staff") {
-    return <NonTeachingTable data={nonTeachingList || []} />;
+    return (
+      <NonTeachingTable
+        data={nonTeachingList || []}
+        isLoading={nonTeachingLoading}
+        error={nonTeachingError}
+        currentPage={nonTeachingPage}
+        totalPages={nonTeachingTotalPages}
+        onPageChange={onNonTeachingPageChange}
+        onEditStaff={onEditStaff}
+        onDeleteStaff={onDeleteStaff}
+      />
+    );
   }
 
-  if (
-    mainTab === "Teaching Staff" &&
-    staffTypeTab === "Substitute" &&
-    subTab === "Assign Substitute"
-  ) {
+  if (mainTab === "Teaching Staff" && staffTypeTab === "Substitute" && subTab === "Assign Substitute") {
     return <AssignSubstitute onSubstituteAssigned={onSubstituteAssigned} />;
   }
 
-  if (
-    mainTab === "Teaching Staff" &&
-    staffTypeTab === "Substitute" &&
-    subTab === "Substitute List"
-  ) {
+  if (mainTab === "Teaching Staff" && staffTypeTab === "Substitute" && subTab === "Substitute List") {
     return <SubstituteList assignments={substituteAssignments} />;
   }
 
-  // 🔥 DEFAULT → NORMAL TABLE (Teacher / Non-Teaching)
+  if (mainTab === "Teaching Staff" && staffTypeTab === "Leave Request") {
+    return <LeaveRequestTable />;
+  }
+
+  // Loading skeleton
+  if (teacherLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-[#F4F6F8] rounded-[18px] p-4 h-16 animate-pulse" />
+        <div className="bg-white rounded-[12px] border p-4 space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-10 bg-gray-100 rounded animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (teacherError) {
+    return (
+      <div className="flex items-center justify-center py-16 text-red-500 text-sm">
+        {teacherError}
+      </div>
+    );
+  }
   return (
     <div className="space-y-4">
       {/* Filters */}
@@ -155,8 +193,8 @@ const StaffTable = ({
                 <th className="text-left">Phone</th>
                 <th className="text-left">Email</th>
                 <th className="text-left">Department</th>
-                <th className="text-left">Attendance %</th>
-                <th className="text-left">Status</th>
+                {/* <th className="text-left">Attendance %</th> */}
+                {/* <th className="text-left">Status</th> */}
                 <th className="text-left">Actions</th>
               </tr>
             </thead>
@@ -174,7 +212,7 @@ const StaffTable = ({
                   <td>{item.phone}</td>
                   <td>{item.email}</td>
                   <td>{item.department}</td>
-                  <td
+                  {/* <td
                     className={`font-medium ${
                       item.attendance === "92%"
                         ? "text-green-600"
@@ -184,8 +222,8 @@ const StaffTable = ({
                     }`}
                   >
                     {item.attendance}
-                  </td>
-                  <td>
+                  </td> */}
+                  {/* <td>
                     <span
                       className={`px-3 py-1 rounded-full text-xs ${
                         item.status === "Active"
@@ -195,7 +233,7 @@ const StaffTable = ({
                     >
                       {item.status}
                     </span>
-                  </td>
+                  </td> */}
                   <td className="text-center">
                     <div className="inline-flex items-center justify-center gap-4">
 <button
@@ -222,16 +260,43 @@ const StaffTable = ({
 
         <div className="flex justify-between items-center mt-4 text-sm text-[#767676]">
           <p>
-            Showing {filteredItems.length} of {items.length} Staff
+            Showing {filteredItems.length} of {items.length} staff
+            {totalPages > 1 && ` — Page ${currentPage} of ${totalPages}`}
           </p>
 
-          <div className="flex gap-2">
-            <button className="px-2 py-1 border rounded">Previous</button>
-            <button className="px-2 py-1 bg-indigo-600 text-white rounded">1</button>
-            <button className="px-2 py-1 border rounded">2</button>
-            <button className="px-2 py-1 border rounded">3</button>
-            <button className="px-2 py-1 border rounded">Next</button>
-          </div>
+          {totalPages > 1 && (
+            <div className="flex gap-2">
+              <button
+                className="px-2 py-1 border rounded disabled:opacity-40"
+                disabled={currentPage <= 1}
+                onClick={() => onPageChange?.(currentPage - 1)}
+              >
+                Previous
+              </button>
+
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => onPageChange?.(i + 1)}
+                  className={`px-2 py-1 rounded ${
+                    currentPage === i + 1
+                      ? "bg-indigo-600 text-white"
+                      : "border"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+
+              <button
+                className="px-2 py-1 border rounded disabled:opacity-40"
+                disabled={currentPage >= totalPages}
+                onClick={() => onPageChange?.(currentPage + 1)}
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

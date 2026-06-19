@@ -1,21 +1,55 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import StatsCard from "../components/StatsCard";
 import AddStaffModal, {
   type AddStaffFormData,
 } from "../components/Staffmanagement/AddStaffModal";
 import StaffTable from "../components/Staffmanagement/StaffTable";
 import type { SubstituteDetails } from "../components/Staffmanagement/SubstituteDetailsModal";
+import api from "../api/axios";
+
+// ── KPI types ──────────────────────────────────────────────────────────────
+interface StaffKpiData {
+  total_staffs: number;
+  teaching_staffs: number;
+  non_teaching_staffs: number;
+  todays_present_teachers: number;
+  todays_absent_teachers: number;
+}
+
+// ── Teaching Staff list types ───────────────────────────────────────────────
+interface TeachingStaff {
+  id: number;
+  user_id: string;
+  staff_name: string;
+  photo: string | null;
+  gender: string;
+  dob: string;
+  address: string;
+  email: string;
+  phone_number: string;
+  qualification: string;
+  experience_year: number;
+  joining_date: string;
+  designation: string;
+  employment_type: string;
+  department: string;
+  salary_type: string;
+  monthly_salary: string;
+  bank_account: string;
+  bank_name: string;
+  ifsc_code: string;
+  payroll_applicable: boolean;
+  is_teacher: boolean;
+}
 
 import {
-  CircleCheck,
-  CircleHelp,
-  CircleX,
-  ClipboardList,
   Users,
   UserCheck,
   UserPlus,
   UserCog,
   UserX,
+  GraduationCap,
+  FileText,
 } from "lucide-react";
 
 const StaffManagement = () => {
@@ -25,124 +59,110 @@ const StaffManagement = () => {
 
   const [isAddStaffModalOpen, setIsAddStaffModalOpen] = React.useState(false);
 
+  // KPI cards state
+  const [kpiData, setKpiData] = useState<StaffKpiData | null>(null);
+  const [kpiLoading, setKpiLoading] = useState(true);
+  const [kpiError, setKpiError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadKpi = async () => {
+      try {
+        setKpiLoading(true);
+        setKpiError(null);
+        const res = await api.get<{ status: boolean; message: string; data: StaffKpiData }>(
+          "/staff-kpi-cards-data/"
+        );
+        setKpiData(res.data.data);
+      } catch (err: any) {
+        setKpiError("Failed to load KPI data");
+        console.error("Staff KPI fetch error:", err);
+      } finally {
+        setKpiLoading(false);
+      }
+    };
+
+    loadKpi();
+  }, []);
+
   // edit mode
   const [isEditStaffMode, setIsEditStaffMode] = React.useState(false);
   const [editingStaffId, setEditingStaffId] = React.useState<string | null>(null);
-  const [editingStaff, setEditingStaff] = React.useState<
-    | {
-        id: string;
-        name: string;
-        phone: string;
-        email: string;
-        department: string;
-        attendance?: string;
-        status?: string;
+  const [editingStaff, setEditingStaff] = React.useState<any | null>(null);
+
+  // Teaching staff list state
+  const [teacherList, setTeacherList] = React.useState<TeachingStaff[]>([]);
+  const [teacherLoading, setTeacherLoading] = React.useState(false);
+  const [teacherError, setTeacherError] = React.useState<string | null>(null);
+  const [teacherPage, setTeacherPage] = React.useState(1);
+  const [teacherTotalPages, setTeacherTotalPages] = React.useState(1);
+
+  const fetchTeachingStaff = React.useCallback(async (page = 1) => {
+    try {
+      setTeacherLoading(true);
+      setTeacherError(null);
+      const res = await api.get("/list-teaching-staff/", { params: { page } });
+      if (res.data.status) {
+        setTeacherList(res.data.data);
+        setTeacherTotalPages(res.data.total_pages ?? 1);
+        setTeacherPage(res.data.current_page ?? page);
       }
-    | null
-  >(null);
+    } catch (err: any) {
+      setTeacherError("Failed to load teaching staff");
+      console.error("Teaching staff fetch error:", err);
+    } finally {
+      setTeacherLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTeachingStaff(1);
+  }, [fetchTeachingStaff]);
 
   const [substituteAssignments, setSubstituteAssignments] = React.useState<
     SubstituteDetails[]
   >([]);
 
-  const [teacherList, setTeacherList] = React.useState<any[]>([
-    {
-      id: "TCH001",
-      name: "Sarah Johnson",
-      phone: "+1 234-567-8901",
-      email: "sarah.j@school.com",
-      department: "Mathematics",
-      attendance: "92%",
-      status: "Active",
-    },
-    {
-      id: "TCH002",
-      name: "Michael Chen",
-      phone: "+1 234-567-8901",
-      email: "sarah.j@school.com",
-      department: "Physics",
-      attendance: "82%",
-      status: "Active",
-    },
-    {
-      id: "TCH003",
-      name: "David Thompson",
-      phone: "+1 234-567-8901",
-      email: "sarah.j@school.com",
-      department: "Chemistry",
-      attendance: "65%",
-      status: "Inactive",
-    },
-  ]);
 
-  const [nonTeachingList, setNonTeachingList] = React.useState<any[]>([
-    {
-      id: "NTS001",
-      name: "Ayesha Khan",
-      phone: "+1 234-567-8901",
-      email: "ayesha.k@school.com",
-      department: "Administration",
-      attendance: "95%",
-      status: "Active",
-    },
-    {
-      id: "NTS002",
-      name: "Ravi Patel",
-      phone: "+1 234-567-8902",
-      email: "ravi.p@school.com",
-      department: "Library",
-      attendance: "92%",
-      status: "Active",
-    },
-    {
-      id: "NTS003",
-      name: "Meera Singh",
-      phone: "+1 234-567-8903",
-      email: "meera.s@school.com",
-      department: "Transport",
-      attendance: "88%",
-      status: "Inactive",
-    },
-    {
-      id: "NTS004",
-      name: "John Doe",
-      phone: "+1 234-567-8904",
-      email: "john.d@school.com",
-      department: "Front Office",
-      attendance: "90%",
-      status: "Active",
-    },
-    {
-      id: "NTS005",
-      name: "Sara Nair",
-      phone: "+1 234-567-8905",
-      email: "sara.n@school.com",
-      department: "Cafeteria",
-      attendance: "93%",
-      status: "Active",
-    },
-  ]);
+  // Non-teaching staff list state
+  const [nonTeachingList, setNonTeachingList] = React.useState<any[]>([]);
+  const [nonTeachingLoading, setNonTeachingLoading] = React.useState(false);
+  const [nonTeachingError, setNonTeachingError] = React.useState<string | null>(null);
+  const [nonTeachingPage, setNonTeachingPage] = React.useState(1);
+  const [nonTeachingTotalPages, setNonTeachingTotalPages] = React.useState(1);
+
+  const fetchNonTeachingStaff = React.useCallback(async (page = 1) => {
+    try {
+      setNonTeachingLoading(true);
+      setNonTeachingError(null);
+      const res = await api.get("/list-non-teaching-staff/", { params: { page } });
+      if (res.data.status) {
+        setNonTeachingList(res.data.data);
+        setNonTeachingTotalPages(res.data.total_pages ?? 1);
+        setNonTeachingPage(res.data.current_page ?? page);
+      }
+    } catch (err: any) {
+      setNonTeachingError("Failed to load non-teaching staff");
+      console.error("Non-teaching staff fetch error:", err);
+    } finally {
+      setNonTeachingLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNonTeachingStaff(1);
+  }, [fetchNonTeachingStaff]);
 
   const openEditModal = (staff: any) => {
     setIsEditStaffMode(true);
     setEditingStaffId(staff.id);
-    setEditingStaff({
-      id: staff.id,
-      name: staff.name,
-      phone: staff.phone,
-      email: staff.email,
-      department: staff.department,
-      attendance: staff.attendance,
-      status: staff.status,
-    });
+    setEditingStaff(staff);
     setIsAddStaffModalOpen(true);
   };
 
   const deleteStaff = (staffId: string) => {
-    // eslint-disable-next-line no-alert
     const ok = window.confirm("Are you sure you want to delete this staff member?");
     if (!ok) return;
-
+    // Local optimistic removal while delete API is pending
     if (mainTab === "Non-Teaching Staff") {
       setNonTeachingList((cur) => cur.filter((s: any) => s.id !== staffId));
     } else {
@@ -158,129 +178,68 @@ const StaffManagement = () => {
   const teachingStaffStats = [
     {
       title: "Total Teachers",
-      value: "1,138",
-      subtitle: "+12% this month",
+      value: kpiLoading ? "—" : kpiError ? "N/A" : String(kpiData?.total_staffs ?? 0),
+      subtitle: kpiError ? kpiError : "All staff members",
       icon: <Users size={18} />,
     },
     {
       title: "Teaching Staff",
-      value: "120",
-      subtitle: "-3% from this month",
+      value: kpiLoading ? "—" : kpiError ? "N/A" : String(kpiData?.teaching_staffs ?? 0),
+      subtitle: "Enrolled teaching staff",
       icon: <UserPlus size={18} />,
     },
     {
       title: "Non-Teaching Staff",
-      value: "45",
-      subtitle: "+8% from this month",
+      value: kpiLoading ? "—" : kpiError ? "N/A" : String(kpiData?.non_teaching_staffs ?? 0),
+      subtitle: "Support & admin staff",
       icon: <UserCog size={18} />,
     },
     {
-      title: "Present",
-      value: "60",
-      subtitle: "+5 this month",
+      title: "Present Today",
+      value: kpiLoading ? "—" : kpiError ? "N/A" : String(kpiData?.todays_present_teachers ?? 0),
+      subtitle: "Teachers present today",
       icon: <UserCheck size={18} />,
     },
     {
-      title: "Absent",
-      value: "60",
-      subtitle: "Requires attention",
+      title: "Absent Today",
+      value: kpiLoading ? "—" : kpiError ? "N/A" : String(kpiData?.todays_absent_teachers ?? 0),
+      subtitle: "Teachers absent today",
       icon: <UserX size={18} />,
     },
   ];
 
-  const substituteStats = [
-    {
-      title: "Completed Substitutions",
-      value: "60",
-      subtitle: "+16 this month",
-      icon: <UserCheck size={18} />,
-    },
-    {
-      title: "Teachers Free Now",
-      value: "60",
-      subtitle: "+3 this month",
-      icon: <UserPlus size={18} />,
-    },
-    {
-      title: "Classes Without Teacher",
-      value: "60",
-      subtitle: "+3 this month",
-      icon: <Users size={18} />,
-    },
-  ];
+  const statsData = teachingStaffStats;
 
-  const nonTeachingStaffStats = [
-    {
-      title: "Total Staff",
-      value: "1,138",
-      subtitle: "+12% from last year",
-      icon: <Users size={18} />,
-    },
-    {
-      title: "Active Staff",
-      value: "120",
-      subtitle: "-10% from last month",
-      icon: <CircleX size={18} />,
-    },
-    {
-      title: "On Leave",
-      value: "45",
-      subtitle: "+90% from last month",
-      icon: <CircleCheck size={18} />,
-    },
-    {
-      title: "Late",
-      value: "60",
-      subtitle: "This academic year",
-      icon: <ClipboardList size={18} />,
-    },
-    {
-      title: "New Joiners",
-      value: "60",
-      subtitle: "This academic year",
-      icon: <CircleHelp size={18} />,
-    },
-  ];
-
-  let statsData = teachingStaffStats;
-  if (mainTab === "Teaching Staff" && staffTypeTab === "Substitute") {
-    statsData = substituteStats;
-  } else if (mainTab === "Non-Teaching Staff") {
-    statsData = nonTeachingStaffStats;
-  }
-
-  const statsGridClass =
-    statsData.length === 5
-      ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
-      : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
+  const statsGridClass = "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5";
 
   const initialForm: Partial<AddStaffFormData> | undefined =
     isEditStaffMode && editingStaff
       ? {
-          teacherName: editingStaff.name,
-          staffId: editingStaff.id,
-          phoneNumber: editingStaff.phone,
-          email: editingStaff.email,
-          department: editingStaff.department,
-          // required but not stored in list rows
-          gender: "",
-          dob: "",
+          teacherName: editingStaff.staff_name ?? editingStaff.name ?? "",
+          staffId: editingStaff.user_id ?? editingStaff.id ?? "",
+          phoneNumber: editingStaff.phone_number ?? editingStaff.phone ?? "",
+          email: editingStaff.email ?? "",
+          gender: editingStaff.gender ?? "",
+          dob: editingStaff.dob ?? "",
           photo: null,
-          address: "",
-          qualification: "",
-          experienceYear: "",
-          specialization: "",
-          courseExpertise: "",
-          joiningDate: "",
-          employmentType: "",
-          salaryType: "",
-          monthlySalary: "",
-          bankAccountNumber: "",
-          bankName: "",
-          ifscCode: "",
-          payrollApplicable: false,
-          role: "",
+          address: editingStaff.address ?? "",
+          qualification: editingStaff.qualification ?? "",
+          experienceYear: editingStaff.experience_year ? String(editingStaff.experience_year) : "",
+          specialization: editingStaff.specialization ?? "",
+          courseExpertise: editingStaff.subject_expertise ?? editingStaff.courseExpertise ?? "",
+          joiningDate: editingStaff.joining_date ?? "",
+          designation: editingStaff.designation ?? "",
+          employmentType: editingStaff.employment_type ?? "",
+          department: editingStaff.department ?? "",
+          reportingAdmin: editingStaff.reporting_admin ?? "",
+          salaryType: editingStaff.salary_type ?? "",
+          monthlySalary: editingStaff.monthly_salary ? String(editingStaff.monthly_salary) : "",
+          bankAccountNumber: editingStaff.bank_account ?? editingStaff.bankAccountNumber ?? "",
+          bankName: editingStaff.bank_name ?? editingStaff.bankName ?? "",
+          ifscCode: editingStaff.ifsc_code ?? editingStaff.ifscCode ?? "",
+          role: editingStaff.role ?? "",
           temporaryPassword: "",
+          permissions: editingStaff.permissions ?? [],
         }
       : undefined;
 
@@ -313,47 +272,19 @@ const StaffManagement = () => {
       {isAddStaffModalOpen && (
         <AddStaffModal
           initialForm={initialForm}
+          isEdit={isEditStaffMode}
+          dbId={editingStaff?.dbId}
+          isTeacher={mainTab === "Teaching Staff"}
           onClose={() => {
             setIsAddStaffModalOpen(false);
             setIsEditStaffMode(false);
             setEditingStaff(null);
             setEditingStaffId(null);
           }}
-          onSave={(form) => {
-            const record = {
-              id: form.staffId || `STF${Date.now().toString().slice(-5)}`,
-              name: form.teacherName || "-",
-              phone: form.phoneNumber || "-",
-              email: form.email || "-",
-              department: form.department || "-",
-              attendance:
-                isEditStaffMode && editingStaff
-                  ? editingStaff.attendance ?? "0%"
-                  : "0%",
-              status:
-                isEditStaffMode && editingStaff
-                  ? editingStaff.status ?? "Active"
-                  : "Active",
-            };
-
-            if (isEditStaffMode && editingStaff) {
-              if (mainTab === "Non-Teaching Staff") {
-                setNonTeachingList((cur) =>
-                  cur.map((s: any) => (s.id === editingStaff.id ? record : s))
-                );
-              } else {
-                setTeacherList((cur) =>
-                  cur.map((s: any) => (s.id === editingStaff.id ? record : s))
-                );
-              }
-            } else {
-              if (mainTab === "Non-Teaching Staff") {
-                setNonTeachingList((cur) => [record, ...cur]);
-              } else {
-                setTeacherList((cur) => [record, ...cur]);
-              }
-            }
-
+          onSave={(_form) => {
+            // Re-fetch both live lists after a successful create/edit
+            fetchTeachingStaff(teacherPage);
+            fetchNonTeachingStaff(nonTeachingPage);
             setIsAddStaffModalOpen(false);
             setIsEditStaffMode(false);
             setEditingStaff(null);
@@ -397,22 +328,30 @@ const StaffManagement = () => {
       {/* SECOND TAB */}
       {mainTab === "Teaching Staff" && (
         <div className="pt-8 border-b flex gap-10 text-sm">
-          {["Teacher", "Substitute"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => {
-                setStaffTypeTab(tab);
-                setSubTab("Assign Substitute");
-              }}
-              className={`pb-3 flex items-center gap-2 ${
-                staffTypeTab === tab
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-gray-500"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+          {[
+            { name: "Teacher", icon: GraduationCap },
+            { name: "Substitute", icon: Users },
+            { name: "Leave Request", icon: FileText },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.name}
+                onClick={() => {
+                  setStaffTypeTab(tab.name);
+                  setSubTab("Assign Substitute");
+                }}
+                className={`pb-3 flex items-center gap-2 transition-all ${
+                  staffTypeTab === tab.name
+                    ? "text-blue-600 border-b-2 border-blue-600 font-semibold"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
+              >
+                <Icon size={16} />
+                {tab.name}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -446,7 +385,17 @@ const StaffManagement = () => {
           substituteAssignments={substituteAssignments}
           onSubstituteAssigned={handleSubstituteAssigned}
           teacherList={teacherList}
+          teacherLoading={teacherLoading}
+          teacherError={teacherError}
+          currentPage={teacherPage}
+          totalPages={teacherTotalPages}
+          onPageChange={(page) => fetchTeachingStaff(page)}
           nonTeachingList={nonTeachingList}
+          nonTeachingLoading={nonTeachingLoading}
+          nonTeachingError={nonTeachingError}
+          nonTeachingPage={nonTeachingPage}
+          nonTeachingTotalPages={nonTeachingTotalPages}
+          onNonTeachingPageChange={(page) => fetchNonTeachingStaff(page)}
           onEditStaff={(staff) => openEditModal(staff)}
           onDeleteStaff={(id) => deleteStaff(id)}
         />
