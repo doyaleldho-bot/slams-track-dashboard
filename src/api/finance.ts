@@ -75,10 +75,21 @@ export async function getFinanceTeacherReports(
   };
 }
 
+export async function getFinanceRevenueYears(): Promise<any> {
+  const res = await api.get("/finance/reports/revenue-years/");
+  return res.data.data ?? res.data;
+}
+
+export async function getFinanceRevenueMonths(): Promise<any> {
+  const res = await api.get("/finance/reports/revenue-months/");
+  return res.data.data ?? res.data;
+}
+
 export async function getFinanceRevenueReports(
   page: number = 1,
   pageSize: number = 12,
-  year?: string
+  year?: string,
+  month?: number
 ): Promise<any> {
   const params: Record<string, string | number> = {
     page,
@@ -89,11 +100,16 @@ export async function getFinanceRevenueReports(
     params.year = year;
   }
 
+  if (month) {
+    params.month = month;
+  }
+
   const res = await api.get("/finance/reports/revenue/", {
     params,
   });
 
   return {
+    ...res.data,
     count: res.data.count,
     next: res.data.next,
     previous: res.data.previous,

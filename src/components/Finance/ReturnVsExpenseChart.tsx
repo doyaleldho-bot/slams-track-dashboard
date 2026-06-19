@@ -10,10 +10,19 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import { getFinanceRevenueReports } from "../../api/finance";
+import {
+  getFinanceRevenueReports,
+  getFinanceRevenueYears,
+  getFinanceRevenueMonths,
+} from "../../api/finance";
 
 const ReturnVsExpenseChart: React.FC = () => {
   const [year, setYear] = useState("All Year");
+  const [month, setMonth] = useState("");
+  const [yearOptions, setYearOptions] = useState<string[]>(["All Year"]);
+  const [monthOptions, setMonthOptions] = useState<
+    Array<{ id: string; name: string }>
+  >([{ id: "", name: "All Month" }]);
   const [chartData, setChartData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,13 +30,64 @@ const ReturnVsExpenseChart: React.FC = () => {
   useEffect(() => {
     let mounted = true;
 
+    const loadYearOptions = async () => {
+      try {
+        const response = await getFinanceRevenueYears();
+        if (!mounted) return;
+        const years = Array.isArray(response)
+          ? response.map((item: any) => String(item.year ?? item))
+          : [];
+        setYearOptions(["All Year", ...years]);
+      } catch (fetchError) {
+        console.error("Failed to load revenue year options", fetchError);
+      }
+    };
+
+    const loadMonthOptions = async () => {
+      try {
+        const response = await getFinanceRevenueMonths();
+        if (!mounted) return;
+        const months = Array.isArray(response)
+          ? response.map((item: any) => ({
+              id: String(
+                item.id ?? item.month ?? item.month_name ?? item.name ?? "",
+              ),
+              name: String(item.name ?? item.month_name ?? item.month ?? item),
+            }))
+          : [];
+        setMonthOptions([{ id: "", name: "All Month" }, ...months]);
+      } catch (fetchError) {
+        console.error("Failed to load revenue month options", fetchError);
+      }
+    };
+
+    loadYearOptions();
+    loadMonthOptions();
+
     const loadRevenueData = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
-        const response = await getFinanceRevenueReports(1, 12, year);
+        const response = await getFinanceRevenueReports(
+          1,
+          12,
+          year,
+          month ? Number(month) : undefined,
+        );
         if (!mounted) return;
+
+        // Handle chart_data from response (all months data)
+        if (Array.isArray(response?.chart_data)) {
+          const mappedData = response.chart_data.map((item: any) => ({
+            month: item.month_name ?? item.month ?? "",
+            admissionRevenue: Number(item.admission_revenue ?? 0) || 0,
+            feeCollection: Number(item.fee_collection ?? 0) || 0,
+            salaryExpenses: Number(item.salary_expense ?? 0) || 0,
+          }));
+          setChartData(mappedData);
+          return;
+        }
 
         const totals =
           response?.data ??
@@ -130,9 +190,25 @@ const ReturnVsExpenseChart: React.FC = () => {
               onChange={(e) => setYear(e.target.value)}
               className="h-10 rounded-[10px] border border-[#E5E7EB] bg-white px-4 text-sm text-[#111827] outline-none"
             >
-              <option>All Year</option>
-              <option>2026</option>
-              <option>2025</option>
+              {yearOptions.map((yearOption) => (
+                <option key={yearOption} value={yearOption}>
+                  {yearOption}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-3 rounded-[10px] border-[#E5E7EB] bg-white px-4 py-2">
+            <span className="text-sm font-medium text-[#111827]">Month</span>
+            <select
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+              className="h-10 rounded-[10px] border border-[#E5E7EB] bg-white px-4 text-sm text-[#111827] outline-none"
+            >
+              {monthOptions.map((monthOption) => (
+                <option key={monthOption.id} value={monthOption.id}>
+                  {monthOption.name}
+                </option>
+              ))}
             </select>
           </div>
         </div>
