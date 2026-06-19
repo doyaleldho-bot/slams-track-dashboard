@@ -29,6 +29,7 @@ const menuItems: MenuItem[] = [
   { label: "Settings", icon: Settings, path: "/settings" },
 ];
 
+
 const Sidebar = () => {
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -36,7 +37,7 @@ const Sidebar = () => {
 
   const handleMouseEnter = (label: string) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    setHovered(label);
+    setHovered(label); 
   };
 
   const handleMouseLeave = () => {
