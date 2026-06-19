@@ -1,6 +1,11 @@
 import React, { useState } from "react"
 import { User, Eye, EyeOff } from "lucide-react"
 import EditProfileModal from "./EditProfileModal"
+import { useAppDispatch, useAppSelector } from "../../redux/hooks"
+import api from "../../api/axios"
+import { toast } from "react-toastify"
+import { useNavigate } from "react-router"
+import { logoutUser } from "../../redux/action/UserThunk"
 
 const profileData = {
   basicProfile: {
@@ -20,7 +25,12 @@ const profileData = {
   },
 }
 
+export const BASE_URL = import.meta.env.VITE_API_URL
 const Profile: React.FC = () => {
+  const dispatch = useAppDispatch()
+  const navigate = useNavigate()
+  const { profile, loading } = useAppSelector((s) => s.profile)
+
   const [openModal, setOpenModal] = useState(false)
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
@@ -52,7 +62,7 @@ const Profile: React.FC = () => {
     }))
   }
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     const newErrors = {
       currentPassword: "",
       newPassword: "",
@@ -87,20 +97,57 @@ const Profile: React.FC = () => {
     if (!isValid) return
 
     const payload = {
-      currentPassword: passwordData.currentPassword,
-      newPassword: passwordData.newPassword,
+      current_password: passwordData.currentPassword,
+      new_password: passwordData.newPassword,
+      confirm_password: passwordData.confirmPassword,
     }
 
-    console.log("Password Change Payload:", payload)
+    try {
+      const response = await api.post("/settings/change-password/", payload)
 
-    // API call here
-    // await axios.post("/change-password", payload)
+      toast.success(response.data.message || "Password changed successfully")
 
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    })
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      })
+    } catch (error: any) {
+      console.log(error.response?.data)
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Password change failed"
+
+      toast.error(errorMessage)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutUser()).unwrap()
+
+      toast.success("Logged out successfully")
+
+      navigate("/login", {
+        replace: true,
+      })
+    } catch (error: any) {
+      toast.error(error?.message || "Logout failed")
+
+      navigate("/login", {
+        replace: true,
+      })
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-[400px] items-center justify-center">
+        Loading profile...
+      </div>
+    )
   }
 
   return (
@@ -108,9 +155,17 @@ const Profile: React.FC = () => {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
-          <div className="flex h-44 w-44 items-center justify-center rounded-full bg-[#fff]">
-            <User size={110} className="text-[#002F9666]" />
-          </div>
+          {profile?.profile_photo ? (
+            <img
+              src={`${BASE_URL}${profile?.profile_photo}`}
+              className="h-44 w-44 rounded-full object-cover"
+              alt="Profile"
+            />
+          ) : (
+            <div className="flex h-44 w-44 items-center justify-center rounded-full bg-[#fff]">
+              <User size={110} className="text-[#002F9666]" />
+            </div>
+          )}
         </div>
 
         <button
@@ -128,21 +183,20 @@ const Profile: React.FC = () => {
 
         <div className="grid gap-y-4 md:grid-cols-[180px_1fr]">
           <p className="font-medium text-[#555]">Full Name:</p>
-          <p>{profileData.basicProfile.fullName}</p>
+          <p>{profile?.fullname || "-"}</p>
 
           <p className="font-medium text-[#555]">Role:</p>
-          <p>{profileData.basicProfile.role}</p>
+          <p>{profile?.role || "-"}</p>
 
           <p className="font-medium text-[#555]">Phone Number:</p>
-          <p>{profileData.basicProfile.phoneNumber}</p>
+          <p>{profile?.phone_number || "-"}</p>
 
           <p className="font-medium text-[#555]">Email ID:</p>
-          <p>{profileData.basicProfile.email}</p>
+          <p>{profile?.email || "-"}</p>
 
           <p className="font-medium text-[#555]">Address:</p>
-          <p className="max-w-[600px] leading-6">
-            {profileData.basicProfile.address}
-          </p>
+
+          <p className="max-w-[600px] leading-6">{profile?.address || "-"}</p>
         </div>
       </div>
       {/* Work Profile */}
@@ -151,18 +205,29 @@ const Profile: React.FC = () => {
 
         <div className="grid gap-y-4 md:grid-cols-[180px_1fr]">
           <p className="font-medium text-[#555]">Employee ID:</p>
-          <p>{profileData.workProfile.employeeId}</p>
+          <p>{profile?.employee_id || "-"}</p>
 
           <p className="font-medium text-[#555]">Assigned By:</p>
-          <p>{profileData.workProfile.assignedBy}</p>
+          <p>{profile?.assigned_by || "-"}</p>
 
           <p className="font-medium text-[#555]">Account Created:</p>
-          <p>{profileData.workProfile.accountCreated}</p>
+
+          <p>
+            {profile?.account_created
+              ? new Date(profile.account_created).toLocaleDateString("en-GB")
+              : "-"}
+          </p>
 
           <p className="font-medium text-[#555]">Status:</p>
 
-          <span className="w-fit rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-600">
-            {profileData.workProfile.status}
+          <span
+            className={`w-fit rounded-full px-3 py-1 text-sm font-medium ${
+              profile?.status === "Active"
+                ? "bg-green-100 text-green-600"
+                : "bg-red-100 text-red-600"
+            }`}
+          >
+            {profile?.status || "-"}
           </span>
         </div>
       </div>
@@ -254,7 +319,10 @@ const Profile: React.FC = () => {
         </div>
       </div>
       {/* sign out button */}
-      <button className="h-11 rounded-lg bg-[#FFFFFF] px-6  transition hover:bg-[#f7f7f7] border border-[#E5E7EB] text-[#E7000B] text-sm leading-5 font-[Arimo] text-center">
+      <button
+        className="h-11 rounded-lg bg-[#FFFFFF] px-6  transition hover:bg-[#f7f7f7] border border-[#E5E7EB] text-[#E7000B] text-sm leading-5 font-[Arimo] text-center"
+        onClick={handleLogout}
+      >
         Sign out
       </button>
       <EditProfileModal

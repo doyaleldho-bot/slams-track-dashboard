@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
 import { Search, ChevronDown, SquarePen } from "lucide-react"
+import type { ClassData } from "../../pages/AcademicPage"
 
 interface TableItem {
   id: string
@@ -9,6 +10,17 @@ interface TableItem {
   section: string
   students: number
   batch: string
+  branch?: string
+}
+
+interface SchoolManagementProps {
+  managementData: ClassData[]
+  currentPage: number
+  totalPages: number
+  next: () => void
+  prev: () => void
+  setCurrentPage: React.Dispatch<React.SetStateAction<number>>
+  onEdit: (id: string | number) => void
 }
 
 const tableData: TableItem[] = [
@@ -68,18 +80,28 @@ const tableData: TableItem[] = [
   },
 ]
 
-const SchoolManagement = () => {
+const SchoolManagement: React.FC<SchoolManagementProps> = ({
+  managementData,
+  currentPage,
+  setCurrentPage,
+  totalPages,
+  next,
+  prev,
+  onEdit,
+}) => {
   const [search, setSearch] = useState("")
-  const [selectedType, setSelectedType] = useState<"college" | "school">(
-    "college",
-  )
+
+  const institutionName =
+    localStorage.getItem("institution_name")?.toLowerCase() || ""
+
+  const selectedType: "school" | "college" = institutionName.includes("school")
+    ? "school"
+    : "college"
 
   const [selectedBatch, setSelectedBatch] = useState("Select Batch")
   const [isBatchOpen, setIsBatchOpen] = useState(false)
 
   const dropdownRef = useRef<HTMLDivElement>(null)
-
-  const batches = [...new Set(tableData.map((item) => item.batch))]
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -98,21 +120,37 @@ const SchoolManagement = () => {
     }
   }, [])
 
+  const batches = [...new Set(managementData.map((item) => item.class_batch))]
+  console.log(managementData)
   const filteredData = useMemo(() => {
-    return tableData.filter((item) => {
-      const matchesType = item.type === selectedType
+    return managementData?.filter((item) => {
+      // const matchesType = item.type === selectedType
 
       const matchesSearch =
-        item.id.toLowerCase().includes(search.toLowerCase()) ||
-        item.name.toLowerCase().includes(search.toLowerCase())
+        item.class_id.toLowerCase().includes(search.toLowerCase()) ||
+        item.class_name.toLowerCase().includes(search.toLowerCase())
 
       const matchesBatch =
-        selectedBatch === "Select Batch" ? true : item.batch === selectedBatch
+        selectedBatch === "Select Batch"
+          ? true
+          : item.class_batch === selectedBatch
 
-      return matchesType && matchesSearch && matchesBatch
+      return matchesSearch && matchesBatch
     })
-  }, [search, selectedBatch, selectedType])
+  }, [search, selectedBatch, selectedType, managementData])
+  console.log(filteredData)
+  //visble pages
+  const visiblePages = 4
 
+  const startPage =
+    Math.floor((currentPage - 1) / visiblePages) * visiblePages + 1
+
+  const endPage = Math.min(startPage + visiblePages - 1, totalPages)
+
+  const pageNumbers = Array.from(
+    { length: endPage - startPage + 1 },
+    (_, i) => startPage + i,
+  )
   return (
     <div className="w-full rounded-xl border border-[#E5E7EB] bg-white p-4 md:p-6 xl:p-8">
       {/* Header */}
@@ -124,31 +162,6 @@ const SchoolManagement = () => {
         </h2>
 
         <div className="flex flex-wrap items-center gap-3">
-          {/* Type Switch */}
-          <div className="flex overflow-hidden rounded-lg border border-[#E5E7EB]">
-            <button
-              onClick={() => setSelectedType("college")}
-              className={`px-4 py-2 text-sm transition-all ${
-                selectedType === "college"
-                  ? "bg-[#474747] text-white"
-                  : "bg-white text-[#474747]"
-              }`}
-            >
-              College
-            </button>
-
-            <button
-              onClick={() => setSelectedType("school")}
-              className={`px-4 py-2 text-sm transition-all ${
-                selectedType === "school"
-                  ? "bg-[#474747] text-white"
-                  : "bg-white text-[#474747]"
-              }`}
-            >
-              School
-            </button>
-          </div>
-
           {/* Search */}
           <div className="relative w-full sm:w-[240px]">
             <Search
@@ -216,9 +229,13 @@ const SchoolManagement = () => {
             <tr className="border-b border-[#E5E7EB] text-left">
               <th className="pb-4 text-sm lg:text-base">ID</th>
 
-              <th className="pb-4 text-sm lg:text-base">
-                {selectedType === "college" ? "Department" : "Class"}
-              </th>
+              <th className="pb-4 text-sm lg:text-base">Class</th>
+              {selectedType === "college" && (
+                <th className="pb-4 text-sm lg:text-base">Department</th>
+              )}
+              {selectedType === "college" && (
+                <th className="pb-4 text-sm lg:text-base">Branch</th>
+              )}
 
               <th className="pb-4 text-sm lg:text-base">Level</th>
               <th className="pb-4 text-sm lg:text-base">Section</th>
@@ -234,30 +251,85 @@ const SchoolManagement = () => {
                 key={item.id}
                 className="border-b border-[#ECECEC] hover:bg-[#FAFAFA]"
               >
-                <td className="py-5 text-sm lg:text-base">{item.id}</td>
+                <td className="py-5 text-sm lg:text-base">{item.class_id}</td>
 
-                <td className="py-5 text-sm lg:text-base">{item.name}</td>
+                <td className="py-5 text-sm lg:text-base">
+                  {" "}
+                  {item.class_name}{" "}
+                </td>
+
+                {selectedType === "college" && (
+                  <td className="py-5 text-sm lg:text-base">
+                    {item.department || "-"}
+                  </td>
+                )}
+                {selectedType === "college" && (
+                  <td className="py-5 text-sm lg:text-base">
+                    {item.branch || "-"}
+                  </td>
+                )}
 
                 <td className="py-5 text-sm lg:text-base">{item.level}</td>
 
                 <td className="py-5 text-sm lg:text-base">{item.section}</td>
 
-                <td className="py-5 text-sm lg:text-base">{item.students}</td>
+                <td className="py-5 text-sm lg:text-base">
+                  {item.total_students}
+                </td>
 
                 <td className="py-5">
-                  <span className="rounded-md border border-[#22C55E] px-3 py-1 text-xs lg:text-sm font-medium text-[#22C55E]">
-                    Active
-                  </span>
+                  {item?.status === "Active" ? (
+                    <span className="rounded-md border border-[#22C55E] px-3 py-1 text-xs lg:text-sm font-medium text-[#22C55E]">
+                      {item?.status}
+                    </span>
+                  ) : (
+                    <span className="rounded-md border border-[#f12222] px-3 py-1 text-xs lg:text-sm font-medium text-[#f12222]">
+                      {item?.status ?? "Inactive"}
+                    </span>
+                  )}
                 </td>
 
                 <td className="py-5 text-center">
-                  <button>
+                  <button onClick={() => onEdit(item?.id)}>
                     <SquarePen size={18} className="mx-auto text-[#1677FF]" />
                   </button>
                 </td>
               </tr>
             ))}
           </tbody>
+          <div className="mt-6 flex items-center justify-between">
+            <button
+              onClick={prev}
+              disabled={currentPage === 1}
+              className="rounded-lg border px-3 py-2 disabled:opacity-50"
+            >
+              {"<"}
+            </button>
+
+            <div className="flex gap-2">
+              {pageNumbers.map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`h-9 w-9 rounded-lg ${
+                    currentPage === page
+                      ? "bg-[#474747] text-white"
+                      : "border border-gray-300"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={next}
+              disabled={currentPage === totalPages}
+              className="rounded-lg border px-3 py-2 disabled:opacity-50"
+            >
+              {">"}
+            </button>
+          </div>
         </table>
       </div>
     </div>

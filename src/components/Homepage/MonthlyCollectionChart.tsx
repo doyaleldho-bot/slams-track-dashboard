@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import api from "../../api/axios";
+
 import {
   ResponsiveContainer,
   AreaChart,
@@ -11,32 +13,25 @@ import {
 
 interface CollectionData {
   month: string;
-  amount: number;
+  revenue: number;
 }
 
-const data: CollectionData[] = [
-  { month: "Jan", amount: 60000 },
-  { month: "Feb", amount: 170000 },
-  { month: "Mar", amount: 160000 },
-  { month: "Apr", amount: 160000 },
-  { month: "May", amount: 150000 },
-  { month: "Jun", amount: 240000 },
-  { month: "Jul", amount: 175000 },
-  { month: "Aug", amount: 265000 },
-  { month: "Sep", amount: 270000 },
-  { month: "Oct", amount: 305000 },
-  { month: "Nov", amount: 160000 },
-  { month: "Dec", amount: 200000 },
-
-];
+interface DashboardLineChartResponse {
+  status: boolean;
+  message: string;
+  year: number;
+  data: CollectionData[];
+}
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload?.length) {
     return (
       <div className="bg-white shadow-lg border border-gray-100 px-3 py-2 rounded-lg">
-        <p className="text-xs text-gray-500">{payload[0].payload.month}</p>
+        <p className="text-xs text-gray-500">
+          {payload[0].payload.month}
+        </p>
         <p className="text-sm font-semibold text-gray-900">
-          ₹ {payload[0].value.toLocaleString()}
+          ₹ {Number(payload[0].value).toLocaleString()}
         </p>
       </div>
     );
@@ -46,20 +41,59 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 const MonthlyCollectionChart: React.FC = () => {
+  const [chartData, setChartData] = useState<CollectionData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchChartData = async () => {
+      try {
+        setLoading(true);
+
+        const response =
+          await api.get<DashboardLineChartResponse>(
+            "/dashboard-line-chart/"
+          );
+
+        setChartData(response.data.data);
+      } catch (error) {
+        console.error(
+          "Failed to fetch dashboard chart data:",
+          error
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChartData();
+  }, []);
+
+  const maxRevenue =
+    Math.max(
+      ...chartData.map((item) => item.revenue),
+      100000
+    ) * 1.1;
+
+  if (loading) {
+    return (
+      <div className="w-full h-[726px] rounded-3xl p-5 md:p-6 flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full h-[726px]  rounded-3xl p-5 md:p-6 mb-6 pb-6 ">
-      {/* Title */}
+    <div className="w-full h-[726px] rounded-3xl p-5 md:p-6 mb-6 pb-6">
       <h3 className="text-[20px] font-semibold text-[#202020] mb-4">
         Monthly Collection Chart
       </h3>
 
-      {/* Chart */}
-      <div className="w-full h-full max-h-[726px] ">
+      <div className="w-full h-full max-h-[650px]">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
-           accessibilityLayer={false}
-  tabIndex={-1}
-            data={data}
+            accessibilityLayer={false}
+            tabIndex={-1}
+            data={chartData}
             margin={{
               top: 10,
               right: 10,
@@ -67,7 +101,6 @@ const MonthlyCollectionChart: React.FC = () => {
               bottom: 10,
             }}
           >
-            {/* Gradient */}
             <defs>
               <linearGradient
                 id="collectionGradient"
@@ -89,14 +122,12 @@ const MonthlyCollectionChart: React.FC = () => {
               </linearGradient>
             </defs>
 
-            {/* Grid */}
             <CartesianGrid
               stroke="#E9E9E9"
               vertical={false}
               strokeDasharray="0"
             />
 
-            {/* X Axis */}
             <XAxis
               dataKey="month"
               axisLine={false}
@@ -108,17 +139,18 @@ const MonthlyCollectionChart: React.FC = () => {
               dy={12}
             />
 
-            {/* Y Axis */}
             <YAxis
-              domain={[0, 320000]}
-              ticks={[0, 80000, 160000, 240000, 320000]}
+              domain={[0, maxRevenue]}
               axisLine={false}
               tickLine={false}
               tick={{
                 fill: "#8A8A8A",
                 fontSize: 16,
               }}
-              width={60}
+              width={80}
+              tickFormatter={(value) =>
+                `₹${(value / 100000).toFixed(1)}L`
+              }
             />
 
             <Tooltip
@@ -126,10 +158,9 @@ const MonthlyCollectionChart: React.FC = () => {
               content={<CustomTooltip />}
             />
 
-            {/* Area */}
             <Area
               type="monotone"
-              dataKey="amount"
+              dataKey="revenue"
               stroke="#8192F8"
               strokeWidth={8}
               fill="url(#collectionGradient)"

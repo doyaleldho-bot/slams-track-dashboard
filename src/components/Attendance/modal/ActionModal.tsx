@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import type { TeacherAttendance } from "../types/TeacherAttendance";
 import { X } from "lucide-react";
-
+import api from "../../../api/axios";
 interface ActionModalProps {
   isOpen: boolean;
   onClose: () => void;
   teacher: TeacherAttendance | null;
   onSave: (teacher: TeacherAttendance) => void;
+  attendanceType?: "teacher" | "staff";
 }
 
 const ActionModal: React.FC<ActionModalProps> = ({
@@ -14,19 +15,61 @@ const ActionModal: React.FC<ActionModalProps> = ({
   onClose,
   teacher,
   onSave,
+  attendanceType = "teacher",
 }) => {
   const [formData, setFormData] =
     useState<TeacherAttendance | null>(null);
-
+console.log(teacher)
   useEffect(() => {
     setFormData(teacher);
   }, [teacher]);
 
   if (!isOpen || !formData) return null;
 
-  const handleSave = () => {
+const handleSave = async () => {
+  try {
+    const payload = {
+      date: formData.attendanceDate,
+      status: formData.status,
+      remarks: formData.remark,
+      checked_in_time: formData.checkIn,
+      checked_out_time:
+        formData.checkOut === ""
+          ? null
+          : formData.checkOut,
+    };
+
+    if (attendanceType === "teacher") {
+      await api.post(
+        "/mark-teacher-attendance/",
+        {
+          ...payload,
+          teacher_id:
+            formData.profileId ||
+            formData.id,
+        }
+      );
+    } else {
+      await api.post(
+        "/mark-staff-attendance/",
+        {
+          ...payload,
+          staff_id:
+            formData.profileId ||
+            formData.id,
+        }
+      );
+    }
+
     onSave(formData);
-  };
+    onClose();
+  } catch (error) {
+    console.error(
+      "Failed to update attendance",
+      error
+    );
+  }
+};
 
 
 
@@ -52,7 +95,7 @@ const ActionModal: React.FC<ActionModalProps> = ({
 
           <div className="flex gap-4 flex-wrap">
 
-            {["Present", "Absent", "Late", "Half Day"].map(
+            {["Present", "Absent", "Late", "Half day"].map(
               (status) => (
                 <label
                   key={status}

@@ -139,6 +139,7 @@ const Sidebar = () => {
 
         {/* HELP CARD */}
         <div className="p-4">
+          
           <div className="bg-[#0a4cc4] rounded-lg p-4">
             <p className="text-sm font-medium">Need Help?</p>
             <p className="text-xs text-white/80 mt-1">

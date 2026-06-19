@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState,useEffect } from 'react'
 import StatsCard from '../components/StatsCard'
 import { PiUserList } from "react-icons/pi";
 import type { TeacherAttendance } from "../components/Attendance/types/TeacherAttendance";
+import api from "../api/axios"; // adjust path
 
 import {
   Users,
@@ -22,15 +23,43 @@ const [isModalOpen, setIsModalOpen] = useState(false);
 const [selectedTeacher, setSelectedTeacher] =
   useState<TeacherAttendance | null>(null);
 
-const handleEdit = (teacher: TeacherAttendance) => {
-  setSelectedTeacher(teacher);
-  setIsModalOpen(true);
-};
+
     const today = new Date().toLocaleDateString("en-US", {
   month: "long",
   day: "2-digit",
   year: "numeric",
 });
+
+const [attendanceType, setAttendanceType] =
+  useState<"teacher" | "staff">(
+    "teacher"
+  );
+
+  const handleTeacherEdit = (
+  teacher: TeacherAttendance
+) => {
+  setAttendanceType("teacher");
+  setSelectedTeacher(teacher);
+  setIsModalOpen(true);
+};
+
+const handleStaffEdit = (
+  staff: TeacherAttendance
+) => {
+   console.log("Staff Row", staff);
+  setAttendanceType("staff");
+  setSelectedTeacher(staff);
+  setIsModalOpen(true);
+};
+
+interface TeacherAttendanceTableProps {
+  onEdit: (teacher: TeacherAttendance) => void;
+  selectedDate: string;
+  setSelectedDate: React.Dispatch<
+    React.SetStateAction<string>
+  >;
+  refreshKey: number;
+}
 
 const initialTeachers: TeacherAttendance[] = [
   {
@@ -89,56 +118,137 @@ const initialTeachers: TeacherAttendance[] = [
   },
 ];
 
-const handleSaveTeacher = (updatedTeacher: TeacherAttendance) => {
-  setTeachers((prev) =>
-    prev.map((teacher) =>
-      teacher.teacherId === updatedTeacher.teacherId
-        ? updatedTeacher
-        : teacher
-    )
-  );
+const handleExport = async () => {
+  try {
+    let endpoint = "";
+    let filename = "";
 
+    switch (activeTab) {
+      case "Teacher Attendance":
+        endpoint = `/export-teachers-attendance/?date=${selectedDate}`;
+        filename = "teacher-attendance.xlsx";
+        break;
+
+      case "Staff Attendance":
+        endpoint = `/export-staff-attendance/?date=${selectedDate}`;
+        filename = "staff-attendance.xlsx";
+        break;
+
+      case "Student Attendance":
+        endpoint = `/export-students-attendance/?date=${selectedDate}`;
+        filename = "student-attendance.xlsx";
+        break;
+
+      default:
+        return;
+    }
+
+    const response = await api.get(endpoint, {
+      responseType: "blob",
+    });
+
+    const blob = new Blob([response.data], {
+      type:
+        response.headers["content-type"] ||
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    const url = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+
+    document.body.appendChild(link);
+    link.click();
+
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Export failed:", error);
+  }
+};
+
+const [refreshKey, setRefreshKey] = useState(0);
+
+const handleSaveTeacher = () => {
+  setRefreshKey((prev) => prev + 1);
   setIsModalOpen(false);
 };
 const [teachers, setTeachers] =
-  useState<TeacherAttendance[]>(initialTeachers);
+  useState<TeacherAttendance[]>([]);
 
-type AttendanceStatsCard = {
+interface AttendanceKPI {
   title: string;
-  value: string;
-  subtitle?: string;
-  icon: React.ReactNode;
-  change?: string;
-  highlight?: boolean;
-};
+  present: number;
+  total: number;
+  count: string;
+  attendance_rate: number;
+}
 
-     const statsData: AttendanceStatsCard[] = [
-    {
-      title: "Student Attendance Today",
-      value: "842/900",
-      subtitle: "Attendance rate 92%",
-      icon: <Users size={18} className="" />,
-      change: undefined,
-      highlight: false,
-    },
-    {
-      title: "Teachers Attendance Today",
-      value: "33/44",
-      subtitle: "Attendance rate 75%",
-      icon: <PiUserList size={18} className="" />,
-      change: undefined,
-      highlight: false,
-    },
-    {
-      title: "Staff Attendance Today",
-      value: "18/20",
-      subtitle: "Attendance rate 90%",
-      icon: <UserX size={18} className="" />,
-      change: undefined,
-      highlight: false,
-    },
+interface AttendanceKPIResponse {
+  status: boolean;
+  message: string;
+  data: AttendanceKPI[];
+}
 
-  ];
+    const [statsData, setStatsData] = useState<AttendanceStatsCard[]>([]);
+const [statsLoading, setStatsLoading] = useState(true);
+const [selectedDate, setSelectedDate] = useState(
+  new Date().toISOString().split("T")[0]
+);
+
+
+useEffect(() => {
+  const fetchAttendanceStats = async () => {
+    try {
+      setStatsLoading(true);
+
+      const response = await api.get<AttendanceKPIResponse>(
+        `/attendance-kpi-cards/?date=${selectedDate}`
+      );
+
+      const formattedData: AttendanceStatsCard[] =
+        response.data.data.map((item) => {
+          let icon;
+
+          switch (item.title) {
+            case "Student Attendance Today":
+              icon = <Users size={18} />;
+              break;
+
+            case "Teachers Attendance Today":
+              icon = <PiUserList size={18} />;
+              break;
+
+            case "Staff Attendance Today":
+              icon = <UserX size={18} />;
+              break;
+
+            default:
+              icon = <Users size={18} />;
+          }
+
+          return {
+            title: item.title,
+            value: item.count,
+            subtitle: `Attendance rate ${item.attendance_rate}%`,
+            icon,
+            highlight: false,
+          };
+        });
+
+      setStatsData(formattedData);
+    } catch (error) {
+      console.error("Failed to fetch attendance KPI cards:", error);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  fetchAttendanceStats();
+}, [selectedDate]);
+
 
   return (
     
@@ -163,8 +273,10 @@ Track and manage attendance for teachers, students, and staff      </p>
         Today: {today}
       </button>
       <div className="pl-2">
-      <button        
- className="flex gap-2 justify-center items-center h-9 rounded-[10px] text-[14px] leading-[20px] font-normal  px-4 border bg-[#1F1F1F] text-white">
+    <button
+  onClick={handleExport}
+  className="flex gap-2 justify-center items-center h-9 rounded-[10px] text-[14px] leading-[20px] font-normal px-4 border bg-[#1F1F1F] text-white"
+>
     <Download size={18} className="" />
        Export report
       </button>
@@ -178,20 +290,25 @@ Track and manage attendance for teachers, students, and staff      </p>
 
 
 
-<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-6 pt-10">  {statsData.map((card, index) => (
-          <StatsCard
-            key={index}
-            title={card.title}
-            value={card.value}
-            change={card.change}
-            subtitle={card.subtitle}
-            icon={card.icon}
-            highlight={card.highlight}
-             width="450px"
-  height="200px"
-          />
-        ))}
-      </div>
+<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-6 pt-10">
+  {statsLoading ? (
+    <div>Loading...</div>
+  ) : (
+    statsData.map((card, index) => (
+      <StatsCard
+        key={index}
+        title={card.title}
+        value={card.value}
+        change={card.change}
+        subtitle={card.subtitle}
+        icon={card.icon}
+        highlight={card.highlight}
+        width="450px"
+        height="200px"
+      />
+    ))
+  )}
+</div>
 
 
  <div className="pt-10">
@@ -206,17 +323,23 @@ Track and manage attendance for teachers, students, and staff      </p>
 
       <div className="mt-10">
         {activeTab === "Teacher Attendance" && (
-<TeacherAttendanceTab onEdit={handleEdit} />    
-    )}
+<TeacherAttendanceTab
+  onEdit={handleTeacherEdit}
+  selectedDate={selectedDate}
+  setSelectedDate={setSelectedDate}
+  refreshKey={refreshKey}
+/>   )}
 
         {activeTab === "Student Attendance" && (
           <StudentAttendanceTable />
         )}
 
-        {activeTab === "Staff Attendance" && (
-<StaffAttendanceTable
-  onEdit={handleEdit}
-/>        )}
+       {activeTab === "Staff Attendance" && (
+  <StaffAttendanceTable
+    onEdit={handleStaffEdit}
+    refreshKey={refreshKey}
+  />
+)}
       </div>
     </div>
 
@@ -224,12 +347,12 @@ Track and manage attendance for teachers, students, and staff      </p>
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         teacher={selectedTeacher}
-          onSave={handleSaveTeacher}
-
+        onSave={handleSaveTeacher}
+        attendanceType={attendanceType}
       />
 
     </div>
   );
 };
 
-export default Attendance;
+export default Attendance; 

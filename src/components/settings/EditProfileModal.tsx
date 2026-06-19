@@ -1,5 +1,8 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { X, Image as ImageIcon, ChevronRight } from "lucide-react"
+import { useAppDispatch, useAppSelector } from "../../redux/hooks"
+import { updateProfile } from "../../redux/action/UserThunk"
+import { toast } from "react-toastify"
 
 interface EditProfileModalProps {
   isOpen: boolean
@@ -10,6 +13,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const dispatch = useAppDispatch()
+  const { profile, loading } = useAppSelector((s) => s.profile)
+
   const [formData, setFormData] = useState({
     fullName: "",
     role: "",
@@ -19,9 +25,28 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     phone2: "",
   })
 
+  const [initialFormData, setInitialFormData] = useState(formData)
+
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
+  const [imageName, setImageName] = useState<string>("")
+
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        fullName: profile.fullname || "",
+        role: profile.role || "",
+        email: profile.email || "",
+        address: profile.address || "",
+        phone1: profile.phone_number || "",
+        phone2: "",
+      })
+      if (profile.profile_photo) {
+        setImageName(profile.profile_photo.split("/").pop() || "Profile Image")
+      }
+    }
+  }, [profile, isOpen])
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -45,6 +70,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     if (!file) return
 
     setSelectedImage(file)
+    setImageName(file.name)
 
     setErrors((prev) => ({
       ...prev,
@@ -79,24 +105,58 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       newErrors.address = "Address is required"
     }
 
-    if (!selectedImage) {
-      newErrors.profileImage = "Profile image is required"
-    }
+    // if (!selectedImage) {
+    //   newErrors.profileImage = "Profile image is required"
+    // }
 
     setErrors(newErrors)
 
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) return
 
-    console.log({
-      ...formData,
-      profileImage: selectedImage,
-    })
+    const payload: any = {}
 
-    alert("Profile Updated Successfully")
+    if (formData.fullName !== profile?.fullname) {
+      payload.fullname = formData.fullName
+    }
+
+    if (formData.role !== profile?.role) {
+      payload.role = formData.role
+    }
+
+    if (formData.email !== profile?.email) {
+      payload.email = formData.email
+    }
+
+    if (formData.address !== profile?.address) {
+      payload.address = formData.address
+    }
+
+    if (formData.phone1 !== profile?.phone_number) {
+      payload.phone_number = formData.phone1
+    }
+
+    if (selectedImage) {
+      payload.profile_photo = selectedImage
+    }
+
+    // no changes
+    if (Object.keys(payload).length === 0) {
+      toast.info("No changes detected")
+      return
+    }
+
+    try {
+      await dispatch(updateProfile(payload)).unwrap()
+
+      toast.success("Profile updated successfully")
+      onClose()
+    } catch (error: any) {
+      toast.error(error || "Profile update failed")
+    }
   }
 
   if (!isOpen) return null
@@ -119,7 +179,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             {/* Full Name */}
             <div>
               <label className="mb-2 block text-sm font-medium">
-                Full Name *
+                Full Name
               </label>
 
               <input
@@ -162,6 +222,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
               <input
                 name="role"
+                disabled={!!formData.role}
                 value={formData.role}
                 onChange={handleChange}
                 className={`h-11 w-full rounded-lg border bg-[#F8F8F8] px-4 outline-none ${
@@ -231,7 +292,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
             <div>
               <label className="mb-2 block text-sm font-medium">
-                Profile Image *
+                Profile Image
               </label>
 
               <label
@@ -248,10 +309,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   className={selectedImage ? "text-green-600" : "text-gray-500"}
                 />
 
-                {selectedImage ? (
+                {imageName ? (
                   <>
                     <p className="mt-3 text-sm font-medium text-green-700">
-                      {selectedImage.name}
+                      {imageName}
                     </p>
 
                     <span className="text-xs text-green-600">

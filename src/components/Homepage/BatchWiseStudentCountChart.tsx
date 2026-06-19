@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import api from "../../api/axios";
+
 import {
   ResponsiveContainer,
   BarChart,
@@ -12,25 +15,6 @@ interface BatchData {
   batch: string;
   students: number;
 }
-
-const data: BatchData[] = [
-  {
-    batch: "Batch 2026",
-    students: 900,
-  },
-  {
-    batch: "Batch 2025",
-    students: 600,
-  },
-  {
-    batch: "Batch 2023",
-    students: 1020,
-  },
-  {
-    batch: "Batch 2024",
-    students: 700,
-  },
-];
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload?.length) {
@@ -50,6 +34,42 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 const BatchWiseStudentCountChart = () => {
+  const [data, setData] = useState<BatchData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBatchData = async () => {
+      try {
+        const res = await api.get("/dashboard-charts/");
+
+        const batchData = res.data.batch_wise_student_count || [];
+
+        const formattedData: BatchData[] = batchData.map(
+          (item: any) => ({
+            batch: item.batch,
+            students: item.count,
+          })
+        );
+
+        setData(formattedData);
+      } catch (error) {
+        console.error("Error fetching batch data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBatchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-3xl border border-[#E5E7EB] p-6 h-full min-h-[480px] flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-3xl border border-[#E5E7EB] p-6 h-full min-h-[480px]">
       <h3 className="text-[20px] font-semibold text-[#2B2B2B] mb-6">
@@ -84,10 +104,9 @@ const BatchWiseStudentCountChart = () => {
             />
 
             <YAxis
-              domain={[0, 1200]}
-              ticks={[0, 300, 600, 900, 1200]}
               axisLine={false}
               tickLine={false}
+              allowDecimals={false}
               tick={{
                 fill: "#7A7A7A",
                 fontSize: 14,
