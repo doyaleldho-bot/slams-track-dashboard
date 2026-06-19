@@ -29,7 +29,7 @@ const StudentSearchBar: React.FC<StudentSearchBarProps> = ({ onSearch }) => {
       <Search className="absolute left-3 w-5 h-5 text-gray-400" />
       <input
         type="text"
-        placeholder="Search by name or id"
+        placeholder="Search by name "
         value={searchQuery}
         onChange={handleChange}
         className="w-full h-full bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400"

@@ -1,13 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowUpDown } from "lucide-react";
 import StudentKPICards from "../components/StudentComponents/StudentKPICards";
 import StudentSearchBar from "../components/StudentComponents/StudentSearchBar";
 import FilterButtons from "../components/StudentComponents/FilterButtons";
 import StudentTable from "../components/StudentComponents/StudentTable";
 import AddStudentModal from "../components/StudentComponents/AddStudentModal";
+import api from "../api/axios";
+import { getClasses } from "../services/classApi";
+import { toast } from "react-toastify";
 
 export interface Student {
-  id: string;
+  id?: string;
+  studentId?: string;
   name: string;
   class: string;
   section: string;
@@ -15,12 +19,46 @@ export interface Student {
   admitted: string;
   feeStatus: "Paid" | "Pending";
   attend: number;
-  status: "Present" | "Absent";
+  status: "Present" | "Absent" | "Late";
 }
 
 export interface StudentTableProps {
   students?: Student[];
   onEdit?: (id: string) => void;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}
+interface ClassItem {
+  class_section: string;
+  id: number;
+  class_name: string;
+}
+
+interface StudentApiResponse {
+  status: boolean;
+  message: string;
+  total_students: number;
+  total_pages: number;
+  current_page: number;
+  next: string | null;
+  previous: string | null;
+  data: {
+    id: number;
+    student_id: string;
+    fullname: string;
+    phone_number: string;
+    class_name: string;
+    section_roll: {
+      section: string;
+      roll_no: string;
+    };
+    admission_date: string;
+    fee_status: string;
+    attendance_date: string;
+    attendance_status: string;
+    status: string;
+  }[];
 }
 
 const StudentPage = () => {
@@ -28,9 +66,8 @@ const StudentPage = () => {
   const [activeFilter, setActiveFilter] = useState<
     "All" | "Present" | "Absent"
   >("All");
-  const [selectedClass, setSelectedClass] = useState("1");
   const [showAddModal, setShowAddModal] = useState(false);
-  const [kpiData] = useState({
+  const [kpiData, setKpiData] = useState({
     totalStudents: 0,
     totalStudentsChange: "+12% from last year",
 
@@ -45,143 +82,163 @@ const StudentPage = () => {
     feePending: 0,
     feePendingChange: "require attention",
   });
-  // const [studentList, setStudentList] = useState([]);
-
-  const [studentList, setStudentList] = useState<Student[]>([
-    {
-      id: "School-1234",
-      name: "Aarav Sharma",
-      class: "Class 10",
-      section: "Section A",
-      rollNo: "Roll: 10A01",
-      admitted: "12 Jun 2025",
-      feeStatus: "Paid",
-      attend: 92,
-      status: "Present",
-    },
-    {
-      id: "School-1234",
-      name: "Sharma VD",
-      class: "Class 10",
-      section: "Section A",
-      rollNo: "Roll: 10A01",
-      admitted: "12 Jun 2025",
-      feeStatus: "Pending",
-      attend: 85,
-      status: "Present",
-    },
-    {
-      id: "School-1234",
-      name: "Aarav Sharma",
-      class: "Class 10",
-      section: "Section A",
-      rollNo: "Roll: 10A01",
-      admitted: "12 Jun 2025",
-      feeStatus: "Paid",
-      attend: 60,
-      status: "Absent",
-    },
-    {
-      id: "School-1234",
-      name: "Aarav Sharma",
-      class: "Class 10",
-      section: "Section A",
-      rollNo: "Roll: 10A01",
-      admitted: "12 Jun 2025",
-      feeStatus: "Pending",
-      attend: 85,
-      status: "Present",
-    },
-    {
-      id: "School-1234",
-      name: "Aarav Sharma",
-      class: "10",
-      section: "Section A",
-      rollNo: "Roll: 10A01",
-      admitted: "12 Jun 2025",
-      feeStatus: "Pending",
-      attend: 85,
-      status: "Present",
-    },
-    {
-      id: "School-1234",
-      name: "Aarav Sharma",
-      class: "8",
-      section: "Section A",
-      rollNo: "Roll: 10A01",
-      admitted: "12 Jun 2025",
-      feeStatus: "Paid",
-      attend: 60,
-      status: "Present",
-    },
-    {
-      id: "School-1234",
-      name: "Aarav Sharma",
-      class: "9",
-      section: "Section A",
-      rollNo: "Roll: 10A01",
-      admitted: "12 Jun 2025",
-      feeStatus: "Paid",
-      attend: 60,
-      status: "Absent",
-    },
-    {
-      id: "School-1234",
-      name: "Aarav Sharma",
-      class: "10",
-      section: "Section A",
-      rollNo: "Roll: 10A01",
-      admitted: "12 Jun 2025",
-      feeStatus: "Paid",
-      attend: 60,
-      status: "Absent",
-    },
-  ]);
+  const [classes, setClasses] = useState<ClassItem[]>([]);
+  const [selectedClass, setSelectedClass] = useState<string>("");
 
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [sections, setSections] = useState<string[]>([]);
+  const [selectedSection, setSelectedSection] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  //dummy api
-  //     const fetchStudents = async (className: string) => {
+
+  useEffect(() => {
+    const loadClasses = async () => {
+      try {
+        const classList = await getClasses();
+        setClasses(classList);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    loadClasses();
+  }, []);
+
+  useEffect(() => {
+    if (selectedClass && selectedSection) {
+      fetchKpiData(
+        selectedClass,
+        selectedSection
+      );
+
+      fetchStudentList(
+        selectedClass,
+        selectedSection
+      );
+    }
+  }, [selectedClass, selectedSection]);
+
+  // useEffect(() => {
+  //   const loadSections = async () => {
+  //     if (!selectedClass) return;
+
+  //     try {
+  //       const sectionList = await getSections(selectedClass);
+
+  //       setSections(sectionList);
+
+  //       if (sectionList.length > 0) {
+  //         setSelectedSection(sectionList[0]);
+  //       }
+  //     } catch (error) {
+  //       console.error(error);
+  //     }
+  //   };
+
+  //   loadSections();
+  // }, [selectedClass]);
+
+  // const fetchClasses = async () => {
   //   try {
-  //     const res = await api.get(
-  //       `/students?class=${encodeURIComponent(className)}&page=1&limit=10`
-  //     );
+  //     const res = await api.get("/list-classes-for-dropdowns/");
 
-  //     setStudents(res.data.students);
+  //     const classList: ClassItem[] = res.data.data.map(
+  //       (item: any) => ({
+  //         id: item.id,
+  //         class_name: item.class_name,
+  //       })
+  //     );
+  //     setClasses(classList);
+
+  //     // Select first class by default
+  //     if (classList.length > 0) {
+  //       setSelectedClass(classList[0].id.toString());
+  //     }
   //   } catch (error) {
   //     console.error(error);
   //   }
   // };
 
-  //     const fetchStudents = async (className: string) => {
+
+  //student data api
+  const [studentList, setStudentList] = useState<Student[]>([]);
+
+  const fetchStudentList = async (classId: string, section: string, page = 1) => {
+    try {
+      const res = await api.get<StudentApiResponse>(
+        `/student-list/?status=all&class_id=${classId}&page=${page}&section=${section}`
+      );
+      setCurrentPage(res.data.current_page);
+      setTotalPages(res.data.total_pages);
+
+      const students: Student[] = res.data.data.map((student) => ({
+        id: String(student.id),
+        studentId: student.student_id,
+        name: student.fullname,
+        class: student.class_name,
+        section: student.section_roll.section,
+        rollNo: student.section_roll.roll_no,
+        admitted: student.admission_date,
+        feeStatus:
+          student.fee_status === "Paid" ? "Paid" : "Pending",
+        attend: 0, // API doesn't provide attendance percentage
+        status:
+          student.attendance_status === "Present"
+            ? "Present"
+            : student.attendance_status === "Late"
+              ? "Late"
+              : "Absent",
+      }));
+      setStudentList(students);
+    } catch (error) {
+      console.error("Error fetching students:", error);
+    }
+  };
+
+  // const fetchSections = async (classId: string) => {
   //   try {
   //     const res = await api.get(
-  //       `/students?class=${encodeURIComponent(className)}`
+  //       `/classes/sections/?class_id=${classId}`
   //     );
 
-  //     const students = res.data.students;
+  //     setSections(res.data.sections);
 
-  //     setStudentList(students);
-
-  //     setKpiData({
-  //       totalStudents: students.length,
-  //       absentStudents: students.filter(
-  //         (s: Student) => s.status === "Absent"
-  //       ).length,
-  //       presentStudents: students.filter(
-  //         (s: Student) => s.status === "Present"
-  //       ).length,
-  //       newAdmissions: students.filter(
-  //         (s: Student) => new Date(s.admitted).getFullYear() === 2026
-  //       ).length,
-  //       feePending: students.filter(
-  //         (s: Student) => s.feeStatus === "Pending"
-  //       ).length,
-  //     });
+  //     // Select first section by default
+  //     if (res.data.sections.length > 0) {
+  //       setSelectedSection(res.data.sections[0]);
+  //     }
   //   } catch (error) {
   //     console.error(error);
   //   }
   // };
+
+  const fetchKpiData = async (
+    classId: string,
+    section: string
+  ) => {
+    try {
+      const today = new Date().toISOString().split("T")[0];
+
+      const res = await api.get(
+        `/dashboard/kpi/?date=${today}&class_id=${classId}&section=${section}`
+      );
+
+      const data = res.data.data;
+
+      setKpiData((prev) => ({
+        ...prev,
+        totalStudents: data.total_students,
+        absentStudents: data.absent_students,
+        presentStudents: data.present_students,
+        newAdmissions: data.applications_received,
+        feePending: data.fee_pending,
+      }));
+    } catch (error) {
+      console.error("KPI API Error:", error);
+    }
+  };
+
 
   //for filter and search put in main page and pass the filtered list to table component
   const filteredStudents = studentList.filter((student) => {
@@ -195,13 +252,43 @@ const StudentPage = () => {
     return matchesSearch && matchesFilter;
   });
 
-  function handleEditStudent(id: string) {
-    const s = studentList.find((st) => st.id === id);
-    if (s) {
-      setSelectedStudent(s);
+  const handleEditStudent = async (id: string) => {
+    try {
+      const res = await api.get(`/student-overview/${id}/`);
+
+      const student = res.data.data;
+
+      setSelectedStudent(student);
       setShowAddModal(true);
+    } catch (error) {
+      console.error("Error fetching student details:", error);
     }
+  };
+
+  //rearrange roll no. button click handler
+  const handleRearrangeRollNumbers = async () => {
+  try {
+    const res = await api.post("/arrange-roll-numbers/", {
+      class_id: selectedClass,
+      section: selectedSection,
+    });
+
+    if (res.data.status) {
+      toast.success(
+        `${res.data.message}. Total Students: ${res.data.total_students}`
+      );
+
+      // Refresh student list if needed
+      fetchStudentList(selectedClass, selectedSection);
+    }
+  } catch (error: any) {
+    console.error("Error rearranging roll numbers:", error);
+    toast.error(
+      error?.response?.data?.message ||
+        "Failed to rearrange roll numbers"
+    );
   }
+};
 
   return (
     <div className=" min-h-screen">
@@ -219,28 +306,38 @@ const StudentPage = () => {
           <select
             value={selectedClass}
             onChange={(e) => {
-              const value = e.target.value;
+              const selectedCls = classes.find(
+                (cls) => String(cls.id) === e.target.value
+              );
 
-              setSelectedClass(value);
-              // fetchStudents(value);
+              if (selectedCls) {
+                setSelectedClass(String(selectedCls.id)); // 17
+                setSelectedSection(selectedCls.class_section); // A
+              }
             }}
             className="px-4 py-2 bg-white border border-gray-300 rounded-md"
           >
-            <option value="LKG">LKG</option>
-            <option value="UKG">UKG</option>
-            <option value="1">Class 1</option>
-            <option value="2">Class 2</option>
-            <option value="3">Class 3</option>
-            <option value="4">Class 4</option>
-            <option value="5">Class 5</option>
-            <option value="6">Class 6</option>
-            <option value="7">Class 7</option>
-            <option value="8">Class 8</option>
-            <option value="9">Class 9</option>
-            <option value="10">Class 10</option>
-            <option value="11">Class 11</option>
-            <option value="12">Class 12</option>
+            <option value="">Select Class</option>
+
+            {classes.map((cls) => (
+              <option key={cls.id} value={cls.id}>
+                {cls.class_name} - {cls.class_section}
+              </option>
+            ))}
           </select>
+          {/* {selectedClass && (
+            <select
+              value={selectedSection}
+              onChange={(e) => setSelectedSection(e.target.value)}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-md"
+            >
+              {sections.map((section) => (
+                <option key={section} value={section}>
+                  {section}
+                </option>
+              ))}
+            </select>
+          )} */}
           <button
             onClick={() => setShowAddModal(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md transition-colors"
@@ -257,19 +354,25 @@ const StudentPage = () => {
             onSaved={(saved) => {
               if (!saved) return;
               if (selectedStudent) {
-                // update existing
+                // update existing row locally
                 setStudentList((prev) =>
-                  prev.map((s) =>
-                    s.id === selectedStudent.id
+                  prev.map((s) => {
+                    const matchesStudentId =
+                      s.studentId === selectedStudent.student_id ||
+                      s.studentId === selectedStudent.studentId ||
+                      s.id === String(selectedStudent.profile_id) ||
+                      s.id === String(selectedStudent.id);
+
+                    return matchesStudentId
                       ? {
-                          ...s,
-                          name: saved.personal?.name || s.name,
-                          class: saved.academic?.className || s.class,
-                          section: saved.academic?.section || s.section,
-                          admitted: saved.academic?.admissionDate || s.admitted,
-                        }
-                      : s,
-                  ),
+                        ...s,
+                        name: saved.personal?.name || s.name,
+                        class: saved.academic?.className || s.class,
+                        section: saved.academic?.section || s.section,
+                        admitted: saved.academic?.admissionDate || s.admitted,
+                      }
+                      : s;
+                  }),
                 );
               } else {
                 // add new
@@ -289,6 +392,12 @@ const StudentPage = () => {
                 };
                 setStudentList((prev) => [newStudent, ...prev]);
               }
+
+              // Refresh data from server to ensure class/section updates are reflected
+              if (selectedClass && selectedSection) {
+                fetchStudentList(selectedClass, selectedSection);
+              }
+
               setSelectedStudent(null);
               setShowAddModal(false);
             }}
@@ -311,7 +420,7 @@ const StudentPage = () => {
       {/* Search and Filter Section */}
       <div className="flex items-center justify-between gap-4 mb-4 bg-white p-4 rounded-lg">
         <StudentSearchBar onSearch={setSearchQuery} />
-        <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+        <button   onClick={handleRearrangeRollNumbers}   disabled={!selectedClass || !selectedSection} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
           <ArrowUpDown size={16} />
           Rearrange Roll No.
         </button>
@@ -320,7 +429,8 @@ const StudentPage = () => {
 
       {/* Student Table Section */}
       <div className="overflow-x-auto">
-        <StudentTable students={filteredStudents} onEdit={handleEditStudent} />
+        <StudentTable students={filteredStudents} onEdit={handleEditStudent} currentPage={currentPage} totalPages={totalPages} onPageChange={(page) => fetchStudentList(selectedClass, selectedSection, page)
+        } />
       </div>
     </div>
   );

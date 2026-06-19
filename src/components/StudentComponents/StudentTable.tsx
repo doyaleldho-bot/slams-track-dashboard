@@ -2,46 +2,50 @@ import React, { useState } from "react";
 import { Eye, Edit } from "lucide-react";
 import type { StudentTableProps } from "../../pages/StudentPage";
 import StudentDetailsModal from "./StudentDetailsModal";
+import api from "../../api/axios";
 
-
-const StudentTable: React.FC<StudentTableProps> = ({ students, onEdit }) => {
+const StudentTable: React.FC<StudentTableProps> = ({ students, onEdit, currentPage, totalPages, onPageChange }) => {
     const [showModal, setShowModal] = useState(false);
     const [studentDetails, setStudentDetails] = useState<any>(null);
     const handleViewStudent = async (studentId: string) => {
         try {
-            // In a real app, studentId would be used to fetch details
+            const res = await api.get(`/student-overview/${studentId}/`);
 
-            // API
-            // const res = await api.get(`/students/${studentId}`);
-            // setStudentDetails(res.data);
+            const student = res.data.data;
 
-            // Dummy Data
             setStudentDetails({
-                name: "Aarav Sharma",
-                studentId,
-                dob: "15 August 2010",
-                gender: "Male",
-                bloodGroup: "A+",
+                name: student.fullname,
+                studentId: student.student_id,
 
-                email: "aarav.sharma@school.com",
-                phone: "+91 98765 43210",
-                address:
-                    "123 Main Street, Kottayam, Kerala, India - 686001",
+                dob: student.dob,
+                gender: student.gender,
+                bloodGroup: student.blood_group,
 
-                fatherName: "Rajesh Sharma",
-                motherName: "Priya Sharma",
-                fatherOccupation: "Business Owner",
-                motherOccupation: "Teacher",
+                email: student.email,
+                phone: student.phone_number,
+                address: student.address,
 
-                admissionDate: "12 Jun 2025",
-                academicYear: "2025-2026",
-                previousSchool: "St. Mary's School",
-                classSection: "Class 10 A",
+                fatherName: student.father_name,
+                motherName: student.mother_name,
+                fatherOccupation: student.father_occupation,
+                motherOccupation: student.mother_occupation,
+
+                admissionDate: student.admission_date,
+                academicYear: student.batch,
+                previousSchool: student.previous_institute || "-",
+                classSection: `${student.class_name} ${student.section}`,
             });
 
             setShowModal(true);
         } catch (error) {
-            console.error(error);
+            console.error("Error fetching student details:", error);
+        }
+    };
+
+    const handleStudentUpdated = async () => {
+        // refresh currently opened student details
+        if (studentDetails?.studentId) {
+            handleViewStudent(studentDetails.studentId);
         }
     };
     return (
@@ -88,7 +92,7 @@ const StudentTable: React.FC<StudentTableProps> = ({ students, onEdit }) => {
                             <tr key={index} className="hover:bg-gray-50 transition-colors">
                                 <td className="px-6 py-4 text-sm">
                                     <a href="#" className="text-blue-600 hover:underline font-medium">
-                                        {student.id}
+                                        {student.studentId}
                                     </a>
                                 </td>
                                 <td className="px-6 py-4 text-sm text-gray-900 font-medium">
@@ -96,8 +100,7 @@ const StudentTable: React.FC<StudentTableProps> = ({ students, onEdit }) => {
                                 </td>
                                 <td className="px-6 py-4 text-sm text-gray-700">{student.class}</td>
                                 <td className="px-6 py-4 text-sm text-gray-700">
-                                    <div>{student.section}</div>
-                                    <div className="text-xs text-gray-500">{student.rollNo}</div>
+                                    <div>{student.section} /  {student.rollNo}</div>
                                 </td>
                                 <td className="px-6 py-4 text-sm text-gray-700">{student.admitted}</td>
                                 <td className="px-6 py-4 text-sm">
@@ -139,17 +142,26 @@ const StudentTable: React.FC<StudentTableProps> = ({ students, onEdit }) => {
             <div className="border-t border-gray-200 bg-gray-50 px-6 py-3 flex items-center justify-between text-sm">
                 <span className="text-gray-600">Showing {students?.length} Students</span>
                 <div className="flex gap-2">
-                    <button className="px-3 py-1 rounded bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">
+                    <button onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1} className="px-3 py-1 rounded bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">
                         Previous
                     </button>
-                    <button className="px-3 py-1 rounded bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">
-                        1
-                    </button>
-                    <button className="px-3 py-1 rounded bg-blue-600 text-white">2</button>
-                    <button className="px-3 py-1 rounded bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">
-                        3
-                    </button>
-                    <button className="px-3 py-1 rounded bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">
+                    {Array.from({ length: totalPages }, (_, index) => {
+                        const page = index + 1;
+
+                        return (
+                            <button
+                                key={page}
+                                onClick={() => onPageChange(page)}
+                                className={`px-3 py-1 rounded ${currentPage === page
+                                        ? "bg-blue-600 text-white"
+                                        : "bg-white border border-gray-300 text-gray-700"
+                                    }`}
+                            >
+                                {page}
+                            </button>
+                        );
+                    })}
+                    <button onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages} className="px-3 py-1 rounded bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">
                         Next
                     </button>
                 </div>
@@ -158,6 +170,7 @@ const StudentTable: React.FC<StudentTableProps> = ({ students, onEdit }) => {
                 open={showModal}
                 onClose={() => setShowModal(false)}
                 student={studentDetails}
+                onUpdated={handleStudentUpdated}
             />
         </div>
 

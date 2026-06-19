@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import { toast } from "react-toastify";
 // import axios from "axios";
 
 const OTP_DURATION = 5 * 60; // 5 minutes
@@ -24,8 +25,10 @@ const ForgotPasswordPage = () => {
     const [timeLeft, setTimeLeft] = useState(0);
     const [canResend, setCanResend] = useState(false);
     const [otpMessage, setOtpMessage] = useState("");
-
     const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+    const [verifyLoading, setVerifyLoading] = useState(false);
+    const [resendLoading, setResendLoading] = useState(false);
+    const [submitLoading, setSubmitLoading] = useState(false);
 
     const navigate = useNavigate();
 
@@ -68,9 +71,15 @@ const ForgotPasswordPage = () => {
         setErrors(newErrors);
 
         if (newErrors.email) return;
+          setResendLoading(true);
 
         try {
-            await api.post("/forgot-password/", { email });
+            const res = await api.post("/forgot-password/", { email });
+
+            if (!res.data.status) {
+                toast.error(res.data.message || "Failed to send OTP. Try again.");
+                return;
+            }
 
             setOtpSent(true);
             setOtpVerified(false);
@@ -79,10 +88,11 @@ const ForgotPasswordPage = () => {
 
             setTimeLeft(OTP_DURATION);
             setCanResend(false);
-            console.log("ok");
         } catch (error) {
-            console.error(error);
-        }
+            toast.error(error.response.data.message);
+        } finally {
+        setResendLoading(false);
+    }
     };
 
     const handleOtpChange = (index: number, value: string) => {
@@ -122,11 +132,11 @@ const ForgotPasswordPage = () => {
             setErrors(newErrors);
             return;
         }
-
+          setVerifyLoading(true);
         try {
             await api.post("/verify-otp/", {
-              email,
-              otp: enteredOtp,
+                email,
+                otp: enteredOtp,
             });
 
             setOtpVerified(true);
@@ -134,7 +144,7 @@ const ForgotPasswordPage = () => {
             setCanResend(false);
 
             setOtpMessage("OTP verified successfully.");
-             setOtp(["", "", "", "", "", ""]);
+            setOtp(["", "", "", "", "", ""]);
 
             setErrors({
                 email: "",
@@ -142,8 +152,9 @@ const ForgotPasswordPage = () => {
                 password: "",
                 confirmPassword: "",
             });
-            
+
         } catch (error) {
+            toast.error(error.response.data.message);
             setErrors({
                 email: "",
                 otp: "Invalid OTP.",
@@ -151,12 +162,15 @@ const ForgotPasswordPage = () => {
                 confirmPassword: "",
             });
         }
+        finally {
+        setVerifyLoading(false);
+    }
     };
 
     const handleResendOtp = async () => {
         try {
-            await api.post("/forgot-password/resend-otp/", { email });
-
+            setResendLoading(true);
+           const res = await api.post("/forgot-password/resend-otp/", { email });
             setOtp(["", "", "", "", "", ""]);
             setOtpVerified(false);
 
@@ -168,7 +182,9 @@ const ForgotPasswordPage = () => {
             otpRefs.current[0]?.focus();
         } catch (error) {
             console.error(error);
-        }
+        }finally {
+        setResendLoading(false);
+    }
     };
 
     const handleSubmit = async () => {
@@ -211,18 +227,20 @@ const ForgotPasswordPage = () => {
         ) {
             return;
         }
-
+         setSubmitLoading(true);
         try {
-            // await axios.post("/api/auth/reset-password", {
-            //   email,
-            //   otp: otp.join(""),
-            //   password,
-            // });
-
+            await api.post("/reset-password/", {
+                email,
+                new_password: password,
+                confirm_password: confirmPassword,
+            });
+          toast.success("Password reset successfully. Please login with your new password.");
             navigate("/");
         } catch (error) {
-            console.error(error);
-        }
+            toast.error(error.response.details || "Failed to reset password. Try again.");
+        }finally {
+        setSubmitLoading(false);
+    }
     };
 
     return (
@@ -278,9 +296,10 @@ const ForgotPasswordPage = () => {
                                 <button
                                     type="button"
                                     onClick={handleSendOtp}
+                                    disabled={resendLoading}
                                     className="rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
                                 >
-                                    Send OTP
+                                    {resendLoading ? "Sending..." : "Send OTP"}
                                 </button>
                             ) : (
                                 <span className="text-sm text-green-600 font-medium">
@@ -306,9 +325,10 @@ const ForgotPasswordPage = () => {
                                             <button
                                                 type="button"
                                                 onClick={handleResendOtp}
+                                                    disabled={resendLoading}
                                                 className="font-medium text-blue-600 hover:text-blue-700"
                                             >
-                                                Resend OTP
+                                                {resendLoading ? "Sending..." : "Resend OTP"}
                                             </button>
                                         )}
                                     </div>
@@ -347,9 +367,10 @@ const ForgotPasswordPage = () => {
                                         <button
                                             type="button"
                                             onClick={handleVerifyOtp}
+                                               disabled={verifyLoading}
                                             className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-950"
                                         >
-                                            Verify OTP
+                                              {verifyLoading ? "Verifying..." : "Verify OTP"}
                                         </button>
                                     </div>
                                 )}
@@ -410,9 +431,10 @@ const ForgotPasswordPage = () => {
                         <button
                             type="button"
                             onClick={handleSubmit}
+                               disabled={submitLoading}
                             className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-950"
                         >
-                            Create Password
+                           {submitLoading ? "Updating..." : "Create Password"}
                         </button>
                     </div>
                 </div>

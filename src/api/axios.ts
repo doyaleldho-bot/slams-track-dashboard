@@ -1,55 +1,3 @@
-// import axios from "axios";
-
-// const api = axios.create({
-//   baseURL: "/api", 
-//   withCredentials: true,
-//   headers: {
-//     "Content-Type": "application/json",
-//   },
-// });
-
-// // Refresh token request should also use same api instance
-// api.interceptors.response.use(
-//   (res) => res,
-//   async (error) => {
-//     const originalRequest = error.config;
-
-//     if (!error.response) {
-//       return Promise.reject(error);
-//     }
-
-//     //  avoid infinite loop
-//     if (
-//       originalRequest.url?.includes("/refresh-token") ||
-//       originalRequest.url?.includes("/logout")
-//     ) {
-//       window.location.href = "/login";
-//       return Promise.reject(error);
-//     }
-
-//     // handle expired token
-//     if (error.response.status === 401 && !originalRequest._retry) {
-//       originalRequest._retry = true;
-
-//       try {
-//         await api.post("/refresh-token"); //  same baseURL
-
-//         return api(originalRequest);
-//       } catch (err) {
-//         window.location.href = "/login";
-//         return Promise.reject(err);
-//       }
-//     }
-
-//     return Promise.reject(error);
-//   }
-// );
-
-// export default api;
-
-
-
-
 import axios from "axios";
 
 const api = axios.create({
@@ -60,11 +8,7 @@ const api = axios.create({
   },
 });
 
-
-// ===============================
-// 1. REQUEST INTERCEPTOR
-// Attach access token to every request
-// ===============================
+// Request Interceptor
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("access_token");
@@ -78,13 +22,9 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-
-// ===============================
-// 2. RESPONSE INTERCEPTOR
-// Handle 401 + refresh token
-// ===============================
+// Response Interceptor
 api.interceptors.response.use(
-  (res) => res,
+  (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
@@ -92,42 +32,54 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Avoid infinite loop
+    // Prevent refresh loops
     if (
       originalRequest.url?.includes("/token-refresh/") ||
-      originalRequest.url?.includes("/logout")
+      originalRequest.url?.includes("/logout/")
     ) {
-      localStorage.clear();
-      window.location.href = "/login";
       return Promise.reject(error);
     }
 
-    // Handle expired access token
-    if (error.response.status === 401 && !originalRequest._retry) {
+    if (
+      error.response.status === 401 &&
+      !originalRequest._retry
+    ) {
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem("refresh_token");
+        const refreshToken =
+          localStorage.getItem("refresh_token");
 
-        const res = await api.post("/token-refresh/", {
-          refresh: refreshToken,
-        });
+        if (!refreshToken) {
+          return Promise.reject(error);
+        }
 
-        const newAccessToken = res.data.access;
+        console.log("Refreshing token...");
 
-        // store new access token
-        localStorage.setItem("access_token", newAccessToken);
+        const refreshRes = await axios.post(
+          "/api/token-refresh/",
+          {
+            refresh: refreshToken,
+          }
+        );
 
-        // update header for retry
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        const newAccessToken =
+          refreshRes.data.tokens.access;
 
-        // retry original request
+        localStorage.setItem(
+          "access_token",
+          newAccessToken
+        );
+        originalRequest.headers.Authorization =
+          `Bearer ${newAccessToken}`;
+
         return api(originalRequest);
+      } catch (refreshError) {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+          window.location.href = "/login";
 
-      } catch (err) {
-        localStorage.clear();
-        window.location.href = "/login";
-        return Promise.reject(err);
+        return Promise.reject(refreshError);
       }
     }
 

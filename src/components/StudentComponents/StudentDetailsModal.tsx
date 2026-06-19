@@ -12,12 +12,14 @@ interface Props {
   open: boolean;
   onClose: () => void;
   student: any;
+  onUpdated?: () => void;
 }
 
 const StudentDetailsModal = ({
   open,
   onClose,
   student,
+  onUpdated,
 }: Props) => {
   if (!open || !student) return null;
 
