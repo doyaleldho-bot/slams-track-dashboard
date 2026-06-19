@@ -203,15 +203,25 @@ const TeacherTimetable: React.FC<TeacherTimetableProps> = ({
     }
   }
 
-  const handleClear = () => {
-    if (!selectedSlot) return
+  const handleClear = async () => {
+    if (!selectedSlot?.id) return
 
-    const updated = { ...timetable }
+    try {
+      // Delete from backend
+      const res = await api.delete(`/delete-time-table/${selectedSlot.id}/`)
 
-    updated[selectedSlot.day][selectedSlot.period] = null
+      if (res.data.status) {
+        // Update UI after successful delete
+        const updated = { ...timetable }
 
-    setTimetable(updated)
-    setIsModalOpen(false)
+        updated[selectedSlot.day][selectedSlot.period] = null
+
+        setTimetable(updated)
+        setIsModalOpen(false)
+      }
+    } catch (error: any) {
+      console.log(error.response?.data)
+    }
   }
 
   // out side of dropdown click
@@ -486,7 +496,12 @@ const TeacherTimetable: React.FC<TeacherTimetableProps> = ({
 
               <button
                 onClick={handleClear}
-                className="flex-1 rounded-xl bg-[#A12A00] py-3 text-lg text-white"
+                disabled={!selectedSlot?.id}
+                className={`flex-1 rounded-xl py-3 text-lg text-white ${
+                  selectedSlot?.id
+                    ? "bg-[#A12A00]"
+                    : "cursor-not-allowed bg-gray-400"
+                }`}
               >
                 Clear Slot
               </button>
