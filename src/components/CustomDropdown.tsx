@@ -7,6 +7,7 @@ export type DropdownOption =
       id: string | number
       name: string
       classSection?: string
+      classBatch?: string
     }
 
 interface CustomDropdownProps {
@@ -50,9 +51,17 @@ const CustomDropdown = ({
   const getLabel = (option: DropdownOption) => {
     if (typeof option === "string") return option
 
-    return option.classSection
-      ? `${option.name}-${option.classSection}`
-      : option.name
+    let label = option.name
+
+    if (option.classSection) {
+      label += `-${option.classSection}`
+    }
+
+    if (option.classBatch) {
+      label += ` (${option.classBatch})`
+    }
+
+    return label
   }
 
   const getValue = (option: DropdownOption) =>
@@ -76,11 +85,21 @@ const CustomDropdown = ({
 
     if (!selectedOption) return ""
 
-    return typeof selectedOption === "string"
-      ? selectedOption
-      : selectedOption.classSection
-        ? `${selectedOption.name}-${selectedOption.classSection}`
-        : selectedOption.name
+    if (typeof selectedOption === "string") {
+      return selectedOption
+    }
+
+    let label = selectedOption.name
+
+    if (selectedOption.classSection) {
+      label += `-${selectedOption.classSection}`
+    }
+
+    if (selectedOption.classBatch) {
+      label += ` (${selectedOption.classBatch})`
+    }
+
+    return label
   })()
 
   return (
