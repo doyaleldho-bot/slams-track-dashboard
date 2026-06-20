@@ -246,7 +246,6 @@ const ForgotPasswordPage = () => {
     return (
         <div className="relative min-h-screen overflow-hidden bg-[#e9effb] text-slate-900">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.88),transparent_25%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.18),transparent_18%),linear-gradient(180deg,#f7fbff_0%,#e9effb_100%)]" />
-
             <div className="pointer-events-none absolute left-1/2 top-14 h-60 w-96 -translate-x-1/2 rounded-full bg-white/70 blur-3xl" />
             <div className=" absolute inset-0 bg-[url('/loginBG.png')] bg-cover bg-center opac " />
 
