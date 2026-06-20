@@ -135,8 +135,20 @@ const NonTeachingTable: React.FC<NonTeachingTableProps> = ({
                 <tr key={index} className="border-b hover:bg-gray-50">
                   <td className="py-3 text-indigo-600 font-medium">{item.id}</td>
                   <td>
-                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                      <FaUser className="text-gray-500 text-xs" />
+                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                      {item.photo ? (
+                        <img
+                          src={item.photo}
+                          alt={item.name}
+                          className="w-full h-full object-cover rounded-full"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = "none";
+                            (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden");
+                          }}
+                        />
+                      ) : (
+                        <FaUser className="text-gray-500 text-xs" />
+                      )}
                     </div>
                   </td>
                   <td>{item.name}</td>
