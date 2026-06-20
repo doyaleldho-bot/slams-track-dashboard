@@ -8,17 +8,31 @@ import StudentAdmissionTrend from "../components/Homepage/StudentAdmissionTrend"
 import { useEffect, useState } from "react";
 import api from "../api/axios"; // adjust path if needed
 
+interface Stat {
+  count: number;
+  growth_percentage: number;
+}
+
+interface DashboardData {
+  total_students: Stat;
+  teachers: Stat;
+  non_teaching_staff: Stat;
+  active_students: Stat;
+  new_admissions: Stat;
+  batches: Stat;
+}
+
 interface HomeStatsCard {
   title: string;
   value: number;
-  subtitle?: string;
+  subtitle: string;
+  change: string;
   icon: React.ReactNode;
-  change?: string | undefined;
-  highlight?: boolean;
+  highlight: boolean;
 }
 
 const HomePage = () => {
- const [statsData, setStatsData] = useState<HomeStatsCard[]>([]);
+const [statsData, setStatsData] = useState<HomeStatsCard[]>([]);
 const [loading, setLoading] = useState(false);
 const [error, setError] = useState<string | null>(null);
 
@@ -46,60 +60,60 @@ useEffect(() => {
 
       const res = await api.get("/dashboard-kpi-cards/");
 
-      const apiData = res.data?.data;
+      const apiData: DashboardData = res.data?.data;
 
       if (!apiData) return;
 
-      const mapped: HomeStatsCard[] = [
-        {
-          title: "Total Students",
-          value: apiData.total_students,
-          subtitle: "from system",
-          change: "",
-          icon: getIcon("total_students"),
-          highlight: false,
-        },
-        {
-          title: "Total Teachers",
-          value: apiData.total_teachers,
-          subtitle: "from system",
-          change: "",
-          icon: getIcon("total_teachers"),
-          highlight: false,
-        },
-        {
-          title: "Non Teaching Staffs",
-          value: apiData.total_non_teaching_staffs,
-          subtitle: "from system",
-          change: "",
-          icon: getIcon("total_non_teaching_staffs"),
-          highlight: false,
-        },
-        {
-          title: "Active Students",
-          value: apiData.total_active_students,
-          subtitle: "from system",
-          change: "",
-          icon: getIcon("total_active_students"),
-          highlight: false,
-        },
-        {
-          title: "New Admission",
-          value: apiData.new_admission_count,
-          subtitle: "from system",
-          change: "",
-          icon: getIcon("new_admission_count"),
-          highlight: false,
-        },
-        {
-          title: "Total Batches",
-          value: apiData.total_batches,
-          subtitle: "from system",
-          change: "",
-          icon: getIcon("total_batches"),
-          highlight: false,
-        },
-      ];
+   const mapped: HomeStatsCard[] = [
+  {
+    title: "Total Students",
+    value: apiData.total_students.count,
+    subtitle: `${apiData.total_students.growth_percentage}% from last year`,
+    change: "",
+    icon: getIcon("total_students"),
+    highlight: false,
+  },
+  {
+    title: "Total Teachers",
+    value: apiData.teachers.count,
+    subtitle: `${apiData.teachers.growth_percentage}% new openings today`,
+    change: "",
+    icon: getIcon("total_teachers"),
+    highlight: false,
+  },
+  {
+    title: "Non Teaching Staffs",
+    value: apiData.non_teaching_staff.count,
+    subtitle: `${apiData.non_teaching_staff.growth_percentage}% from last year`,
+    change: "",
+    icon: getIcon("total_non_teaching_staffs"),
+    highlight: false,
+  },
+  {
+    title: "Active Students",
+    value: apiData.active_students.count,
+    subtitle: `${apiData.active_students.growth_percentage}% this week`,
+    change: "",
+    icon: getIcon("total_active_students"),
+    highlight: false,
+  },
+  {
+    title: "New Admission",
+    value: apiData.new_admissions.count,
+    subtitle: `${apiData.new_admissions.growth_percentage}% from last year`,
+    change: "",
+    icon: getIcon("new_admission_count"),
+    highlight: false,
+  },
+  {
+    title: "Total Batches",
+    value: apiData.batches.count,
+    subtitle: `${apiData.batches.growth_percentage}% from last year`,
+    change: "",
+    icon: getIcon("total_batches"),
+    highlight: false,
+  },
+];
 
       setStatsData(mapped);
     } catch (err: any) {
@@ -114,7 +128,7 @@ useEffect(() => {
 
   return (
     <div className="p-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-6">
         {" "}
        {loading ? (
   <div>Loading dashboard...</div>
