@@ -218,7 +218,7 @@ const [selectedDepartment, setSelectedDepartment] =
         <div>
           <label
             htmlFor="attendance-date"
-            className="block text-[20px] font-medium text-[#474747] mb-2"
+            className="block text-[18px] font-medium text-[#474747] mb-2"
           >
             Select Date
           </label>
@@ -232,13 +232,13 @@ const [selectedDepartment, setSelectedDepartment] =
                 e.target.value
               )
             }
-            className="w-[230px] h-[44px] border border-[#D4D4D4] rounded-md px-3 text-[20px] outline-none"
+            className="w-[230px] h-[44px] border border-[#D4D4D4] rounded-md px-3 text-[18px] outline-none"
           />
         </div>
 
         {/* Department */}
     <div>
-  <label className="block text-[20px] font-medium text-[#474747] mb-2">
+  <label className="block text-[18px] font-medium text-[#474747] mb-2">
     Select Department
   </label>
 
@@ -273,39 +273,39 @@ const [selectedDepartment, setSelectedDepartment] =
         <table className="w-full">
           <thead>
             <tr className="border-b border-[#E5E7EB]">
-              <th className="text-left pb-4 text-[20px] font-medium text-[#525252]">
+              <th className="text-left pb-4 text-[18px] font-medium text-[#525252]">
                 Staff ID
               </th>
 
-              <th className="text-left pb-4 text-[20px] font-medium text-[#525252]">
+              <th className="text-left pb-4 text-[18px] font-medium text-[#525252]">
                 Staff Name
               </th>
 
-              <th className="text-left pb-4 text-[20px] font-medium text-[#525252]">
+              <th className="text-left pb-4 text-[18px] font-medium text-[#525252]">
                 Department
               </th>
 
-              <th className="text-left pb-4 text-[20px] font-medium text-[#525252]">
+              <th className="text-left pb-4 text-[18px] font-medium text-[#525252]">
                 Designation
               </th>
 
-              <th className="text-left pb-4 text-[20px] font-medium text-[#525252]">
+              <th className="text-left pb-4 text-[18px] font-medium text-[#525252]">
                 Status
               </th>
 
-              <th className="text-left pb-4 text-[20px] font-medium text-[#525252]">
+              <th className="text-left pb-4 text-[18px] font-medium text-[#525252]">
                 Check-in
               </th>
 
-              <th className="text-left pb-4 text-[20px] font-medium text-[#525252]">
+              <th className="text-left pb-4 text-[18px] font-medium text-[#525252]">
                 Check-out
               </th>
 
-              <th className="text-left pb-4 text-[20px] font-medium text-[#525252]">
+              <th className="text-left pb-4 text-[18px] font-medium text-[#525252]">
                 Remark
               </th>
 
-              <th className="text-right pb-4 text-[20px] font-medium text-[#525252]">
+              <th className="text-right pb-4 text-[18px] font-medium text-[#525252]">
                 Action
               </th>
             </tr>
@@ -331,23 +331,23 @@ const [selectedDepartment, setSelectedDepartment] =
                     }
                     className="border-b border-[#E5E7EB]"
                   >
-                    <td className="py-5 text-[20px] text-[#525252]">
+                    <td className="py-5 text-[16px] text-[#525252]">
                       {
                         item.teacherId
                       }
                     </td>
 
-                    <td className="py-5 text-[20px] text-[#525252]">
+                    <td className="py-5 text-[16px] text-[#525252]">
                       {
                         item.teacherName
                       }
                     </td>
 
-                    <td className="py-5 text-[20px] text-[#525252]">
+                    <td className="py-5 text-[16px] text-[#525252]">
                       {item.section}
                     </td>
 
-                    <td className="py-5 text-[20px] text-[#525252]">
+                    <td className="py-5 text-[16px] text-[#525252]">
                       {
                         item.designation
                       }
@@ -363,19 +363,19 @@ const [selectedDepartment, setSelectedDepartment] =
                       </span>
                     </td>
 
-                    <td className="py-5 text-[20px] text-[#525252]">
+                    <td className="py-5 text-[16px] text-[#525252]">
                       {
                         item.checkIn
                       }
                     </td>
 
-                    <td className="py-5 text-[20px] text-[#525252]">
+                    <td className="py-5 text-[16px] text-[#525252]">
                       {
                         item.checkOut
                       }
                     </td>
 
-                    <td className="py-5 text-[20px] text-[#525252]">
+                    <td className="py-5 text-[16px] text-[#525252]">
                       {item.remark}
                     </td>
 

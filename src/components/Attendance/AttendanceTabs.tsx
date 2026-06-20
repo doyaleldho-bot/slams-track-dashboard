@@ -16,12 +16,12 @@ const AttendanceTabs: React.FC<AttendanceTabsProps> = ({
   onChange,
 }) => {
   return (
-    <div className="inline-flex bg-white rounded-full p-1 border border-[#E5E7EB]">
+    <div className="inline-flex  bg-white rounded-full p-1 border border-[#E5E7EB]">
       {tabs.map((tab) => (
         <button
           key={tab}
           onClick={() => onChange(tab)}
-          className={`px-8 h-7 text-[11px] rounded-full transition-all ${
+          className={`px-8 h-7 text-[20px] font-semibold rounded-full transition-all ${
             activeTab === tab
               ? "bg-[#4B5563] text-white"
               : "text-[#4B5563]"
