@@ -422,9 +422,10 @@ const AddClassModal: React.FC<AddClassModalProps> = ({
                   placeholder="Select Level"
                   options={levelOptionsInLevel}
                   onChange={(value) => {
+                    const nextValue = typeof value === "string" ? value : String(value?.id ?? "")
                     setFormData((prev) => ({
                       ...prev,
-                      level: value,
+                      level: nextValue,
                     }))
                     setErrors((prev) => ({
                       ...prev,
@@ -447,9 +448,10 @@ const AddClassModal: React.FC<AddClassModalProps> = ({
                     placeholder="Select Level"
                     options={levelOptionsInName}
                     onChange={(value) => {
+                      const nextValue = typeof value === "string" ? value : String(value?.id ?? "")
                       setFormData((prev) => ({
                         ...prev,
-                        className: value,
+                        className: nextValue,
                       }))
                       setErrors((prev) => ({
                         ...prev,
@@ -518,9 +520,10 @@ const AddClassModal: React.FC<AddClassModalProps> = ({
                   placeholder="Select Section"
                   options={["A", "B", "C", "D"]}
                   onChange={(value) => {
+                    const nextValue = typeof value === "string" ? value : String(value?.id ?? "")
                     setFormData((prev) => ({
                       ...prev,
-                      section: value,
+                      section: nextValue,
                     }))
                     setErrors((prev) => ({
                       ...prev,
@@ -569,9 +572,10 @@ const AddClassModal: React.FC<AddClassModalProps> = ({
                   placeholder="Select Status"
                   options={["Active", "Inactive"]}
                   onChange={(value) => {
+                    const nextValue = typeof value === "string" ? value : String(value?.id ?? "")
                     setFormData((prev) => ({
                       ...prev,
-                      status: value,
+                      status: nextValue,
                     }))
                     setErrors((prev) => ({
                       ...prev,

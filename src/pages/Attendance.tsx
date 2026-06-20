@@ -147,10 +147,12 @@ const handleExport = async () => {
       responseType: "blob",
     });
 
+    const contentTypeHeader = response.headers["content-type"];
     const blob = new Blob([response.data], {
       type:
-        response.headers["content-type"] ||
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        typeof contentTypeHeader === "string"
+          ? contentTypeHeader
+          : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
 
     const url = window.URL.createObjectURL(blob);
@@ -190,6 +192,15 @@ interface AttendanceKPIResponse {
   status: boolean;
   message: string;
   data: AttendanceKPI[];
+}
+
+interface AttendanceStatsCard {
+  title: string;
+  value: string;
+  subtitle: string;
+  icon: React.ReactNode;
+  highlight?: boolean;
+  change?: string;
 }
 
     const [statsData, setStatsData] = useState<AttendanceStatsCard[]>([]);
