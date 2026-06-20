@@ -172,7 +172,11 @@ const FinanceStudentReportPanel: React.FC = () => {
 
                 const worksheet = XLSX.utils.json_to_sheet(exportData);
                 const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Student Report");
+                XLSX.utils.book_append_sheet(
+                  workbook,
+                  worksheet,
+                  "Student Report",
+                );
                 XLSX.writeFile(
                   workbook,
                   `student-report-${new Date().toISOString().split("T")[0]}.xlsx`,

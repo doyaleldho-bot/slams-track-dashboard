@@ -169,7 +169,11 @@ const FinanceTeacherReportPanel: React.FC = () => {
 
                 const worksheet = XLSX.utils.json_to_sheet(exportData);
                 const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Teacher Report");
+                XLSX.utils.book_append_sheet(
+                  workbook,
+                  worksheet,
+                  "Teacher Report",
+                );
                 XLSX.writeFile(
                   workbook,
                   `teacher-report-${new Date().toISOString().split("T")[0]}.xlsx`,
