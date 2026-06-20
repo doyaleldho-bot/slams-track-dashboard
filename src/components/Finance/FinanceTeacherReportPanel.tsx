@@ -1,7 +1,9 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Search, Trash2, Download } from "lucide-react";
 import StatusBadge from "./StatusBadge";
+import * as XLSX from "xlsx";
 import { getFinanceTeacherReports } from "../../api/finance";
+import { getClasses } from "../../services/classApi";
 
 interface TeacherRow {
   id: string;
@@ -15,21 +17,13 @@ interface TeacherRow {
   status: "Active" | "Inactive" | "Resign";
 }
 
-const courseOptions = [
-  "All Course & Standard",
-  "All Course",
-  "10th Standard",
-  "B.com 1st Year",
-  "M.com",
-  "BCA",
-];
 const batchOptions = ["All Batch", "2019", "2020", "2021"];
 const genderOptions = ["All Gender", "Male", "Female", "Other"];
 
 const FinanceTeacherReportPanel: React.FC = () => {
+  const [courseOptions, setCourseOptions] = useState<string[]>(["All Course"]);
   const [search, setSearch] = useState("");
-  const [selectedCourse, setSelectedCourse] = useState(courseOptions[0]);
-  const [selectedBatch, setSelectedBatch] = useState(batchOptions[0]);
+  const [selectedCourse, setSelectedCourse] = useState("All Course");
   const [selectedGender, setSelectedGender] = useState(genderOptions[0]);
   const [selectAll, setSelectAll] = useState(false);
 
@@ -41,13 +35,27 @@ const FinanceTeacherReportPanel: React.FC = () => {
   }>({ count: 0, next: null, previous: null });
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const pageSize = 10;
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
         setIsLoading(true);
-        const data = await getFinanceTeacherReports(currentPage);
+        const classes = await getClasses();
+        if (mounted) {
+          const labels = classes.map((course) =>
+            String(
+              course.class_section
+                ? `${course.class_name} - ${course.class_section}`
+                : course.class_name,
+            ),
+          );
+          const unique = Array.from(new Set(labels)) as string[];
+          setCourseOptions(["All Course", ...unique]);
+        }
+
+        const data = await getFinanceTeacherReports(currentPage, pageSize);
         if (!mounted) return;
 
         // support different response shapes
@@ -100,13 +108,12 @@ const FinanceTeacherReportPanel: React.FC = () => {
       const matchesCourse =
         selectedCourse === courseOptions[0] ||
         r.inChargeClasses === selectedCourse;
-      const matchesBatch =
-        selectedBatch === batchOptions[0] || r.teacherNumber === selectedBatch;
       const matchesGender =
-        selectedGender === genderOptions[0] || r.gender === selectedGender;
-      return matchesSearch && matchesCourse && matchesBatch && matchesGender;
+        selectedGender === genderOptions[0] ||
+        r.gender.toLowerCase() === selectedGender.toLowerCase();
+      return matchesSearch && matchesCourse && matchesGender;
     });
-  }, [search, selectedCourse, selectedBatch, selectedGender]);
+  }, [search, selectedCourse, selectedGender, teacherRows]);
 
   return (
     <div className="rounded-[10px] bg-white p-6 shadow-sm">
@@ -145,44 +152,55 @@ const FinanceTeacherReportPanel: React.FC = () => {
           {/* <button className="inline-flex items-center gap-2 rounded-[10px] border border-[#F74D57] bg-[#FFF5F7] px-4 py-2 text-sm font-semibold text-[#F74D57] hover:bg-[#FFE6EB]">
             <Trash2 size={16} /> Delete all
           </button> */}
-          <button className="inline-flex items-center gap-2 rounded-[10px] border border-[#D1D5DB] bg-white px-4 py-2 text-sm font-semibold text-[#111827] shadow-sm hover:bg-[#F8F8F8]">
+          <button
+            onClick={() => {
+              try {
+                const exportData = filtered.map((r) => ({
+                  "Teacher ID": r.id,
+                  "Teacher Name": r.name,
+                  "Joined Date": r.joinedDate,
+                  Gender: r.gender,
+                  Salary: r.salary,
+                  Attendance: r.attendance,
+                  "In-charge Classes": r.inChargeClasses,
+                  "Teacher Number": r.teacherNumber,
+                  Status: r.status,
+                }));
+
+                const worksheet = XLSX.utils.json_to_sheet(exportData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Teacher Report");
+                XLSX.writeFile(
+                  workbook,
+                  `teacher-report-${new Date().toISOString().split("T")[0]}.xlsx`,
+                );
+              } catch (error) {
+                console.error("Teacher export failed", error);
+              }
+            }}
+            className="inline-flex items-center gap-2 rounded-[10px] border border-[#D1D5DB] bg-white px-4 py-2 text-sm font-semibold text-[#111827] shadow-sm hover:bg-[#F8F8F8]"
+          >
             <Download size={16} /> Export Report
           </button>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3 mb-6 max-w-[980px]">
-        <div className="flex flex-col gap-2 max-w-[320px]">
-          <p className="text-sm font-medium text-[#111827]">
-            Select Course & Standard
-          </p>
+      <div className="grid gap-4 md:grid-cols-2 mb-6 max-w-[680px]">
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-medium text-[#111827]">Select Course</p>
           <select
             value={selectedCourse}
             onChange={(e) => setSelectedCourse(e.target.value)}
             className="h-11 w-full rounded-[10px] border border-[#E5E7EB] bg-white px-4 text-sm text-[#111827] outline-none"
           >
-            {courseOptions.map((c) => (
-              <option key={c} value={c}>
+            {courseOptions.map((c, idx) => (
+              <option key={`${c}-${idx}`} value={c}>
                 {c}
               </option>
             ))}
           </select>
         </div>
-        <div className="flex flex-col gap-2 max-w-[320px]">
-          <p className="text-sm font-medium text-[#111827]">Batch-wise</p>
-          <select
-            value={selectedBatch}
-            onChange={(e) => setSelectedBatch(e.target.value)}
-            className="h-11 w-full rounded-[10px] border border-[#E5E7EB] bg-white px-4 text-sm text-[#111827] outline-none"
-          >
-            {batchOptions.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex flex-col gap-2 max-w-[320px]">
+        <div className="flex flex-col gap-2">
           <p className="text-sm font-medium text-[#111827]">Gender</p>
           <select
             value={selectedGender}
@@ -271,9 +289,22 @@ const FinanceTeacherReportPanel: React.FC = () => {
           >
             Previous
           </button>
-          <button className="rounded-[10px] bg-[#083b9a] px-3 py-1 text-sm font-semibold text-white">
-            {currentPage}
-          </button>
+          {Array.from(
+            { length: Math.max(1, Math.ceil(reportMeta.count / pageSize)) },
+            (_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentPage(index + 1)}
+                className={`rounded-[10px] px-3 py-1 text-sm font-semibold ${
+                  currentPage === index + 1
+                    ? "bg-[#083b9a] text-white"
+                    : "text-[#6B7280] hover:bg-[#F8F8F8]"
+                }`}
+              >
+                {index + 1}
+              </button>
+            ),
+          )}
           <button
             disabled={!reportMeta.next || isLoading}
             onClick={() => setCurrentPage(currentPage + 1)}

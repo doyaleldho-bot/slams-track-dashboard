@@ -4,6 +4,7 @@ import FinanceAdmissionDetail from "./FinanceAdmissionDetail";
 import StatusBadge from "./StatusBadge";
 import EditAdmissionModal from "./EditAdmissionModal";
 import { getClasses } from "../../services/classApi";
+import { getAdmissionById } from "../../api/finance";
 
 interface AdmissionRow {
   id: string;
@@ -11,8 +12,13 @@ interface AdmissionRow {
   gender: string;
   birthDate: string;
   course: string;
+  class_id?: string;
+  section?: string;
+  internalId?: string;
   admissionDate: string;
   admissionAmount: string;
+  courseFee: string;
+  discountAmount: string;
   receiptId: string;
   paidAmount: string;
   balanceAmount: string;
@@ -35,6 +41,8 @@ const admissionData: AdmissionRow[] = [
     course: "10th Standard",
     admissionDate: "21-05-2026",
     admissionAmount: "$25000",
+    courseFee: "$25000",
+    discountAmount: "$0",
     receiptId: "RCPT-123",
     paidAmount: "$25000",
     balanceAmount: "$0",
@@ -63,6 +71,8 @@ const admissionData: AdmissionRow[] = [
     course: "B.com 1st Year",
     admissionDate: "21-05-2026",
     admissionAmount: "$25000",
+    courseFee: "$25000",
+    discountAmount: "$0",
     receiptId: "RCPT-124",
     paidAmount: "$15000",
     balanceAmount: "$10000",
@@ -91,6 +101,8 @@ const admissionData: AdmissionRow[] = [
     course: "10th Standard",
     admissionDate: "21-05-2026",
     admissionAmount: "$25000",
+    courseFee: "$25000",
+    discountAmount: "$0",
     receiptId: "RCPT-125",
     paidAmount: "$25000",
     balanceAmount: "$0",
@@ -118,6 +130,8 @@ const admissionData: AdmissionRow[] = [
     course: "B.com 1st Year",
     admissionDate: "21-05-2026",
     admissionAmount: "$25000",
+    courseFee: "$25000",
+    discountAmount: "$0",
     receiptId: "RCPT-126",
     paidAmount: "$25000",
     balanceAmount: "$0",
@@ -145,6 +159,8 @@ const admissionData: AdmissionRow[] = [
     course: "B.com 1st Year",
     admissionDate: "21-05-2026",
     admissionAmount: "$25000",
+    courseFee: "$25000",
+    discountAmount: "$0",
     receiptId: "RCPT-127",
     paidAmount: "$25000",
     balanceAmount: "$0",
@@ -164,15 +180,6 @@ const admissionData: AdmissionRow[] = [
       { label: "Caste / Category Certificate" },
     ],
   },
-];
-
-const admissionIds = [
-  "All Admission ID",
-  "in123",
-  "in124",
-  "in125",
-  "in126",
-  "in127",
 ];
 
 interface FinanceAdmissionPanelProps {
@@ -195,9 +202,7 @@ const FinanceAdmissionPanel: React.FC<FinanceAdmissionPanelProps> = ({
   loading = false,
 }) => {
   const [search, setSearch] = useState("");
-  const [selectedDate, setSelectedDate] = useState(() =>
-    new Date().toISOString().slice(0, 10),
-  );
+  const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedCourse, setSelectedCourse] = useState("All Course");
   const [selectedAdmissionId, setSelectedAdmissionId] =
     useState("All Admission ID");
@@ -206,9 +211,23 @@ const FinanceAdmissionPanel: React.FC<FinanceAdmissionPanelProps> = ({
   const [editingAdmission, setEditingAdmission] = useState<AdmissionRow | null>(
     null,
   );
+  const [viewLoading, setViewLoading] = useState(false);
   const [classOptions, setClassOptions] = useState<
-    { id: number; class_name: string }[]
+    {
+      id: number;
+      class_id: string;
+      class_name: string;
+      class_section: string;
+      class_batch: string;
+    }[]
   >([]);
+
+  const admissionIds = useMemo(() => {
+    const ids = Array.from(
+      new Set(admissions?.map((a) => a.id).filter(Boolean)),
+    );
+    return ["All Admission ID", ...ids];
+  }, [admissions]);
 
   useEffect(() => {
     let mounted = true;
@@ -217,7 +236,16 @@ const FinanceAdmissionPanel: React.FC<FinanceAdmissionPanelProps> = ({
       try {
         const classes = await getClasses();
         if (!mounted) return;
-        setClassOptions([{ id: 0, class_name: "All Course" }, ...classes]);
+        setClassOptions([
+          {
+            id: 0,
+            class_id: "",
+            class_name: "All Course",
+            class_section: "",
+            class_batch: "",
+          },
+          ...classes,
+        ]);
       } catch (error) {
         console.error("Failed to load class options", error);
       }
@@ -229,18 +257,60 @@ const FinanceAdmissionPanel: React.FC<FinanceAdmissionPanelProps> = ({
   }, []);
 
   const filteredData = useMemo(() => {
+    const normalizeCourse = (value: string) =>
+      value.trim().toLowerCase().replace(/\s+/g, " ");
+
+    const selectedNormalized = normalizeCourse(selectedCourse);
+
+    const normalizeToISODate = (value: string | undefined) => {
+      if (!value) return "";
+      // Try native Date parsing
+      const d = new Date(value);
+      if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+      // Try DD-MM-YYYY
+      const m = value.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+      if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+      return "";
+    };
+
     return admissions.filter((row) => {
       const matchesSearch =
         row.id.toLowerCase().includes(search.toLowerCase()) ||
         row.studentName.toLowerCase().includes(search.toLowerCase());
-      const matchesCourse =
-        selectedCourse === "All Course" || row.course === selectedCourse;
+
+      const rowCourse = row.course ?? "";
+      const rowNormalized = normalizeCourse(rowCourse);
+
+      let matchesCourse = false;
+      if (selectedCourse === "All Course") {
+        matchesCourse = true;
+      } else if (rowNormalized === selectedNormalized) {
+        matchesCourse = true;
+      } else if (
+        selectedNormalized.includes(" - ") &&
+        !rowNormalized.includes(" - ")
+      ) {
+        matchesCourse = rowNormalized === selectedNormalized.split(" - ")[0];
+      } else if (
+        selectedNormalized.includes(" - ") &&
+        rowNormalized.includes(" - ")
+      ) {
+        matchesCourse = rowNormalized === selectedNormalized;
+      }
+
+      const rowISODate = normalizeToISODate(row.admissionDate);
+      const matchesDate =
+        !selectedDate || selectedDate === "" || rowISODate === selectedDate;
+
       const matchesAdmissionId =
         selectedAdmissionId === "All Admission ID" ||
-        row.id === selectedAdmissionId;
-      return matchesSearch && matchesCourse && matchesAdmissionId;
+        String(row.id) === String(selectedAdmissionId);
+
+      return (
+        matchesSearch && matchesCourse && matchesAdmissionId && matchesDate
+      );
     });
-  }, [admissions, search, selectedCourse, selectedAdmissionId]);
+  }, [admissions, search, selectedCourse, selectedAdmissionId, selectedDate]);
 
   if (loading) {
     return (
@@ -259,10 +329,103 @@ const FinanceAdmissionPanel: React.FC<FinanceAdmissionPanelProps> = ({
     );
   }
 
-  const handleSaveEdit = (updatedAdmission: AdmissionRow) => {
-    // In a real app, this would update the backend
-    console.log("Saving admission:", updatedAdmission);
+  const handleSaveEdit = (updatedAdmission: {
+    id: string;
+    student_name: string;
+    gender: string;
+    birth_date: string;
+    course: string;
+    admission_date: string;
+    admission_amount: string;
+    course_fee: string;
+    discount_amount: string;
+    admission_id: string;
+    paid_amount: string;
+    balance_amount: string;
+    payment_mode: string;
+    payment_status: string;
+    father_name: string;
+    mother_name: string;
+    address: string;
+    mobile_number: string;
+    email: string;
+    documents: { label: string }[];
+  }) => {
+    const mappedAdmission: AdmissionRow = {
+      id: updatedAdmission.id,
+      studentName: updatedAdmission.student_name,
+      gender: updatedAdmission.gender,
+      birthDate: updatedAdmission.birth_date,
+      course: updatedAdmission.course,
+      admissionDate: updatedAdmission.admission_date,
+      admissionAmount: updatedAdmission.admission_amount,
+      courseFee: updatedAdmission.course_fee,
+      discountAmount: updatedAdmission.discount_amount,
+      receiptId: updatedAdmission.admission_id,
+      paidAmount: updatedAdmission.paid_amount,
+      balanceAmount: updatedAdmission.balance_amount,
+      paymentMode: updatedAdmission.payment_mode,
+      paymentStatus: updatedAdmission.payment_status as
+        | "Paid"
+        | "Pending"
+        | "Failed",
+      fatherName: updatedAdmission.father_name,
+      motherName: updatedAdmission.mother_name,
+      address: updatedAdmission.address,
+      mobileNumber: updatedAdmission.mobile_number,
+      email: updatedAdmission.email,
+      documents: updatedAdmission.documents,
+    };
+
+    console.log("Saving admission:", mappedAdmission);
     setEditingAdmission(null);
+  };
+
+  const handleView = async (admissionId: string) => {
+    setViewLoading(true);
+    try {
+      console.log(
+        "[FinanceAdmissionPanel] requesting admission detail for id:",
+        admissionId,
+      );
+      const data = await getAdmissionById(admissionId);
+      console.log("[FinanceAdmissionPanel] getAdmissionById response:", data);
+
+      const courseName = data.class_name ?? data.course ?? "";
+      const section = data.class_section ?? data.section ?? "";
+      const courseLabel = section ? `${courseName} - ${section}` : courseName;
+
+      const mapped: AdmissionRow = {
+        id: data.admission_id ? String(data.admission_id) : String(data.id),
+        studentName: data.student_name ?? "",
+        gender: data.gender ?? "",
+        birthDate: data.admission_date ?? "",
+        course: courseLabel,
+        class_id: data.class_id ?? data.course_id ?? undefined,
+        section: section || undefined,
+        admissionDate: data.admission_date ?? "",
+        admissionAmount: data.admission_amount ?? "",
+        courseFee: data.course_fee ?? "",
+        discountAmount: data.discount_amount ?? "",
+        receiptId: data.admission_id ?? String(data.id),
+        paidAmount: data.paid_amount ?? "",
+        balanceAmount: data.balance_amount ?? "",
+        paymentMode: data.payment_mode ?? "",
+        paymentStatus: data.payment_status ?? "Pending",
+        fatherName: data.father_name ?? "",
+        motherName: data.mother_name ?? "",
+        address: data.address ?? "",
+        mobileNumber: data.mobile_number ?? "",
+        email: data.email ?? "",
+        documents: data.documents ?? [],
+      };
+
+      setSelectedAdmission(mapped);
+    } catch (err) {
+      console.error("Failed to fetch admission detail", err);
+    } finally {
+      setViewLoading(false);
+    }
   };
 
   return (
@@ -296,11 +459,13 @@ const FinanceAdmissionPanel: React.FC<FinanceAdmissionPanelProps> = ({
           <p className="text-sm font-medium text-[#111827]">Admission Date</p>
           <label className="relative flex items-center justify-between rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-3 text-sm text-[#111827] cursor-pointer">
             <span>
-              {new Date(selectedDate).toLocaleDateString("en-US", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })}
+              {selectedDate
+                ? new Date(selectedDate).toLocaleDateString("en-US", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })
+                : "Select date"}
             </span>
             <div className="flex items-center gap-2 text-[#6B7280]">
               <CalendarDays size={18} />
@@ -321,11 +486,20 @@ const FinanceAdmissionPanel: React.FC<FinanceAdmissionPanelProps> = ({
             onChange={(e) => setSelectedCourse(e.target.value)}
             className="h-11 w-full rounded-[10px] border border-[#E5E7EB] bg-white px-4 text-sm text-[#111827] outline-none"
           >
-            {classOptions.map((course) => (
-              <option key={course.id} value={course.class_name}>
-                {course.class_name}
-              </option>
-            ))}
+            {classOptions.map((course) => {
+              const courseLabel = course.class_section
+                ? `${course.class_name} - ${course.class_section}`
+                : course.class_name;
+
+              return (
+                <option
+                  key={`${course.id}-${course.class_section}`}
+                  value={courseLabel}
+                >
+                  {courseLabel}
+                </option>
+              );
+            })}
           </select>
         </div>
 
@@ -354,6 +528,7 @@ const FinanceAdmissionPanel: React.FC<FinanceAdmissionPanelProps> = ({
               <th className="px-5 py-4">Course & Std</th>
               <th className="px-5 py-4">Adm Date</th>
               <th className="px-5 py-4">Adm Amount</th>
+              <th className="px-5 py-4">Course Fee</th>
               <th className="px-5 py-4">Paid Amount</th>
               <th className="px-5 py-4">Payment Mode</th>
               <th className="px-5 py-4">Payment Status</th>
@@ -383,6 +558,9 @@ const FinanceAdmissionPanel: React.FC<FinanceAdmissionPanelProps> = ({
                   {row.admissionAmount}
                 </td>
                 <td className="px-5 py-4 text-sm text-[#374151]">
+                  {row.courseFee}
+                </td>
+                <td className="px-5 py-4 text-sm text-[#374151]">
                   {row.paidAmount}
                 </td>
                 <td className="px-5 py-4 text-sm text-[#374151]">
@@ -403,8 +581,9 @@ const FinanceAdmissionPanel: React.FC<FinanceAdmissionPanelProps> = ({
                 <td className="px-5 py-4 text-sm text-[#374151]">
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => setSelectedAdmission(row)}
+                      onClick={() => handleView(row.internalId ?? row.id)}
                       className="rounded-[10px] p-2 text-[#0F6FFF] hover:bg-[#ECF4FF]"
+                      disabled={viewLoading}
                     >
                       <Eye size={16} />
                     </button>

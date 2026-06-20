@@ -1,6 +1,8 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Search, Trash2, Download } from "lucide-react";
 import { getFinanceStudentReports } from "../../api/finance";
+import * as XLSX from "xlsx";
+import { getClasses } from "../../services/classApi";
 import StatusBadge from "./StatusBadge";
 
 interface StudentRow {
@@ -24,20 +26,14 @@ const FinanceStudentReportPanel: React.FC = () => {
   }>({ count: 0, next: null, previous: null });
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const pageSize = 10;
 
-  const courseOptions = [
-    "All Course & Standard",
-    "All Course",
-    "10th Standard",
-    "B.com 1st Year",
-    "M.com",
-    "BCA",
-  ];
   const batchOptions = ["All Batch", "2019", "2020", "2021"];
   const genderOptions = ["All Gender", "Male", "Female", "Other"];
 
+  const [courseOptions, setCourseOptions] = useState<string[]>(["All Course"]);
   const [search, setSearch] = useState("");
-  const [selectedCourse, setSelectedCourse] = useState(courseOptions[0]);
+  const [selectedCourse, setSelectedCourse] = useState("All Course");
   const [selectedBatch, setSelectedBatch] = useState(batchOptions[0]);
   const [selectedGender, setSelectedGender] = useState(genderOptions[0]);
   const [selectAll, setSelectAll] = useState(false);
@@ -47,7 +43,20 @@ const FinanceStudentReportPanel: React.FC = () => {
     (async () => {
       try {
         setIsLoading(true);
-        const data = await getFinanceStudentReports(currentPage);
+        const classes = await getClasses();
+        if (mounted) {
+          const labels = classes.map((course) =>
+            String(
+              course.class_section
+                ? `${course.class_name} - ${course.class_section}`
+                : course.class_name,
+            ),
+          );
+          const unique = Array.from(new Set(labels)) as string[];
+          setCourseOptions(["All Course", ...unique]);
+        }
+
+        const data = await getFinanceStudentReports(currentPage, pageSize);
         if (!mounted) return;
 
         // Handle multiple possible response shapes:
@@ -105,7 +114,7 @@ const FinanceStudentReportPanel: React.FC = () => {
         selectedGender === genderOptions[0] || r.gender === selectedGender;
       return matchesSearch && matchesCourse && matchesBatch && matchesGender;
     });
-  }, [search, selectedCourse, selectedBatch, selectedGender]);
+  }, [search, selectedCourse, selectedBatch, selectedGender, studentRows]);
 
   return (
     <div className="rounded-[10px] bg-white p-6 shadow-sm">
@@ -146,7 +155,34 @@ const FinanceStudentReportPanel: React.FC = () => {
             Delete all
           </button> */}
 
-          <button className="inline-flex items-center gap-2 rounded-[10px] border border-[#D1D5DB] bg-white px-4 py-2 text-sm font-semibold text-[#111827] shadow-sm hover:bg-[#F8F8F8]">
+          <button
+            onClick={() => {
+              try {
+                const exportData = filtered.map((r) => ({
+                  Course: r.course,
+                  "Student Name": r.studentName,
+                  "Admission Number": r.admissionNumber,
+                  Gender: r.gender,
+                  "Collected Fees": r.collectedFees,
+                  Attendance: r.attendance,
+                  Batch: r.batch,
+                  "Parent Number": r.parentNumber,
+                  Status: r.status,
+                }));
+
+                const worksheet = XLSX.utils.json_to_sheet(exportData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Student Report");
+                XLSX.writeFile(
+                  workbook,
+                  `student-report-${new Date().toISOString().split("T")[0]}.xlsx`,
+                );
+              } catch (error) {
+                console.error("Student export failed", error);
+              }
+            }}
+            className="inline-flex items-center gap-2 rounded-[10px] border border-[#D1D5DB] bg-white px-4 py-2 text-sm font-semibold text-[#111827] shadow-sm hover:bg-[#F8F8F8]"
+          >
             <Download size={16} />
             Export Report
           </button>
@@ -155,9 +191,7 @@ const FinanceStudentReportPanel: React.FC = () => {
 
       <div className="grid gap-4 md:grid-cols-3 mb-6 max-w-[980px]">
         <div className="flex flex-col gap-2 max-w-[320px]">
-          <p className="text-sm font-medium text-[#111827]">
-            Select Course & Standard
-          </p>
+          <p className="text-sm font-medium text-[#111827]">Select Course</p>
           <select
             value={selectedCourse}
             onChange={(e) => setSelectedCourse(e.target.value)}
@@ -277,9 +311,22 @@ const FinanceStudentReportPanel: React.FC = () => {
           >
             Previous
           </button>
-          <button className="rounded-[10px] bg-[#083b9a] px-3 py-1 text-sm font-semibold text-white">
-            {currentPage}
-          </button>
+          {Array.from(
+            { length: Math.max(1, Math.ceil(reportMeta.count / pageSize)) },
+            (_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentPage(index + 1)}
+                className={`rounded-[10px] px-3 py-1 text-sm font-semibold ${
+                  currentPage === index + 1
+                    ? "bg-[#083b9a] text-white"
+                    : "text-[#6B7280] hover:bg-[#F8F8F8]"
+                }`}
+              >
+                {index + 1}
+              </button>
+            ),
+          )}
           <button
             disabled={!reportMeta.next || isLoading}
             onClick={() => setCurrentPage(currentPage + 1)}

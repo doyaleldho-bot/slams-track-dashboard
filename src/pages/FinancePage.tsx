@@ -117,26 +117,41 @@ const FinancePage: React.FC = () => {
 
         const mapped = {
           ...data,
-          results: data.results.map((item: any) => ({
-            id: item.admission_id ? String(item.admission_id) : String(item.id),
-            studentName: item.student_name ?? "",
-            gender: item.gender ?? "",
-            birthDate: item.admission_date ?? "",
-            course: item.class_name ?? item.course ?? "",
-            admissionDate: item.admission_date ?? "",
-            admissionAmount: item.admission_amount ?? "",
-            receiptId: item.admission_id ?? String(item.id),
-            paidAmount: item.paid_amount ?? "",
-            balanceAmount: item.balance_amount ?? "",
-            paymentMode: item.payment_mode ?? "",
-            paymentStatus: item.payment_status ?? "Pending",
-            fatherName: item.father_name ?? "",
-            motherName: item.mother_name ?? "",
-            address: item.address ?? "",
-            mobileNumber: item.mobile_number ?? "",
-            email: item.email ?? "",
-            documents: item.documents ?? [],
-          })),
+          results: data.results.map((item: any) => {
+            const courseName = item.class_name ?? item.course ?? "";
+            const section = item.class_section ?? item.section ?? "";
+            const courseLabel = section
+              ? `${courseName} - ${section}`
+              : courseName;
+
+            return {
+              id: item.admission_id
+                ? String(item.admission_id)
+                : String(item.id),
+              internalId: String(item.id),
+              studentName: item.student_name ?? "",
+              gender: item.gender ?? "",
+              birthDate: item.admission_date ?? "",
+              course: courseLabel,
+              class_id: item.class_id ?? item.course_id ?? undefined,
+              section: item.class_section ?? item.section ?? undefined,
+              admissionDate: item.admission_date ?? "",
+              admissionAmount: item.admission_amount ?? "",
+              courseFee: item.course_fee ?? "",
+              discountAmount: item.discount_amount ?? "",
+              receiptId: item.admission_id ?? String(item.id),
+              paidAmount: item.paid_amount ?? "",
+              balanceAmount: item.balance_amount ?? "",
+              paymentMode: item.payment_mode ?? "",
+              paymentStatus: item.payment_status ?? "Pending",
+              fatherName: item.father_name ?? "",
+              motherName: item.mother_name ?? "",
+              address: item.address ?? "",
+              mobileNumber: item.mobile_number ?? "",
+              email: item.email ?? "",
+              documents: item.documents ?? [],
+            };
+          }),
         };
 
         setAdmissionsData(mapped);

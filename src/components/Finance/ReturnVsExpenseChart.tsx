@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Download } from "lucide-react";
+import * as XLSX from "xlsx";
 import {
   ResponsiveContainer,
   BarChart,
@@ -18,11 +19,9 @@ import {
 
 const ReturnVsExpenseChart: React.FC = () => {
   const [year, setYear] = useState("All Year");
-  const [month, setMonth] = useState("");
+  const [month, setMonth] = useState<number | undefined>(undefined);
   const [yearOptions, setYearOptions] = useState<string[]>(["All Year"]);
-  const [monthOptions, setMonthOptions] = useState<
-    Array<{ id: string; name: string }>
-  >([{ id: "", name: "All Month" }]);
+  const [monthOptions, setMonthOptions] = useState<number[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,14 +47,9 @@ const ReturnVsExpenseChart: React.FC = () => {
         const response = await getFinanceRevenueMonths();
         if (!mounted) return;
         const months = Array.isArray(response)
-          ? response.map((item: any) => ({
-              id: String(
-                item.id ?? item.month ?? item.month_name ?? item.name ?? "",
-              ),
-              name: String(item.name ?? item.month_name ?? item.month ?? item),
-            }))
+          ? response.map((item: any) => Number(item.month ?? item))
           : [];
-        setMonthOptions([{ id: "", name: "All Month" }, ...months]);
+        setMonthOptions(months.filter((m) => !Number.isNaN(m)));
       } catch (fetchError) {
         console.error("Failed to load revenue month options", fetchError);
       }
@@ -69,12 +63,7 @@ const ReturnVsExpenseChart: React.FC = () => {
       setError(null);
 
       try {
-        const response = await getFinanceRevenueReports(
-          1,
-          12,
-          year,
-          month ? Number(month) : undefined,
-        );
+        const response = await getFinanceRevenueReports(1, 12, year, month);
         if (!mounted) return;
 
         // Handle chart_data from response (all months data)
@@ -200,19 +189,44 @@ const ReturnVsExpenseChart: React.FC = () => {
           <div className="flex items-center gap-3 rounded-[10px] border-[#E5E7EB] bg-white px-4 py-2">
             <span className="text-sm font-medium text-[#111827]">Month</span>
             <select
-              value={month}
-              onChange={(e) => setMonth(e.target.value)}
+              value={month ?? ""}
+              onChange={(e) =>
+                setMonth(e.target.value ? Number(e.target.value) : undefined)
+              }
               className="h-10 rounded-[10px] border border-[#E5E7EB] bg-white px-4 text-sm text-[#111827] outline-none"
             >
+              <option value="">All Month</option>
               {monthOptions.map((monthOption) => (
-                <option key={monthOption.id} value={monthOption.id}>
-                  {monthOption.name}
+                <option key={monthOption} value={monthOption}>
+                  {monthOption}
                 </option>
               ))}
             </select>
           </div>
         </div>
-        <button className="inline-flex items-center gap-2 rounded-[10px] border border-[#D1D5DB] bg-white px-4 py-2 text-sm font-semibold text-[#111827] shadow-sm hover:bg-[#F8F8F8]">
+        <button
+          onClick={() => {
+            try {
+              const exportData = chartData.map((item) => ({
+                Month: item.month,
+                "Admission Revenue": item.admissionRevenue,
+                "Fee Collection": item.feeCollection,
+                "Salary Expenses": item.salaryExpenses,
+              }));
+
+              const worksheet = XLSX.utils.json_to_sheet(exportData);
+              const workbook = XLSX.utils.book_new();
+              XLSX.utils.book_append_sheet(workbook, worksheet, "Revenue Report");
+              XLSX.writeFile(
+                workbook,
+                `revenue-report-${year === "All Year" ? "all" : year}-${month ?? "all"}-${new Date().toISOString().split("T")[0]}.xlsx`,
+              );
+            } catch (error) {
+              console.error("Revenue report export failed", error);
+            }
+          }}
+          className="inline-flex items-center gap-2 rounded-[10px] border border-[#D1D5DB] bg-white px-4 py-2 text-sm font-semibold text-[#111827] shadow-sm hover:bg-[#F8F8F8]"
+        >
           <Download size={16} />
           Export Report
         </button>
