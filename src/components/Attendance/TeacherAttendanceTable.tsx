@@ -219,7 +219,7 @@ section:
               onChange={(e) =>
                 setSearchTerm(e.target.value)
               }
-              className="w-[220px] h-[40px] pl-9 pr-3 border border-[#E5E7EB] rounded-md text-[13px] outline-none"
+              className="w-[218px] h-[40px] pl-9 pr-3 border border-[#E5E7EB] rounded-md text-[13px] outline-none"
             />
           </div>
 
@@ -256,7 +256,7 @@ section:
         <div>
           <label
             htmlFor="attendance-date"
-            className="block text-[20px] font-medium text-[#474747] mb-2"
+            className="block text-[18px] font-medium text-[#474747] mb-2"
           >
             Select Date
           </label>
@@ -269,7 +269,7 @@ section:
               onChange={(e) =>
                 setSelectedDate(e.target.value)
               }
-              className="max-w-[230px] h-[44px] border border-[#D4D4D4] rounded-md px-3 text-[20px] outline-none"
+              className="max-w-[230px] h-[44px] border border-[#D4D4D4] rounded-md px-3 text-[18px] outline-none"
             />
           </div>
         </div>
@@ -278,7 +278,7 @@ section:
           <div>
             <label
               htmlFor="department-select"
-              className="block text-[20px] font-medium text-[#474747] mb-2"
+              className="block text-[18px] font-medium text-[#474747] mb-2"
             >
               Select Department
             </label>
@@ -292,7 +292,7 @@ section:
                     e.target.value
                   )
                 }
-                className="w-full h-[44px] border border-[#D4D4D4] rounded-md px-3 pr-10 text-[20px] text-[#525252] appearance-none outline-none bg-white"
+                className="w-full h-[44px] border border-[#D4D4D4] rounded-md px-3 pr-10 text-[18px] text-[#525252] appearance-none outline-none bg-white"
               >
                 {departmentOptions.map(
                   (department) => (
@@ -317,7 +317,7 @@ section:
         <div>
           <label
             htmlFor="section-select"
-            className="block text-[20px] font-medium text-[#474747] mb-2"
+            className="block text-[18px] font-medium text-[#474747] mb-2"
           >
             Select Section
           </label>
@@ -331,7 +331,7 @@ section:
                   e.target.value
                 )
               }
-              className="w-[230px] h-[44px] border border-[#D4D4D4] rounded-md px-3 text-[20px] text-[#525252] appearance-none outline-none bg-white"
+              className="w-[230px] h-[44px] border border-[#D4D4D4] rounded-md px-3 text-[18px] text-[#525252] appearance-none outline-none bg-white"
             >
               {sectionOptions.map((section) => (
                 <option
@@ -355,28 +355,28 @@ section:
         <table className="w-full">
           <thead>
             <tr className="border-b border-[#E5E7EB]">
-              <th className="text-left pb-4 text-[20px] font-medium text-[#525252]">
+              <th className="text-left pb-4 text-[18px] font-medium text-[#525252]">
                 Teacher ID
               </th>
-              <th className="text-left pb-4 text-[20px] font-medium text-[#525252]">
+              <th className="text-left pb-4 text-[18px] font-medium text-[#525252]">
                 TeacherName
               </th>
-              <th className="text-left pb-4 text-[20px] font-medium text-[#525252]">
+              <th className="text-left pb-4 text-[18px] font-medium text-[#525252]">
                 Section
               </th>
-              <th className="text-left pb-4 text-[20px] font-medium text-[#525252]">
+              <th className="text-left pb-4 text-[18px] font-medium text-[#525252]">
                 Status
               </th>
-              <th className="text-left pb-4 text-[20px] font-medium text-[#525252]">
+              <th className="text-left pb-4 text-[18px] font-medium text-[#525252]">
                 Check-in
               </th>
-              <th className="text-left pb-4 text-[20px] font-medium text-[#525252]">
+              <th className="text-left pb-4 text-[18px] font-medium text-[#525252]">
                 Check-out
               </th>
-              <th className="text-left pb-4 text-[20px] font-medium text-[#525252]">
+              <th className="text-left pb-4 text-[18px] font-medium text-[#525252]">
                 Remark
               </th>
-              <th className="text-right pb-4 text-[20px] font-medium text-[#525252]">
+              <th className="text-right pb-4 text-[18px] font-medium text-[#525252]">
                 Action
               </th>
             </tr>
@@ -398,15 +398,15 @@ section:
                   key={item.teacherId}
                   className="border-b border-[#E5E7EB]"
                 >
-                  <td className="py-5 text-[20px] text-[#525252]">
+                  <td className="py-5 text-[16px] text-[#525252]">
                     {item.teacherId}
                   </td>
 
-                  <td className="py-5 text-[20px] text-[#525252]">
+                  <td className="py-5 text-[16px] text-[#525252]">
                     {item.teacherName}
                   </td>
 
-                  <td className="py-5 text-[20px] text-[#525252]">
+                  <td className="py-5 text-[16px] text-[#525252]">
                     {item.section}
                   </td>
 
@@ -420,15 +420,15 @@ section:
                     </span>
                   </td>
 
-                  <td className="py-5 text-[20px] text-[#525252]">
+                  <td className="py-5 text-[16px] text-[#525252]">
                     {item.checkIn}
                   </td>
 
-                  <td className="py-5 text-[20px] text-[#525252]">
+                  <td className="py-5 text-[16px] text-[#525252]">
                     {item.checkOut}
                   </td>
 
-                  <td className="py-5 text-[20px] text-[#525252]">
+                  <td className="py-5 text-[16px] text-[#525252]">
                     {item.remark}
                   </td>
 
