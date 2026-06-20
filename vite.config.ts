@@ -28,6 +28,12 @@ console.log('VITE_API_URL', env.VITE_API_URL)
           changeOrigin: true,
           secure: false,
         },
+        "/media": {
+          // proxy Django media files (uploaded photos, etc.)
+          target: env.VITE_API_URL,
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
   }
