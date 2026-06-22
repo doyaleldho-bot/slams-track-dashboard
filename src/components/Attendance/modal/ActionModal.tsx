@@ -128,6 +128,8 @@ const handleSave = async () => {
 
             <input
               id="checkIn"
+                            type="time"
+
               value={formData.checkIn}
               onChange={(e) =>
                 setFormData({
@@ -149,6 +151,7 @@ const handleSave = async () => {
 
             <input
               id="checkOut"
+              type="time"
               value={formData.checkOut}
               onChange={(e) =>
                 setFormData({

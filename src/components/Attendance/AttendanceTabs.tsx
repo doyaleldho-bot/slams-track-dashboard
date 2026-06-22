@@ -21,7 +21,7 @@ const AttendanceTabs: React.FC<AttendanceTabsProps> = ({
         <button
           key={tab}
           onClick={() => onChange(tab)}
-          className={`px-8 h-7 text-[20px] font-semibold rounded-full transition-all ${
+          className={`px-8 h-7 text-[15px] lg:text-[20px]  font-semibold rounded-full transition-all ${
             activeTab === tab
               ? "bg-[#4B5563] text-white"
               : "text-[#4B5563]"
