@@ -10,7 +10,7 @@ interface NonTeachingTableProps {
   totalPages?: number;
   onPageChange?: (page: number) => void;
   onEditStaff?: (staff: any) => void;
-  onDeleteStaff?: (id: string) => void;
+  onToggleBlock?: (staff: any) => void;
 }
 
 const NonTeachingTable: React.FC<NonTeachingTableProps> = ({
@@ -21,7 +21,7 @@ const NonTeachingTable: React.FC<NonTeachingTableProps> = ({
   totalPages = 1,
   onPageChange,
   onEditStaff,
-  onDeleteStaff,
+  onToggleBlock,
 }) => {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [departmentFilter, setDepartmentFilter] = React.useState("All Department");
@@ -178,21 +178,31 @@ const NonTeachingTable: React.FC<NonTeachingTableProps> = ({
                     </span>
                   </td> */}
                   <td className="text-center">
-                    <div className="inline-flex items-center justify-center gap-4">
+                    <div className="inline-flex items-center justify-center gap-3">
                       <button
-                        className="text-indigo-600"
+                        className="text-indigo-600 p-1.5 hover:bg-indigo-50 rounded-lg transition-all"
                         aria-label="Edit staff"
                         onClick={() => onEditStaff?.(item)}
                       >
-                        <FiEdit2 />
+                        <FiEdit2 size={16} />
                       </button>
-                      <button
-                        className="text-red-600"
-                        aria-label="Delete staff"
-                        onClick={() => onDeleteStaff?.(item.id)}
-                      >
-                        <FiTrash2 />
-                      </button>
+                      {item.is_block ? (
+                        <button
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-600 hover:bg-green-700 text-white transition-all shadow-sm cursor-pointer"
+                          aria-label="Unblock staff"
+                          onClick={() => onToggleBlock?.(item)}
+                        >
+                          Unblock
+                        </button>
+                      ) : (
+                        <button
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-red-200 text-red-600 hover:bg-red-50 transition-all cursor-pointer"
+                          aria-label="Block staff"
+                          onClick={() => onToggleBlock?.(item)}
+                        >
+                          Block
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
