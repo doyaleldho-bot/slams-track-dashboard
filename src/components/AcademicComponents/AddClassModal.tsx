@@ -543,6 +543,7 @@ const AddClassModal: React.FC<AddClassModalProps> = ({
                 </label>
 
                 <CustomDropdown
+                
                   value={formData.teacher}
                   searchable
                   placeholder="Select Teacher"

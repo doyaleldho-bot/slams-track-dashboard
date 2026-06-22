@@ -1,6 +1,10 @@
-import React, { useMemo, useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+
 import { Search, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 import StatusBadge from "./StatusBadge";
+import { getFinanceCourseReports } from "../../api/finance";
+import { getClasses } from "../../services/classApi";
 
 interface ReportRow {
   course: string;
@@ -14,79 +18,77 @@ interface ReportRow {
   status: "Active" | "Inactive";
 }
 
-const reportRows: ReportRow[] = [
-  {
-    course: "B.com",
-    duration: "4 Year",
-    activeStudents: 105,
-    completedStudents: 1002,
-    revenue: "$25000",
-    pendingFees: "$25000",
-    totalTeachers: 10,
-    batch: "10",
-    status: "Active",
-  },
-  {
-    course: "10th",
-    duration: "1 Year",
-    activeStudents: 100,
-    completedStudents: 1000,
-    revenue: "$25000",
-    pendingFees: "$15000",
-    totalTeachers: 7,
-    batch: "7",
-    status: "Inactive",
-  },
-  {
-    course: "M.com",
-    duration: "1 Year",
-    activeStudents: 100,
-    completedStudents: 1000,
-    revenue: "$25000",
-    pendingFees: "$15000",
-    totalTeachers: 6,
-    batch: "6",
-    status: "Inactive",
-  },
-  {
-    course: "10th",
-    duration: "1 Year",
-    activeStudents: 100,
-    completedStudents: 1000,
-    revenue: "$25000",
-    pendingFees: "$15000",
-    totalTeachers: 8,
-    batch: "6",
-    status: "Inactive",
-  },
-  {
-    course: "BCA",
-    duration: "1 Year",
-    activeStudents: 100,
-    completedStudents: 1000,
-    revenue: "$25000",
-    pendingFees: "$15000",
-    totalTeachers: 9,
-    batch: "6",
-    status: "Inactive",
-  },
-];
-
-const courseOptions = [
-  "All Course & Standard",
-  "All Course",
-  "10th Standard",
-  "B.com 1st Year",
-  "M.com",
-  "BCA",
-];
-
 const batchOptions = ["All Batch", "Batch 1", "Batch 2", "Batch 3", "Batch 4"];
 
 const FinanceReportPanel: React.FC = () => {
   const [search, setSearch] = useState("");
-  const [selectedCourse, setSelectedCourse] = useState(courseOptions[0]);
+  const [selectedCourse, setSelectedCourse] = useState("All Course");
   const [selectedBatch, setSelectedBatch] = useState(batchOptions[0]);
+  const [courseOptions, setCourseOptions] = useState<string[]>(["All Course"]);
+  const [reportRows, setReportRows] = useState<ReportRow[]>([]);
+  const [reportMeta, setReportMeta] = useState<{
+    count: number;
+    next: string | null;
+    previous: string | null;
+  }>({ count: 0, next: null, previous: null });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const pageSize = 10;
+
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      try {
+        setIsLoading(true);
+        const classes = await getClasses();
+        if (mounted) {
+          const labels = classes.map((course) =>
+            String(
+              course.class_section
+                ? `${course.class_name} - ${course.class_section}`
+                : course.class_name,
+            ),
+          );
+          const unique = Array.from(new Set(labels)) as string[];
+          setCourseOptions(["All Course", ...unique]);
+        }
+
+        const data = await getFinanceCourseReports(currentPage, pageSize);
+
+        if (!mounted) return;
+
+        const results = data?.results ?? [];
+
+        const mapped = results.map((item: any) => ({
+          course: item.course_standard ?? item.course_name ?? item.course ?? "",
+          duration: item.duration ?? "",
+          activeStudents: item.active_students ?? 0,
+          completedStudents: item.completed_students ?? 0,
+          revenue: item.revenue_generated ?? item.revenue ?? "",
+          pendingFees: item.pending_fees ?? "",
+          totalTeachers: item.total_teachers ?? 0,
+          batch: item.batch ?? "",
+          status: item.status ?? "Inactive",
+        }));
+
+        setReportRows(mapped);
+        setReportMeta({
+          count: data.count ?? 0,
+          next: data.next,
+          previous: data.previous,
+        });
+      } catch (error) {
+        console.error("Failed to load course reports", error);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [currentPage]);
 
   const filteredRows = useMemo(() => {
     return reportRows.filter((row) => {
@@ -94,12 +96,12 @@ const FinanceReportPanel: React.FC = () => {
         row.course.toLowerCase().includes(search.toLowerCase()) ||
         row.batch.toLowerCase().includes(search.toLowerCase());
       const matchesCourse =
-        selectedCourse === courseOptions[0] || row.course === selectedCourse;
+        selectedCourse === "All Course" || row.course === selectedCourse;
       const matchesBatch =
         selectedBatch === batchOptions[0] || row.batch === selectedBatch;
       return matchesSearch && matchesCourse && matchesBatch;
     });
-  }, [search, selectedCourse, selectedBatch]);
+  }, [search, selectedCourse, selectedBatch, reportRows]);
 
   return (
     <div className="rounded-[10px] bg-white p-6 shadow-sm">
@@ -125,7 +127,38 @@ const FinanceReportPanel: React.FC = () => {
             />
           </div>
 
-          <button className="inline-flex items-center gap-2 rounded-[10px] border border-[#D1D5DB] bg-white px-4 py-2 text-sm font-semibold text-[#111827] shadow-sm hover:bg-[#F8F8F8]">
+          <button
+            onClick={() => {
+              try {
+                const exportData = filteredRows.map((row) => ({
+                  Course: row.course,
+                  Duration: row.duration,
+                  "Active Students": row.activeStudents,
+                  "Completed Students": row.completedStudents,
+                  Revenue: row.revenue,
+                  "Pending Fees": row.pendingFees,
+                  "Total Teachers": row.totalTeachers,
+                  Batch: row.batch,
+                  Status: row.status,
+                }));
+
+                const worksheet = XLSX.utils.json_to_sheet(exportData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(
+                  workbook,
+                  worksheet,
+                  "Course Report",
+                );
+                XLSX.writeFile(
+                  workbook,
+                  `course-report-${new Date().toISOString().split("T")[0]}.xlsx`,
+                );
+              } catch (error) {
+                console.error("Course export failed", error);
+              }
+            }}
+            className="inline-flex items-center gap-2 rounded-[10px] border border-[#D1D5DB] bg-white px-4 py-2 text-sm font-semibold text-[#111827] shadow-sm hover:bg-[#F8F8F8]"
+          >
             <Download size={16} />
             Export Report
           </button>
@@ -134,9 +167,7 @@ const FinanceReportPanel: React.FC = () => {
 
       <div className="grid gap-4 md:grid-cols-2 mb-6 max-w-[480px]">
         <div className="flex flex-col gap-2 max-w-[340px]">
-          <p className="text-sm font-medium text-[#111827]">
-            Select Course & Standard
-          </p>
+          <p className="text-sm font-medium text-[#111827]">Select Course</p>
           <select
             value={selectedCourse}
             onChange={(e) => setSelectedCourse(e.target.value)}
@@ -225,22 +256,45 @@ const FinanceReportPanel: React.FC = () => {
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-sm text-[#6B7280]">
         <span>
-          Showing {filteredRows.length} of {reportRows.length} Courses
+          Showing {filteredRows.length} of {reportMeta.count} Courses
         </span>
         <div className="flex items-center gap-2 rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2">
-          <button className="rounded-[10px] px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
+          <button
+            disabled={!reportMeta.previous || isLoading}
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            className={`rounded-[10px] px-3 py-1 text-sm ${
+              !reportMeta.previous
+                ? "text-[#9CA3AF]"
+                : "text-[#6B7280] hover:bg-[#F8F8F8]"
+            }`}
+          >
             Previous
           </button>
-          <button className="rounded-[10px] px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
-            1
-          </button>
-          <button className="rounded-[10px] bg-[#083b9a] px-3 py-1 text-sm font-semibold text-white">
-            2
-          </button>
-          <button className="rounded-[10px] px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
-            3
-          </button>
-          <button className="rounded-[10px] px-3 py-1 text-sm text-[#6B7280] hover:bg-[#F8F8F8]">
+          {Array.from(
+            { length: Math.max(1, Math.ceil(reportMeta.count / pageSize)) },
+            (_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentPage(index + 1)}
+                className={`rounded-[10px] px-3 py-1 text-sm font-semibold ${
+                  currentPage === index + 1
+                    ? "bg-[#083b9a] text-white"
+                    : "text-[#6B7280] hover:bg-[#F8F8F8]"
+                }`}
+              >
+                {index + 1}
+              </button>
+            ),
+          )}
+          <button
+            disabled={!reportMeta.next || isLoading}
+            onClick={() => setCurrentPage(currentPage + 1)}
+            className={`rounded-[10px] px-3 py-1 text-sm ${
+              !reportMeta.next
+                ? "text-[#9CA3AF]"
+                : "text-[#6B7280] hover:bg-[#F8F8F8]"
+            }`}
+          >
             Next
           </button>
         </div>

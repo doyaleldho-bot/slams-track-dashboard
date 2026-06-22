@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { X } from "lucide-react";
+import api from "../../api/axios";
+import { updateAdmission } from "../../api/finance";
 
 interface AdmissionRow {
   id: string;
@@ -9,11 +11,13 @@ interface AdmissionRow {
   course: string;
   admissionDate: string;
   admissionAmount: string;
+  courseFee: string;
+  discountAmount: string;
   receiptId: string;
   paidAmount: string;
   balanceAmount: string;
   paymentMode: string;
-  paymentStatus: "Paid" | "Pending" | "Failed";
+  paymentStatus: string;
   fatherName: string;
   motherName: string;
   address: string;
@@ -22,10 +26,34 @@ interface AdmissionRow {
   documents: { label: string }[];
 }
 
+type AdmissionFormData = {
+  id: string;
+  student_name: string;
+  gender: string;
+  birth_date: string;
+  course: string;
+  admission_date: string;
+  admission_amount: string;
+  course_fee: string;
+  total_amount: string;
+  discount_amount: string;
+  admission_id: string;
+  paid_amount: string;
+  balance_amount: string;
+  payment_mode: string;
+  payment_status: string;
+  father_name: string;
+  mother_name: string;
+  address: string;
+  mobile_number: string;
+  email: string;
+  documents: { label: string }[];
+};
+
 interface EditAdmissionModalProps {
   admission: AdmissionRow;
   onClose: () => void;
-  onSave: (updatedAdmission: AdmissionRow) => void;
+  onSave: (updatedAdmission: AdmissionFormData) => void;
 }
 
 const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
@@ -33,7 +61,44 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
   onClose,
   onSave,
 }) => {
-  const [formData, setFormData] = useState<AdmissionRow>(admission);
+  const [formData, setFormData] = useState<AdmissionFormData>({
+    id: admission.id,
+    student_name: admission.studentName,
+    gender: admission.gender,
+    birth_date: admission.birthDate,
+    course: admission.course,
+    admission_date: admission.admissionDate,
+    admission_amount: admission.admissionAmount,
+    course_fee: admission.courseFee,
+    total_amount: String(
+      (parseFloat(admission.admissionAmount) || 0) +
+        (parseFloat(admission.courseFee) || 0),
+    ),
+    discount_amount: admission.discountAmount,
+    admission_id: admission.receiptId,
+    paid_amount: admission.paidAmount,
+    balance_amount: admission.balanceAmount,
+    payment_mode: admission.paymentMode,
+    payment_status: admission.paymentStatus,
+    father_name: admission.fatherName,
+    mother_name: admission.motherName,
+    address: admission.address,
+    mobile_number: admission.mobileNumber,
+    email: admission.email,
+    documents: admission.documents,
+  });
+  console.log(admission);
+  const calculateTotal = (admissionAmount: string, courseFee: string) => {
+    const amount = parseFloat(admissionAmount) || 0;
+    const fee = parseFloat(courseFee) || 0;
+    return (amount + fee).toString();
+  };
+
+  const calculateBalance = (totalAmount: string, paidAmount: string) => {
+    const total = parseFloat(totalAmount) || 0;
+    const paid = parseFloat(paidAmount) || 0;
+    return (total - paid).toString();
+  };
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -41,17 +106,62 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
     >,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => {
+      const nextForm = {
+        ...prev,
+        [name]: value,
+      };
+
+      if (name === "admission_amount" || name === "course_fee") {
+        nextForm.total_amount = calculateTotal(
+          name === "admission_amount" ? value : prev.admission_amount,
+          name === "course_fee" ? value : prev.course_fee,
+        );
+      }
+
+      if (
+        name === "admission_amount" ||
+        name === "course_fee" ||
+        name === "paid_amount"
+      ) {
+        const total =
+          name === "admission_amount"
+            ? calculateTotal(value, prev.course_fee)
+            : name === "course_fee"
+              ? calculateTotal(prev.admission_amount, value)
+              : prev.total_amount;
+
+        nextForm.balance_amount = calculateBalance(
+          total,
+          name === "paid_amount" ? value : prev.paid_amount,
+        );
+      }
+
+      return nextForm;
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.id) {
+      handleSaveEdit(formData);
+    }
     onSave(formData);
   };
+  const handleSaveEdit = async (updatedAdmission: any) => {
+    try {
+      console.log("Sending:", updatedAdmission);
 
+      const response = await updateAdmission(
+        updatedAdmission.id,
+        updatedAdmission,
+      );
+
+      console.log("Success:", response);
+    } catch (error) {
+      console.error("Update failed:", error);
+    }
+  };
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[10px] bg-white p-8 shadow-xl">
@@ -87,10 +197,10 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
               </label>
               <input
                 type="text"
-                name="studentName"
-                value={formData.studentName}
-                onChange={handleChange}
-                className="w-full rounded-xl border border-[#E5E7EB] px-4 py-3 text-sm text-[#374151] outline-none focus:border-[#083b9a]"
+                name="student_name"
+                value={formData.student_name}
+                readOnly
+                className="w-full rounded-xl border border-[#E5E7EB] bg-[#F8FAFB] px-4 py-3 text-sm text-[#374151] outline-none"
               />
             </div>
             <div className="space-y-2">
@@ -100,8 +210,8 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
               <select
                 name="gender"
                 value={formData.gender}
-                onChange={handleChange}
-                className="w-full rounded-xl border border-[#E5E7EB] px-4 py-3 text-sm text-[#374151] outline-none focus:border-[#083b9a]"
+                disabled
+                className="w-full rounded-xl border border-[#E5E7EB] bg-[#F8FAFB] px-4 py-3 text-sm text-[#374151] outline-none"
               >
                 <option>Male</option>
                 <option>Female</option>
@@ -114,10 +224,10 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
               </label>
               <input
                 type="text"
-                name="birthDate"
-                value={formData.birthDate}
-                onChange={handleChange}
-                className="w-full rounded-xl border border-[#E5E7EB] px-4 py-3 text-sm text-[#374151] outline-none focus:border-[#083b9a]"
+                name="birth_date"
+                value={formData.birth_date}
+                readOnly
+                className="w-full rounded-xl border border-[#E5E7EB] bg-[#F8FAFB] px-4 py-3 text-sm text-[#374151] outline-none"
               />
             </div>
             <div className="space-y-2">
@@ -128,8 +238,8 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
                 type="text"
                 name="course"
                 value={formData.course}
-                onChange={handleChange}
-                className="w-full rounded-xl border border-[#E5E7EB] px-4 py-3 text-sm text-[#374151] outline-none focus:border-[#083b9a]"
+                readOnly
+                className="w-full rounded-xl border border-[#E5E7EB] bg-[#F8FAFB] px-4 py-3 text-sm text-[#374151] outline-none"
               />
             </div>
             <div className="space-y-2">
@@ -138,10 +248,10 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
               </label>
               <input
                 type="text"
-                name="admissionDate"
-                value={formData.admissionDate}
-                onChange={handleChange}
-                className="w-full rounded-xl border border-[#E5E7EB] px-4 py-3 text-sm text-[#374151] outline-none focus:border-[#083b9a]"
+                name="admission_date"
+                value={formData.admission_date}
+                readOnly
+                className="w-full rounded-xl border border-[#E5E7EB] bg-[#F8FAFB] px-4 py-3 text-sm text-[#374151] outline-none"
               />
             </div>
             <div className="space-y-2">
@@ -150,8 +260,44 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
               </label>
               <input
                 type="text"
-                name="admissionAmount"
-                value={formData.admissionAmount}
+                name="admission_amount"
+                value={formData.admission_amount}
+                onChange={handleChange}
+                className="w-full rounded-xl border border-[#E5E7EB] px-4 py-3 text-sm text-[#374151] outline-none focus:border-[#083b9a]"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[#374151]">
+                Course Fee
+              </label>
+              <input
+                type="text"
+                name="course_fee"
+                value={formData.course_fee}
+                onChange={handleChange}
+                className="w-full rounded-xl border border-[#E5E7EB] px-4 py-3 text-sm text-[#374151] outline-none focus:border-[#083b9a]"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[#374151]">
+                Total Amount
+              </label>
+              <input
+                type="text"
+                name="total_amount"
+                value={formData.total_amount}
+                readOnly
+                className="w-full rounded-xl border border-[#E5E7EB] bg-[#F8FAFB] px-4 py-3 text-sm text-[#374151] outline-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[#374151]">
+                Discount Amount
+              </label>
+              <input
+                type="text"
+                name="discount_amount"
+                value={formData.discount_amount}
                 onChange={handleChange}
                 className="w-full rounded-xl border border-[#E5E7EB] px-4 py-3 text-sm text-[#374151] outline-none focus:border-[#083b9a]"
               />
@@ -162,10 +308,10 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
               </label>
               <input
                 type="text"
-                name="receiptId"
-                value={formData.receiptId}
-                onChange={handleChange}
-                className="w-full rounded-xl border border-[#E5E7EB] px-4 py-3 text-sm text-[#374151] outline-none focus:border-[#083b9a]"
+                name="admission_id"
+                value={formData.admission_id}
+                readOnly
+                className="w-full rounded-xl border border-[#E5E7EB] bg-[#F8FAFB] px-4 py-3 text-sm text-[#374151] outline-none"
               />
             </div>
             <div className="space-y-2">
@@ -174,8 +320,8 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
               </label>
               <input
                 type="text"
-                name="paidAmount"
-                value={formData.paidAmount}
+                name="paid_amount"
+                value={formData.paid_amount}
                 onChange={handleChange}
                 className="w-full rounded-xl border border-[#E5E7EB] px-4 py-3 text-sm text-[#374151] outline-none focus:border-[#083b9a]"
               />
@@ -186,10 +332,10 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
               </label>
               <input
                 type="text"
-                name="balanceAmount"
-                value={formData.balanceAmount}
-                onChange={handleChange}
-                className="w-full rounded-xl border border-[#E5E7EB] px-4 py-3 text-sm text-[#374151] outline-none focus:border-[#083b9a]"
+                name="balance_amount"
+                value={formData.balance_amount}
+                readOnly
+                className="w-full rounded-xl border border-[#E5E7EB] bg-[#F8FAFB] px-4 py-3 text-sm text-[#374151] outline-none"
               />
             </div>
             <div className="space-y-2">
@@ -197,8 +343,8 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
                 Payment Mode
               </label>
               <select
-                name="paymentMode"
-                value={formData.paymentMode}
+                name="payment_mode"
+                value={formData.payment_mode}
                 onChange={handleChange}
                 className="w-full rounded-xl border border-[#E5E7EB] px-4 py-3 text-sm text-[#374151] outline-none focus:border-[#083b9a]"
               >
@@ -206,6 +352,7 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
                 <option>Cash</option>
                 <option>Cheque</option>
                 <option>Card</option>
+                <option>Online</option>
               </select>
             </div>
             <div className="space-y-2">
@@ -213,13 +360,14 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
                 Payment Status
               </label>
               <select
-                name="paymentStatus"
-                value={formData.paymentStatus}
+                name="payment_status"
+                value={formData.payment_status}
                 onChange={handleChange}
                 className="w-full rounded-xl border border-[#E5E7EB] px-4 py-3 text-sm text-[#374151] outline-none focus:border-[#083b9a]"
               >
                 <option>Paid</option>
                 <option>Pending</option>
+                <option>Partial</option>
                 <option>Failed</option>
               </select>
             </div>
@@ -231,10 +379,10 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
             </label>
             <input
               type="text"
-              name="fatherName"
-              value={formData.fatherName}
-              onChange={handleChange}
-              className="w-full rounded-xl border border-[#E5E7EB] px-4 py-3 text-sm text-[#374151] outline-none focus:border-[#083b9a]"
+              name="father_name"
+              value={formData.father_name}
+              readOnly
+              className="w-full rounded-xl border border-[#E5E7EB] bg-[#F8FAFB] px-4 py-3 text-sm text-[#374151] outline-none"
             />
           </div>
 
@@ -244,10 +392,10 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
             </label>
             <input
               type="text"
-              name="motherName"
-              value={formData.motherName}
-              onChange={handleChange}
-              className="w-full rounded-xl border border-[#E5E7EB] px-4 py-3 text-sm text-[#374151] outline-none focus:border-[#083b9a]"
+              name="mother_name"
+              value={formData.mother_name}
+              readOnly
+              className="w-full rounded-xl border border-[#E5E7EB] bg-[#F8FAFB] px-4 py-3 text-sm text-[#374151] outline-none"
             />
           </div>
 
@@ -258,9 +406,9 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
             <textarea
               name="address"
               value={formData.address}
-              onChange={handleChange}
+              readOnly
               rows={3}
-              className="w-full rounded-xl border border-[#E5E7EB] px-4 py-3 text-sm text-[#374151] outline-none focus:border-[#083b9a]"
+              className="w-full rounded-xl border border-[#E5E7EB] bg-[#F8FAFB] px-4 py-3 text-sm text-[#374151] outline-none"
             />
           </div>
 
@@ -271,10 +419,10 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
               </label>
               <input
                 type="text"
-                name="mobileNumber"
-                value={formData.mobileNumber}
-                onChange={handleChange}
-                className="w-full rounded-xl border border-[#E5E7EB] px-4 py-3 text-sm text-[#374151] outline-none focus:border-[#083b9a]"
+                name="mobile_number"
+                value={formData.mobile_number}
+                readOnly
+                className="w-full rounded-xl border border-[#E5E7EB] bg-[#F8FAFB] px-4 py-3 text-sm text-[#374151] outline-none"
               />
             </div>
             <div className="space-y-2">
@@ -285,8 +433,8 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
                 type="email"
                 name="email"
                 value={formData.email}
-                onChange={handleChange}
-                className="w-full rounded-xl border border-[#E5E7EB] px-4 py-3 text-sm text-[#374151] outline-none focus:border-[#083b9a]"
+                readOnly
+                className="w-full rounded-xl border border-[#E5E7EB] bg-[#F8FAFB] px-4 py-3 text-sm text-[#374151] outline-none"
               />
             </div>
           </div>

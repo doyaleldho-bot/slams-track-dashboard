@@ -18,6 +18,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
     inactive: "border-orange-500 text-orange-600",
     paid: "border-emerald-500 text-emerald-600",
     pending: "border-amber-500 text-amber-600",
+    partial: "border-amber-500 text-amber-600",
     failed: "border-red-500 text-red-600",
   };
 

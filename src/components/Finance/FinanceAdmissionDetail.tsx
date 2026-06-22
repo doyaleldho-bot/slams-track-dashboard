@@ -11,11 +11,13 @@ interface AdmissionDetailProps {
     course: string;
     admissionDate: string;
     admissionAmount: string;
+    courseFee: string;
+    discountAmount: string;
     receiptId: string;
     paidAmount: string;
     balanceAmount: string;
     paymentMode: string;
-    paymentStatus: "Paid" | "Pending" | "Failed";
+    paymentStatus: string;
     fatherName: string;
     motherName: string;
     address: string;
@@ -94,6 +96,18 @@ const FinanceAdmissionDetail: React.FC<AdmissionDetailProps> = ({
               </p>
               <p className="font-semibold">{admission.admissionAmount}</p>
             </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase text-[#6B7280]">
+                Course Fee
+              </p>
+              <p className="font-semibold">{admission.courseFee}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase text-[#6B7280]">
+                Discount Amount
+              </p>
+              <p className="font-semibold">{admission.discountAmount}</p>
+            </div>
           </div>
         </div>
 
@@ -133,9 +147,9 @@ const FinanceAdmissionDetail: React.FC<AdmissionDetailProps> = ({
                 variant={
                   admission.paymentStatus === "Paid"
                     ? "paid"
-                    : admission.paymentStatus === "Pending"
-                      ? "pending"
-                      : "failed"
+                    : admission.paymentStatus === "Failed"
+                      ? "failed"
+                      : "pending"
                 }
               />
             </div>

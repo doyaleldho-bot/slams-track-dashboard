@@ -58,7 +58,12 @@ const initialData = {
   },
 };
 
-const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) => {
+const AddStudentModal: React.FC<Props> = ({
+  open,
+  onClose,
+  onSaved,
+  student,
+}) => {
   const [step, setStep] = useState<number>(1);
   const [data, setData] = useState<any>(initialData);
   const [files, setFiles] = useState<Record<string, File | null>>({
@@ -211,7 +216,7 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
 
   function updatePersonal<K extends string & keyof typeof initialData.personal>(
     key: K,
-    value: typeof initialData.personal[K]
+    value: (typeof initialData.personal)[K],
   ) {
     setData((prev: any) => ({
       ...prev,
@@ -755,13 +760,10 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
   function StepIndicator() {
     const steps = ["Personal", "Academic", "Payment", "Document"];
 
-
-
     return (
       <div className="flex items-center justify-between px-6 py-6">
         {steps.map((stepName, idx) => (
           <div key={idx} className="flex items-center flex-1">
-
             {/* Step Name */}
             <div
               className={`px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap ${step > idx + 1
@@ -797,7 +799,9 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
             <h2 className="text-xl font-semibold">Add New Student</h2>
             <p className="text-sm text-gray-500">Step {step} of 4 — Personal</p>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:opacity-80">✕</button>
+          <button onClick={onClose} className="text-gray-500 hover:opacity-80">
+            ✕
+          </button>
         </div>
 
         <StepIndicator />
@@ -1010,7 +1014,11 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
 
               <div>
                 <label className="text-sm text-gray-600">Batch</label>
-                <input value={data.academic.batch} onChange={(e) => updateAcademic("batch", e.target.value)} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <input
+                  value={data.academic.batch}
+                  onChange={(e) => updateAcademic("batch", e.target.value)}
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
               {/* <div>
                 <label className="text-sm text-gray-600">Section</label>
@@ -1034,17 +1042,38 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
               </div> */}
               <div>
                 <label className="text-sm text-gray-600">Admission Date</label>
-                <input type="date" value={data.academic.admissionDate} onChange={(e) => updateAcademic("admissionDate", e.target.value)} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <input
+                  type="date"
+                  value={data.academic.admissionDate}
+                  onChange={(e) =>
+                    updateAcademic("admissionDate", e.target.value)
+                  }
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
 
               <div>
                 <label className="text-sm text-gray-600">Student Type</label>
-                <input value={data.academic.studentType} onChange={(e) => updateAcademic("studentType", e.target.value)} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <input
+                  value={data.academic.studentType}
+                  onChange={(e) =>
+                    updateAcademic("studentType", e.target.value)
+                  }
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
 
               <div>
-                <label className="text-sm text-gray-600">Previous Qualification</label>
-                <input value={data.academic.previousQualification} onChange={(e) => updateAcademic("previousQualification", e.target.value)} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <label className="text-sm text-gray-600">
+                  Previous Qualification
+                </label>
+                <input
+                  value={data.academic.previousQualification}
+                  onChange={(e) =>
+                    updateAcademic("previousQualification", e.target.value)
+                  }
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
 
               <div>
@@ -1054,7 +1083,11 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
 
               <div>
                 <label className="text-sm text-gray-600">Status</label>
-                <input value={data.academic.status} onChange={(e) => updateAcademic("status", e.target.value)} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <input
+                  value={data.academic.status}
+                  onChange={(e) => updateAcademic("status", e.target.value)}
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
 
               <div>
@@ -1091,12 +1124,24 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
 
               <div>
                 <label className="text-sm text-gray-600">Payment Mode</label>
-                <input value={data.payment.paymentMode} onChange={(e) => updatePayment("paymentMode", e.target.value)} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <input
+                  value={data.payment.paymentMode}
+                  onChange={(e) => updatePayment("paymentMode", e.target.value)}
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
 
               <div>
-                <label className="text-sm text-gray-600">Installment Plan</label>
-                <input value={data.payment.installmentPlan} onChange={(e) => updatePayment("installmentPlan", e.target.value)} className="w-full mt-2 p-3 bg-gray-100 rounded" />
+                <label className="text-sm text-gray-600">
+                  Installment Plan
+                </label>
+                <input
+                  value={data.payment.installmentPlan}
+                  onChange={(e) =>
+                    updatePayment("installmentPlan", e.target.value)
+                  }
+                  className="w-full mt-2 p-3 bg-gray-100 rounded"
+                />
               </div>
             </div>
           )}
@@ -1104,12 +1149,36 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
           {step === 4 && (
             <div className="grid gap-3">
               {[
-                { key: "studentPhoto", label: "Student Photo", desc: "Upload a clear photo" },
-                { key: "birthCertificate", label: "Birth Certificate", desc: "PDF or Image" },
-                { key: "previousTc", label: "Previous School TC", desc: "PDF or Image" },
-                { key: "aadhar", label: "Aadhar Card (Student)", desc: "PDF or Image" },
-                { key: "parentProof", label: "Parent ID Proof", desc: "PDF or Image" },
-                { key: "casteCertificate", label: "Caste / Category Certificate", desc: "PDF or Image" },
+                {
+                  key: "studentPhoto",
+                  label: "Student Photo",
+                  desc: "Upload a clear photo",
+                },
+                {
+                  key: "birthCertificate",
+                  label: "Birth Certificate",
+                  desc: "PDF or Image",
+                },
+                {
+                  key: "previousTc",
+                  label: "Previous School TC",
+                  desc: "PDF or Image",
+                },
+                {
+                  key: "aadhar",
+                  label: "Aadhar Card (Student)",
+                  desc: "PDF or Image",
+                },
+                {
+                  key: "parentProof",
+                  label: "Parent ID Proof",
+                  desc: "PDF or Image",
+                },
+                {
+                  key: "casteCertificate",
+                  label: "Caste / Category Certificate",
+                  desc: "PDF or Image",
+                },
               ].map((doc) => {
                 const prog = uploadProgress[doc.key] || 0;
                 const isUploading = prog > 0 && prog < 100;
@@ -1124,7 +1193,9 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
                   <div key={doc.key} className="bg-gray-100 p-3 rounded">
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div>
-                        <div className="text-sm font-medium text-gray-700">{doc.label}</div>
+                        <div className="text-sm font-medium text-gray-700">
+                          {doc.label}
+                        </div>
                         <div className="text-xs text-gray-500">{doc.desc}</div>
 
                         {uploadedFile ? (
@@ -1151,7 +1222,11 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
                             : "bg-blue-500 text-white hover:bg-blue-600"
                             }`}
                         >
-                          {isComplete ? "✓ Uploaded" : isUploading ? "Uploading..." : "Upload"}
+                          {isComplete
+                            ? "✓ Uploaded"
+                            : isUploading
+                              ? "Uploading..."
+                              : "Upload"}
 
                           <input
                             type="file"
@@ -1199,12 +1274,19 @@ const AddStudentModal: React.FC<Props> = ({ open, onClose, onSaved, student }) =
         <div className="flex items-center justify-between px-6 py-4 border-t">
           <div>
             {step > 1 && (
-              <button onClick={() => setStep(step - 1)} className="px-4 py-2 bg-gray-200 rounded">◀ Back</button>
+              <button
+                onClick={() => setStep(step - 1)}
+                className="px-4 py-2 bg-gray-200 rounded"
+              >
+                ◀ Back
+              </button>
             )}
           </div>
 
           <div className="flex items-center gap-3">
-            <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+            <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">
+              Cancel
+            </button>
 
             {step < 4 && (
               <button
