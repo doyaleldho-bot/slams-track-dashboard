@@ -40,6 +40,7 @@ interface TeachingStaff {
   ifsc_code: string;
   payroll_applicable: boolean;
   is_teacher: boolean;
+  is_block?: boolean;
 }
 
 import {
@@ -159,14 +160,40 @@ const StaffManagement = () => {
     setIsAddStaffModalOpen(true);
   };
 
-  const deleteStaff = (staffId: string) => {
-    const ok = window.confirm("Are you sure you want to delete this staff member?");
+  const toggleBlockStaff = async (staff: any) => {
+    const targetId = staff.dbId || staff.id;
+    const currentBlockStatus = staff.is_block ?? false;
+    const newBlockStatus = !currentBlockStatus;
+    const actionText = newBlockStatus ? "block" : "unblock";
+    const ok = window.confirm(`Are you sure you want to ${actionText} this staff member?`);
     if (!ok) return;
-    // Local optimistic removal while delete API is pending
-    if (mainTab === "Non-Teaching Staff") {
-      setNonTeachingList((cur) => cur.filter((s: any) => s.id !== staffId));
-    } else {
-      setTeacherList((cur) => cur.filter((s: any) => s.id !== staffId));
+
+    try {
+      const res = await api.patch(`/staff/block-status/${targetId}/`, {
+        is_block: newBlockStatus,
+      });
+
+      if (res.data.status) {
+        const updatedIsBlock = res.data.data?.is_block ?? newBlockStatus;
+        if (mainTab === "Non-Teaching Staff") {
+          setNonTeachingList((cur) =>
+            cur.map((s: any) =>
+              s.id === targetId ? { ...s, is_block: updatedIsBlock } : s
+            )
+          );
+        } else {
+          setTeacherList((cur) =>
+            cur.map((s: any) =>
+              s.id === targetId ? { ...s, is_block: updatedIsBlock } : s
+            )
+          );
+        }
+      } else {
+        alert(res.data.message || "Failed to update block status");
+      }
+    } catch (err: any) {
+      console.error("Error updating block status:", err);
+      alert("Failed to update block status. Please try again.");
     }
   };
 
@@ -397,7 +424,7 @@ const StaffManagement = () => {
           nonTeachingTotalPages={nonTeachingTotalPages}
           onNonTeachingPageChange={(page) => fetchNonTeachingStaff(page)}
           onEditStaff={(staff) => openEditModal(staff)}
-          onDeleteStaff={(id) => deleteStaff(id)}
+          onToggleBlock={(staff) => toggleBlockStaff(staff)}
         />
       </div>
     </div>
