@@ -230,20 +230,20 @@ const handleExport = () => {
 //   }
 // };
 
-// const handleForceLogout = async () => {
-//   try {
-//     const response = await api.post(
-//       "/security/force-logout/"
-//     );
+const handleForceLogout = async () => {
+  try {
+    const response = await api.post(
+      "/security/force-logout/"
+    );
 
-//     alert(response.data.message);
+    alert(response.data.message);
 
-//     fetchActiveSessions();
-//     fetchLoginHistory();
-//   } catch (error) {
-//     console.error(error);
-//   }
-// };
+    fetchActiveSessions();
+    fetchLoginHistory();
+  } catch (error) {
+    console.error(error);
+  }
+};
 
 
 
@@ -431,13 +431,13 @@ value={selectedStaff?.user_id || ""}              onChange={(e) => {
 
 <div className="flex gap-5">
 
-{/* <button
+<button
   onClick={handleForceLogout}
   className="text-[#E7000B] text-[14px] border p-2 rounded-lg hover:bg-red-200"
 >
   Force Logout
 </button> 
-<button
+{/* <button
 onClick={() => handleLogoutAllDevices()}
  className="text-[#E7000B] text-[14px] border p-2 rounded-lg hover:bg-red-200">
   Logout From All Devices
