@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Landmark } from "lucide-react";
+import * as XLSX from "xlsx";
 import {
   FinanceHeader,
   FinanceStats,
@@ -138,10 +139,10 @@ const FinancePage: React.FC = () => {
               admissionDate: item.admission_date ?? "",
               admissionAmount: item.admission_amount ?? "",
               courseFee: item.course_fee ?? "",
-              discountAmount: item.discount_amount ?? "",
+              discountAmount: item.discount_amount ?? item.discount ?? "",
               receiptId: item.admission_id ?? String(item.id),
               paidAmount: item.paid_amount ?? "",
-              balanceAmount: item.balance_amount ?? "",
+              balanceAmount: item.balance_amount ?? item.balance ?? "",
               paymentMode: item.payment_mode ?? "",
               paymentStatus: item.payment_status ?? "Pending",
               fatherName: item.father_name ?? "",
@@ -177,7 +178,45 @@ const FinancePage: React.FC = () => {
   const tabs = ["Payroll", "Admission", "Reports"];
 
   const handleExport = () => {
-    console.log("Export report");
+    try {
+      const statsExport = statsData.map((stat) => ({
+        Metric: stat.title,
+        Value: stat.value,
+        Details: stat.subtitle ?? "",
+      }));
+
+      const admissionExport =
+        admissionsData?.results.map((item) => ({
+          "Admission ID": item.receiptId,
+          "Student Name": item.studentName,
+          Course: item.course,
+          "Admission Date": item.admissionDate,
+          "Admission Amount": item.admissionAmount,
+          "Course Fee": item.courseFee,
+          "Discount Amount": item.discountAmount,
+          "Paid Amount": item.paidAmount,
+          "Balance Amount": item.balanceAmount,
+          "Payment Mode": item.paymentMode,
+          "Payment Status": item.paymentStatus,
+        })) ?? [];
+
+      const workbook = XLSX.utils.book_new();
+
+      const statsSheet = XLSX.utils.json_to_sheet(statsExport);
+      XLSX.utils.book_append_sheet(workbook, statsSheet, "Finance Summary");
+
+      if (admissionExport.length > 0) {
+        const admissionsSheet = XLSX.utils.json_to_sheet(admissionExport);
+        XLSX.utils.book_append_sheet(workbook, admissionsSheet, "Admissions");
+      }
+
+      XLSX.writeFile(
+        workbook,
+        `finance-dashboard-export-${new Date().toISOString().split("T")[0]}.xlsx`,
+      );
+    } catch (error) {
+      console.error("Finance dashboard export failed", error);
+    }
   };
 
   const handleAddAdmission = () => {

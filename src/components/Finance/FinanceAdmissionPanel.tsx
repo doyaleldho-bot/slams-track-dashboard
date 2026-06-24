@@ -224,7 +224,7 @@ const FinanceAdmissionPanel: React.FC<FinanceAdmissionPanelProps> = ({
 
   const admissionIds = useMemo(() => {
     const ids = Array.from(
-      new Set(admissions?.map((a) => a.id).filter(Boolean)),
+      new Set(admissions?.map((a) => a.receiptId ?? a.id).filter(Boolean)),
     );
     return ["All Admission ID", ...ids];
   }, [admissions]);
@@ -406,10 +406,10 @@ const FinanceAdmissionPanel: React.FC<FinanceAdmissionPanelProps> = ({
         admissionDate: data.admission_date ?? "",
         admissionAmount: data.admission_amount ?? "",
         courseFee: data.course_fee ?? "",
-        discountAmount: data.discount_amount ?? "",
+        discountAmount: data.discount_amount ?? data.discount ?? "",
         receiptId: data.admission_id ?? String(data.id),
         paidAmount: data.paid_amount ?? "",
-        balanceAmount: data.balance_amount ?? "",
+        balanceAmount: data.balance_amount ?? data.balance ?? "",
         paymentMode: data.payment_mode ?? "",
         paymentStatus: data.payment_status ?? "Pending",
         fatherName: data.father_name ?? "",
@@ -537,13 +537,13 @@ const FinanceAdmissionPanel: React.FC<FinanceAdmissionPanelProps> = ({
           </thead>
 
           <tbody>
-            {filteredData.map((row) => (
+            {filteredData.map((row, index) => (
               <tr
-                key={row.id}
+                key={`${row.receiptId ?? row.id}-${row.internalId ?? ""}-${index}`}
                 className="border-t border-[#F1F5F9] hover:bg-[#F9FAFB]"
               >
                 <td className="px-5 py-4 text-sm font-medium text-[#111827]">
-                  {row.id}
+                  {row.receiptId ?? row.id}
                 </td>
                 <td className="px-5 py-4 text-sm text-[#374151]">
                   {row.studentName}
@@ -617,9 +617,22 @@ const FinanceAdmissionPanel: React.FC<FinanceAdmissionPanelProps> = ({
           >
             Previous
           </button>
-          <button className="rounded-[10px] bg-[#083b9a] px-3 py-1 text-sm font-semibold text-white">
-            {currentPage}
-          </button>
+          {Array.from(
+            { length: Math.max(1, Math.ceil(admissionCount / 10)) },
+            (_, index) => (
+              <button
+                key={index}
+                onClick={() => onPageChange?.(index + 1)}
+                className={`rounded-[10px] px-3 py-1 text-sm font-semibold ${
+                  currentPage === index + 1
+                    ? "bg-[#083b9a] text-white"
+                    : "text-[#6B7280] hover:bg-[#F8F8F8]"
+                }`}
+              >
+                {index + 1}
+              </button>
+            ),
+          )}
           <button
             disabled={!hasNextPage || !onPageChange}
             onClick={() => onPageChange?.(currentPage + 1)}

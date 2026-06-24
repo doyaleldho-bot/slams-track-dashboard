@@ -240,8 +240,11 @@ export const updateAdmission = async (
       paid_amount: Number(data.paid_amount),
       pending_amount: Number(data.pending_amount ?? data.balance_amount ?? 0),
       course_fee: Number(data.course_fee ?? 0),
-      discount_amount: Number(data.discount_amount ?? 0),
+      discount: Number(data.discount_amount ?? data.discount ?? 0),
+      discount_amount: Number(data.discount_amount ?? data.discount ?? 0),
       balance_amount: Number(data.balance_amount),
+      payment_mode: data.payment_mode ?? "",
+      installment_plan: data.installment_plan ?? "",
     },
   };
 

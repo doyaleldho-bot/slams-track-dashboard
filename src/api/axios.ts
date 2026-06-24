@@ -121,7 +121,7 @@ api.interceptors.response.use(
           refresh: refreshToken,
         });
 
-        const newAccessToken = res.data.access;
+        const newAccessToken = res.data.tokens.access;
 
         if (isValidToken(newAccessToken)) {
           // store new access token
