@@ -54,7 +54,7 @@ const MonthlyCollectionChart: React.FC = () => {
             "/dashboard-line-chart/"
           );
 
-        setChartData(response.data.data);
+        setChartData(response.data?.data || []);
       } catch (error) {
         console.error(
           "Failed to fetch dashboard chart data:",
