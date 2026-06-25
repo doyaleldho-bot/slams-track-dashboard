@@ -24,13 +24,13 @@ console.log('VITE_API_URL', env.VITE_API_URL)
       proxy: {
         "/api": {
           //  from env file
-          target: env.VITE_API_URL,
+          target: "http://192.168.1.17:8000",
           changeOrigin: true,
           secure: false,
         },
         "/media": {
           // proxy Django media files (uploaded photos, etc.)
-          target: env.VITE_API_URL,
+          target: "http://192.168.1.17:8000",
           changeOrigin: true,
           secure: false,
         },
