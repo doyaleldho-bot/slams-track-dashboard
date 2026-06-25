@@ -2,6 +2,7 @@ import React, { useState, useEffect, type ChangeEvent } from "react";
 import api from "../../api/axios";
 import { toast } from "react-toastify";
 import { getClasses, getSections } from "../../services/classApi";
+import useLockBodyScroll from "../../utils/useLockBodyScroll";
 
 interface Props {
   open: boolean;
@@ -83,6 +84,8 @@ const AddStudentModal: React.FC<Props> = ({
     class_section: string;
   }[]>([]);
   const [sections, setSections] = useState<string[]>([]);
+  
+  useLockBodyScroll(open);  
 
   useEffect(() => {
     if (student) {
@@ -792,8 +795,8 @@ const AddStudentModal: React.FC<Props> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-6 overflow-auto">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-6">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
         <div className="flex justify-between items-center px-6 py-4 border-b">
           <div>
             <h2 className="text-xl font-semibold">Add New Student</h2>
@@ -806,7 +809,7 @@ const AddStudentModal: React.FC<Props> = ({
 
         <StepIndicator />
 
-        <div className="p-6">
+        <div className="p-6 flex-1 overflow-y-auto">
           {step === 1 && (
             <div className="grid grid-cols-2 gap-3">
               <div>

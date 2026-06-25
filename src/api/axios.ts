@@ -58,13 +58,13 @@ const api = axios.create({
 })
 
 const logoutAndRedirect = () => {
-  localStorage.clear()
+  // localStorage.clear()
 
   const currentPath = window.location.pathname
 
-  if (currentPath !== "/login") {
-    window.location.replace("/login")
-  }
+  // if (currentPath !== "/login") {
+  //   window.location.replace("/login")
+  // }
 }
 
 // ===============================
