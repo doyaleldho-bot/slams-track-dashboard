@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ArrowUpDown } from "lucide-react";
 import StudentKPICards from "../components/StudentComponents/StudentKPICards";
 import StudentSearchBar from "../components/StudentComponents/StudentSearchBar";
@@ -30,6 +30,7 @@ export interface StudentTableProps {
   onPageChange: (page: number) => void;
 }
 interface ClassItem {
+  class_batch: ReactNode;
   class_section: string;
   id: number;
   class_name: string;
@@ -119,48 +120,6 @@ const StudentPage = () => {
     }
   }, [selectedClass, selectedSection]);
 
-  // useEffect(() => {
-  //   const loadSections = async () => {
-  //     if (!selectedClass) return;
-
-  //     try {
-  //       const sectionList = await getSections(selectedClass);
-
-  //       setSections(sectionList);
-
-  //       if (sectionList.length > 0) {
-  //         setSelectedSection(sectionList[0]);
-  //       }
-  //     } catch (error) {
-  //       console.error(error);
-  //     }
-  //   };
-
-  //   loadSections();
-  // }, [selectedClass]);
-
-  // const fetchClasses = async () => {
-  //   try {
-  //     const res = await api.get("/list-classes-for-dropdowns/");
-
-  //     const classList: ClassItem[] = res.data.data.map(
-  //       (item: any) => ({
-  //         id: item.id,
-  //         class_name: item.class_name,
-  //       })
-  //     );
-  //     setClasses(classList);
-
-  //     // Select first class by default
-  //     if (classList.length > 0) {
-  //       setSelectedClass(classList[0].id.toString());
-  //     }
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // };
-
-
   //student data api
   const [studentList, setStudentList] = useState<Student[]>([]);
 
@@ -195,23 +154,6 @@ const StudentPage = () => {
       console.error("Error fetching students:", error);
     }
   };
-
-  // const fetchSections = async (classId: string) => {
-  //   try {
-  //     const res = await api.get(
-  //       `/classes/sections/?class_id=${classId}`
-  //     );
-
-  //     setSections(res.data.sections);
-
-  //     // Select first section by default
-  //     if (res.data.sections.length > 0) {
-  //       setSelectedSection(res.data.sections[0]);
-  //     }
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // };
 
   const fetchKpiData = async (
     classId: string,
@@ -267,28 +209,28 @@ const StudentPage = () => {
 
   //rearrange roll no. button click handler
   const handleRearrangeRollNumbers = async () => {
-  try {
-    const res = await api.post("/arrange-roll-numbers/", {
-      class_id: selectedClass,
-      section: selectedSection,
-    });
+    try {
+      const res = await api.post("/arrange-roll-numbers/", {
+        class_id: selectedClass,
+        section: selectedSection,
+      });
 
-    if (res.data.status) {
-      toast.success(
-        `${res.data.message}. Total Students: ${res.data.total_students}`
-      );
+      if (res.data.status) {
+        toast.success(
+          `${res.data.message}. Total Students: ${res.data.total_students}`
+        );
 
-      // Refresh student list if needed
-      fetchStudentList(selectedClass, selectedSection);
-    }
-  } catch (error: any) {
-    console.error("Error rearranging roll numbers:", error);
-    toast.error(
-      error?.response?.data?.message ||
+        // Refresh student list if needed
+        fetchStudentList(selectedClass, selectedSection);
+      }
+    } catch (error: any) {
+      console.error("Error rearranging roll numbers:", error);
+      toast.error(
+        error?.response?.data?.message ||
         "Failed to rearrange roll numbers"
-    );
-  }
-};
+      );
+    }
+  };
 
   return (
     <div className=" min-h-screen">
@@ -321,23 +263,11 @@ const StudentPage = () => {
 
             {classes.map((cls) => (
               <option key={cls.id} value={cls.id}>
-                {cls.class_name} - {cls.class_section}
+                {cls.class_name} - {cls.class_section} - {cls.class_batch}
               </option>
             ))}
           </select>
-          {/* {selectedClass && (
-            <select
-              value={selectedSection}
-              onChange={(e) => setSelectedSection(e.target.value)}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-md"
-            >
-              {sections.map((section) => (
-                <option key={section} value={section}>
-                  {section}
-                </option>
-              ))}
-            </select>
-          )} */}
+
           <button
             onClick={() => setShowAddModal(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md transition-colors"
@@ -405,33 +335,48 @@ const StudentPage = () => {
         </div>
       </div>
 
-      {/* KPI Cards Section */}
-      <StudentKPICards
-        totalStudents={kpiData.totalStudents}
-        totalStudentsChange={kpiData.totalStudentsChange}
-        absentStudents={kpiData.absentStudents}
-        absentStudentsChange={kpiData.absentStudentsChange}
-        presentStudents={kpiData.presentStudents}
-        presentStudentsChange={kpiData.presentStudentsChange}
-        newAdmissions={kpiData.newAdmissions}
-        feePending={kpiData.feePending}
-        feePendingChange={kpiData.feePendingChange}
-      />
-      {/* Search and Filter Section */}
-      <div className="flex items-center justify-between gap-4 mb-4 bg-white p-4 rounded-lg">
-        <StudentSearchBar onSearch={setSearchQuery} />
-        <button   onClick={handleRearrangeRollNumbers}   disabled={!selectedClass || !selectedSection} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
-          <ArrowUpDown size={16} />
-          Rearrange Roll No.
-        </button>
-        <FilterButtons onFilterChange={setActiveFilter} />
-      </div>
+      {!selectedClass ? (
+        <div className="bg-white rounded-lg border border-gray-200 py-16 text-center">
+          <h3 className="text-lg font-medium text-gray-800">
+            Select a Class
+          </h3>
 
-      {/* Student Table Section */}
-      <div className="overflow-x-auto">
-        <StudentTable students={filteredStudents} onEdit={handleEditStudent} currentPage={currentPage} totalPages={totalPages} onPageChange={(page) => fetchStudentList(selectedClass, selectedSection, page)
-        } />
-      </div>
+          <p className="text-sm text-gray-500 mt-2">
+            Choose a class from the dropdown above to view student records.
+          </p>
+        </div>
+
+      ) : (
+        <>
+          {/* KPI Cards Section */}
+          <StudentKPICards
+            totalStudents={kpiData.totalStudents}
+            totalStudentsChange={kpiData.totalStudentsChange}
+            absentStudents={kpiData.absentStudents}
+            absentStudentsChange={kpiData.absentStudentsChange}
+            presentStudents={kpiData.presentStudents}
+            presentStudentsChange={kpiData.presentStudentsChange}
+            newAdmissions={kpiData.newAdmissions}
+            feePending={kpiData.feePending}
+            feePendingChange={kpiData.feePendingChange}
+          />
+          {/* Search and Filter Section */}
+          <div className="flex items-center justify-between gap-4 mb-4 bg-white p-4 rounded-lg">
+            <StudentSearchBar onSearch={setSearchQuery} />
+            <button onClick={handleRearrangeRollNumbers} disabled={!selectedClass || !selectedSection} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+              <ArrowUpDown size={16} />
+              Rearrange Roll No.
+            </button>
+            <FilterButtons onFilterChange={setActiveFilter} />
+          </div>
+
+          {/* Student Table Section */}
+          <div className="overflow-x-auto">
+            <StudentTable students={filteredStudents} onEdit={handleEditStudent} currentPage={currentPage} totalPages={totalPages} onPageChange={(page) => fetchStudentList(selectedClass, selectedSection, page)
+            } />
+          </div>
+        </>
+      )}
     </div>
   );
 };

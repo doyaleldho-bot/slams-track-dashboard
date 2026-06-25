@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import { X } from "lucide-react";
 import api from "../../api/axios";
 import { updateAdmission } from "../../api/finance";
+import useLockBodyScroll from "../../utils/useLockBodyScroll";
 
 interface AdmissionRow {
   id: string;
+  internalId?: string;
   studentName: string;
   gender: string;
   birthDate: string;
@@ -28,6 +30,7 @@ interface AdmissionRow {
 
 type AdmissionFormData = {
   id: string;
+  internal_id?: string;
   student_name: string;
   gender: string;
   birth_date: string;
@@ -54,15 +57,19 @@ interface EditAdmissionModalProps {
   admission: AdmissionRow;
   onClose: () => void;
   onSave: (updatedAdmission: AdmissionFormData) => void;
+  open:boolean
 }
 
 const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
   admission,
   onClose,
   onSave,
+  open
 }) => {
+    useLockBodyScroll(open);
   const [formData, setFormData] = useState<AdmissionFormData>({
     id: admission.id,
+    internal_id: (admission as any).internalId ?? undefined,
     student_name: admission.studentName,
     gender: admission.gender,
     birth_date: admission.birthDate,
@@ -71,7 +78,8 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
     admission_amount: admission.admissionAmount,
     course_fee: admission.courseFee,
     total_amount: String(
-      (parseFloat(admission.admissionAmount) || 0) +
+      (parseFloat(admission.admissionAmount) || 0) -
+        (parseFloat(admission.discountAmount) || 0) +
         (parseFloat(admission.courseFee) || 0),
     ),
     discount_amount: admission.discountAmount,
@@ -88,10 +96,15 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
     documents: admission.documents,
   });
   console.log(admission);
-  const calculateTotal = (admissionAmount: string, courseFee: string) => {
+  const calculateTotal = (
+    admissionAmount: string,
+    courseFee: string,
+    discountAmount: string = "0",
+  ) => {
     const amount = parseFloat(admissionAmount) || 0;
     const fee = parseFloat(courseFee) || 0;
-    return (amount + fee).toString();
+    const discount = parseFloat(discountAmount) || 0;
+    return (amount - discount + fee).toString();
   };
 
   const calculateBalance = (totalAmount: string, paidAmount: string) => {
@@ -112,24 +125,36 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
         [name]: value,
       };
 
-      if (name === "admission_amount" || name === "course_fee") {
+      if (
+        name === "admission_amount" ||
+        name === "course_fee" ||
+        name === "discount_amount"
+      ) {
         nextForm.total_amount = calculateTotal(
           name === "admission_amount" ? value : prev.admission_amount,
           name === "course_fee" ? value : prev.course_fee,
+          name === "discount_amount" ? value : prev.discount_amount,
         );
       }
 
       if (
         name === "admission_amount" ||
         name === "course_fee" ||
+        name === "discount_amount" ||
         name === "paid_amount"
       ) {
         const total =
           name === "admission_amount"
-            ? calculateTotal(value, prev.course_fee)
+            ? calculateTotal(value, prev.course_fee, prev.discount_amount)
             : name === "course_fee"
-              ? calculateTotal(prev.admission_amount, value)
-              : prev.total_amount;
+              ? calculateTotal(
+                  prev.admission_amount,
+                  value,
+                  prev.discount_amount,
+                )
+              : name === "discount_amount"
+                ? calculateTotal(prev.admission_amount, prev.course_fee, value)
+                : prev.total_amount;
 
         nextForm.balance_amount = calculateBalance(
           total,
@@ -153,7 +178,7 @@ const EditAdmissionModal: React.FC<EditAdmissionModalProps> = ({
       console.log("Sending:", updatedAdmission);
 
       const response = await updateAdmission(
-        updatedAdmission.id,
+        updatedAdmission.internal_id ?? updatedAdmission.id,
         updatedAdmission,
       );
 
