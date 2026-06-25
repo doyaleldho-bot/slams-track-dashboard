@@ -135,7 +135,7 @@ useEffect(() => {
 ) : error ? (
   <div className="text-red-500">{error}</div>
 ) : (
-  statsData.map((card, index) => (
+  statsData?.map((card, index) => (
     <StatsCard
       key={index}
       title={card.title}
