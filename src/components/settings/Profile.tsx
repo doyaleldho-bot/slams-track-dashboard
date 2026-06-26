@@ -149,7 +149,6 @@ const Profile: React.FC = () => {
       </div>
     )
   }
-  console.log(`${BASE_URL}${profile?.profile_photo?.replace(/^\/+/, "")}`)
   return (
     <div className="space-y-6 p-6" >
       {/* Header */}
@@ -158,7 +157,7 @@ const Profile: React.FC = () => {
           {
             profile?.profile_photo ? (
               <img
-                src={`${BASE_URL}${profile?.profile_photo?.replace(/^\/+/, "")}`}
+                src={`${BASE_URL}/${profile?.profile_photo?.replace(/^\/+/, "")}`}
                 className="h-44 w-44 rounded-full object-cover"
                 alt="Profile"
               />

@@ -46,7 +46,7 @@ const Navbar = () => {
             {
               profile?.profile_photo ? (
                 <img
-                  src={`${BASE_URL}${profile?.profile_photo?.replace(/^\/+/, "")}`}
+                  src={`${BASE_URL}/${profile?.profile_photo?.replace(/^\/+/, "")}`}
                   className="relative z-10 h-10 w-10 rounded-full object-cover"
                   alt="Profile"
                 />
