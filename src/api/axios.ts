@@ -120,7 +120,7 @@ api.interceptors.response.use(
           refresh: refreshToken,
         })
 
-        const newAccessToken = res.data.access
+        const newAccessToken = res.data.tokens.access
 
         // store new access token
         localStorage.setItem("access_token", newAccessToken)
